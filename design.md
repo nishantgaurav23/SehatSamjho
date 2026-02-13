@@ -188,33 +188,9 @@ A core differentiator is the continuously curated medical glossary — a per-lan
 
 - Initial glossary covers the 500 most common diagnoses, 1,000 most prescribed medicines, and 200 most common lab tests in Indian hospitals.
 - Each entry is reviewed by a bilingual medical professional fluent in the target language.
-- The glossary is used as grounding context injected into the GPT-4o translation prompt, improving consistency and accuracy over pure LLM generation.
+- The glossary is used as a grounding context injected into the GPT-4o translation prompt, improving consistency and accuracy over pure LLM generation.
 - Over time, processed documents expand the glossary — new terms encountered in real documents are flagged for human review and addition.
 - This glossary becomes a compounding data moat: the more documents processed, the more accurate and comprehensive translations become across every language.
-
-## Deployment & Distribution
-
-### Hospital and pharmacy partnerships (primary revenue)
-
-- Hospitals deploy SehatSamjho by promoting the WhatsApp number at discharge counters, OPD waiting areas, and pharmacy windows. Every patient who receives a document is directed to scan a QR code and send their document for translation.
-- Pharmacy chains (Apollo, MedPlus, Tata 1mg retail) promote the service at dispensing counters — patients send their prescription photo while waiting for medicines and receive the translation before they leave.
-- Revenue model: per-document fee or monthly subscription based on partner volume. Break-even at ₹8–10 per document or ₹5,000–15,000/month per facility.
-
-### Government and insurance
-
-- State health missions and Ayushman Bharat empanelled hospitals adopt SehatSamjho for PM-JAY beneficiaries — 500M+ covered lives who disproportionately need language access.
-- Insurance companies integrate to improve patient compliance and reduce readmission rates.
-- Revenue model: government procurement contracts, per-beneficiary pricing for insurers.
-
-### ASHA worker network
-
-- India's 1 million ASHA workers use the WhatsApp bot on behalf of patients during home visits in rural areas, reading translated summaries aloud.
-- Precedent: Khushi Baby's ASHABot onboarded 869 ASHAs in Rajasthan with 24,000+ messages exchanged.
-
-### Organic patient acquisition
-
-- Zero-CAC channel: patients who receive a translated summary share the bot number with family and community members. Hospital signage and pharmacy QR codes seed initial adoption.
-- Estimated CAC: ₹50–200 per user via social channels; near-zero marginal CAC through institutional partnerships.
 
 ## Future Expansion
 
@@ -230,6 +206,5 @@ The WhatsApp-first architecture is designed to extend into deeper integrations a
 | Bhashini TTS | Free | — |
 | WhatsApp Business API (message fees) | ~₹0.5 per conversation | ₹5,000 |
 | Hosting (AWS Mumbai) | — | ₹5,000 |
-| **Total** | **~₹5 per document** | **~₹55,000 (~$650)** |
+| **Total** | **~₹5 per document** | **₹55,000 (~$650)** |
 
-Break-even pricing: charging hospitals ₹8–10 per translated document or ₹5,000–15,000/month per facility covers infrastructure costs with margin from day one.
