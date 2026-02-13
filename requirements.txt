@@ -1,0 +1,80 @@
+# Requirements — SehatSamjho: AI Medical Document Translator
+
+## Problem
+
+9 out of 10 Indian adults have low health literacy. Medical documents — prescriptions, discharge summaries, lab reports — are written in English medical jargon, but most patients speak only their regional language and many cannot read at all. India sees ~3 million preventable deaths annually from medical errors, with communication failure implicated in 80% of serious incidents. At government hospitals, doctors spend an average of 2 minutes per consultation. There is no time to explain, and no tool to bridge the gap.
+
+**No product in India currently translates individual patient medical documents into plain-language Indian vernacular.**
+
+## Target Users
+
+**Primary:** Patients and caregivers at public/government hospitals — low-literacy, non-English-speaking, predominantly from Tier 2/3 cities and rural areas.
+
+**Secondary (paying customers):** Hospital administrators, pharmacy chains (Apollo, MedPlus), state health missions, and insurance providers seeking better patient compliance and reduced readmissions.
+
+## Core Features (MVP)
+
+1. **Scan & Extract** — Patient photographs a prescription or discharge summary via WhatsApp. The system extracts text using OCR + LLM vision (GPT-4o).
+
+2. **Simplify & Translate** — Medical jargon is converted into plain-language explanation in the patient's chosen language. Initial languages: **Hindi, Tamil, Telugu**.
+
+3. **Audio Playback** — Translated summary is read aloud using Bhashini TTS, enabling use by patients who cannot read.
+
+4. **Medicine Info Lookup** — Each medicine in the prescription is matched against a drug database (IndianMedicineDatabase.com, 400K+ entries) to surface name, purpose, common side effects, and dosage instructions in simple language.
+
+5. **Safety Guardrails** — Dosage values and allergy warnings are flagged for human review. The system never provides diagnoses or treatment recommendations. Clear disclaimers on every output.
+
+## Out of Scope (v1)
+
+- Clinical decision support or diagnosis
+- ABDM/ABHA integration (planned for Month 2–3)
+- Doctor-facing features
+- Languages beyond Hindi, Tamil, Telugu
+- Handwritten prescription OCR with high accuracy guarantees (we handle typed/printed first; handwritten is best-effort with confidence scores)
+
+## Functional Requirements
+
+| ID | Requirement | Priority |
+|----|------------|----------|
+| FR-1 | Accept image input via WhatsApp and web interface | Must have |
+| FR-2 | Extract structured data from prescription images (medicines, dosages, frequency, doctor notes) | Must have |
+| FR-3 | Translate extracted content into patient-selected language at ≤8th grade reading level | Must have |
+| FR-4 | Generate audio output of translated summary | Must have |
+| FR-5 | Match medicines to drug database and surface plain-language info | Must have |
+| FR-6 | Flag low-confidence extractions (illegible text, uncertain dosages) with visual indicators | Must have |
+| FR-7 | Display disclaimers and "consult your doctor" notices on all outputs | Must have |
+| FR-8 | Support discharge summaries and lab reports (beyond prescriptions) | Should have |
+| FR-9 | Allow users to select language via simple WhatsApp menu (no typing required) | Should have |
+| FR-10 | Track usage metrics (documents processed, languages used, repeat users) | Should have |
+
+## Non-Functional Requirements
+
+- **Accuracy:** ≥95% factual accuracy on medicine names, dosages, and frequencies (validated against source document)
+- **Latency:** Full translation + audio delivered within 30 seconds of image upload
+- **Availability:** 99% uptime during pilot
+- **Privacy:** No patient documents stored beyond processing window (24 hrs max for quality review, then deleted). All data encrypted in transit and at rest.
+- **Cost:** LLM API cost per document ≤ ₹5 (~$0.06) to maintain viable unit economics
+
+## Success Metrics (Pilot)
+
+| Metric | Target |
+|--------|--------|
+| Translation accuracy (validated by bilingual medical professionals) | ≥95% |
+| Patient comprehension (post-use survey, sample of 50+ patients) | ≥80% report understanding their document |
+| Documents processed in pilot month | 500+ |
+| Repeat usage (same user, second document within 30 days) | ≥30% |
+| Hospital partner willingness to continue post-pilot | ≥1 of 2 pilot hospitals |
+
+## Constraints
+
+- **Regulatory:** Product must NOT be positioned as a medical device. No clinical interpretation, diagnosis, or treatment advice. Informational/literacy tool only.
+- **Data privacy:** Comply with DPDP Act 2023 — informed consent before processing, purpose limitation, encryption, and breach notification readiness.
+- **Infrastructure:** Must work on low-bandwidth connections (2G/3G) common in rural India. WhatsApp-first ensures minimal data usage.
+- **Language:** Medical terminology often has no direct vernacular equivalent. The system must explain concepts rather than force literal translations.
+
+## Key Assumptions
+
+1. GPT-4o Vision can extract text from printed Indian prescriptions with ≥90% accuracy (supported by MIRAGE dataset research and AIIMS study showing 98.6% translation accuracy).
+2. Bhashini TTS APIs remain freely available for startups during the pilot phase.
+3. At least one government or charitable hospital in a metro city will agree to a free pilot.
+4. Patients and caregivers are willing to interact with a WhatsApp bot for health information (precedent: MyGov Corona Helpdesk handled 100M+ queries).
