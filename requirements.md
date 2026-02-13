@@ -8,9 +8,9 @@ No product in India currently translates individual patient medical documents in
 
 ## Target Users
 
-**Primary:** Hospital administrators, pharmacy chains (Apollo, MedPlus), state health missions, and insurance providers who need to improve patient comprehension, treatment compliance, and reduce readmissions. These institutions deploy SehatSamjho for their patients — the patient interacts with the product, the institution pays for it.
+**Primary (Paying Customers):** Patients and caregivers at public and private hospitals — low-literacy, non-English-speaking, spanning Tier 1 through rural India. They access SehatSamjho via WhatsApp, requiring no app download and no ability to read.
 
-**End users:** Patients and caregivers at public and private hospitals — low-literacy, non-English-speaking, spanning Tier 1 through rural India. They access SehatSamjho via WhatsApp, requiring no app download, no registration, and no ability to read.
+**Secondary:** Hospital administrators, pharmacy chains (Apollo, MedPlus), state health missions, and insurance providers who need to improve patient comprehension, treatment compliance, and reduce readmissions. These institutions deploy SehatSamjho for their patients — the patient interacts with the product, the institution pays for it.
 
 ## Core Flow
 
