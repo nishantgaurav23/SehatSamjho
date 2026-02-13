@@ -14,96 +14,116 @@
                               ┌──────────┐ ┌──────────┐ ┌──────────────┐
                               │ GPT-4o   │ │ Drug DB  │ │ Bhashini TTS │
                               │ Vision + │ │ Lookup   │ │ (22 langs)   │
-                              │ LLM      │ │ API      │ │              │
+                              │ LLM      │ │ (Redis)  │ │              │
                               └──────────┘ └──────────┘ └──────────────┘
+
+                              ┌──────────┐              ┌──────────────┐
+                              │ Indic    │              │ PostgreSQL   │
+                              │ Trans2   │              │ (metadata    │
+                              │ (fallback)│              │  + analytics)│
+                              └──────────┘              └──────────────┘
+
+                                                        ┌──────────────┐
+                              ┌─ ─ ─ ─ ─ ┐              │ B2B          │
+                              │ ABDM HIU  │              │ Dashboard    │
+                              │ (future)  │              │ (React)      │
+                              └ ─ ─ ─ ─ ─┘              └──────────────┘
 ```
 
-## User Flow
+## User Flow — Prescription Translation via WhatsApp
 
-**Happy path — prescription translation via WhatsApp:**
-
-1. Patient sends "Hi" → Bot responds with language selection menu (Hindi / Tamil / Telugu) as WhatsApp quick-reply buttons
+1. Patient sends "Hi" → Bot responds with language selection as WhatsApp quick-reply buttons (Hindi / Tamil / Telugu / Kannada / Bengali / More...)
 2. Patient taps language → Bot asks to send a photo of their prescription or report
-3. Patient sends photo → Bot acknowledges ("Translating your prescription, please wait 20–30 seconds...")
-4. System extracts text, simplifies, translates, generates audio
+3. Patient sends photo → Bot acknowledges: "Translating your prescription, please wait 20–30 seconds..."
+4. System extracts text, simplifies, translates, looks up medicines, generates audio
 5. Bot sends back:
    - Text card with translated summary (medicine name → purpose → dosage in plain language)
-   - Audio message (Bhashini TTS) reading the summary aloud
+   - Audio voice message reading the summary aloud
    - Footer disclaimer: "This is a simplified translation. Always follow your doctor's advice."
 6. If any extraction has low confidence → Bot flags: "We could not clearly read [item]. Please confirm with your pharmacist."
 
-**Edge cases handled:**
-- Blurry/unreadable image → "We couldn't read this clearly. Please try again with better lighting."
+### Edge Cases
+
+- Blurry or unreadable image → "We couldn't read this clearly. Please try again with better lighting or ask your pharmacist for a printed copy."
 - Non-medical document → "This doesn't appear to be a medical document. Please send a prescription, lab report, or discharge summary."
-- Unsupported language request → "We currently support Hindi, Tamil, and Telugu. More languages coming soon."
+- Language not yet optimized → System uses IndicTrans2 as primary translator and flags: "Translation quality for [language] is still being improved. Please verify important details with your doctor."
+- Multiple prescriptions in one image → System detects and processes each separately, returning a combined summary.
 
 ## Tech Stack
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
 | **Messaging** | WhatsApp Business API (via Twilio or AiSensy) | 400M+ Indian users, no app install, works on 2G, supports image + audio |
-| **Backend** | Python / FastAPI on Railway or Render | Fast to build, async-friendly, free tier for prototype |
+| **Backend** | Python / FastAPI | Async-friendly, strong ML ecosystem, fast iteration |
+| **Hosting** | AWS (Mumbai region) or Railway | Data residency in India for DPDP compliance. Mumbai region minimizes latency |
 | **OCR + Extraction** | GPT-4o Vision API | Handles printed prescriptions, discharge summaries, lab reports in a single call. AIIMS study validated 98.6% accuracy on medical Hindi translation |
-| **Medical Simplification** | GPT-4o (prompted) | Same model, chained call: extract → simplify → translate. Avoids multi-model orchestration complexity |
-| **Drug Database** | IndianMedicineDatabase.com API + local cache | 400K+ Indian medicines with compositions, uses, side effects |
-| **Translation fallback** | IndicTrans2 (AI4Bharat) | Open-source, 22 languages, runs locally. Fallback if GPT-4o translation quality drops for a specific language |
-| **Text-to-Speech** | Bhashini TTS APIs | Government-backed, free, supports all 22 scheduled Indian languages, natural-sounding voices |
-| **Storage** | PostgreSQL (Supabase free tier) | Metadata only (timestamps, language, document type, confidence scores). NO patient document content stored permanently |
-| **Monitoring** | PostHog (free tier) | Usage analytics, funnel tracking, error rates |
+| **Medical Simplification** | GPT-4o (prompted, chained call) | Same model for extraction → simplification → translation. Avoids multi-model orchestration complexity |
+| **Translation Fallback** | IndicTrans2 (AI4Bharat) | Open-source, 22 languages, self-hostable. Fallback when GPT-4o translation quality is suboptimal for a specific language. Also used as a cross-check layer |
+| **Drug Database** | IndianMedicineDatabase.com API + local Redis cache | 400K+ Indian medicines with compositions, uses, side effects. Cached locally for sub-100ms lookups |
+| **Text-to-Speech** | Bhashini TTS APIs | Government-backed, free, all 22 scheduled Indian languages, natural-sounding voices |
+| **Database** | PostgreSQL (Supabase or AWS RDS) | Metadata and analytics only. No patient document content stored permanently |
+| **Analytics** | PostHog | Usage funnels, error rates, language distribution, retention tracking |
+| **B2B Dashboard** | React + Chart.js | Partner-facing dashboard for hospitals and pharmacy chains |
 
 ## Data Flow & Privacy Architecture
 
 ```
-Image received
+Image received via WhatsApp
       │
       ▼
-┌─────────────────────────┐
-│ 1. Image sent to GPT-4o │  (encrypted in transit via HTTPS)
-│    Vision for extraction │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│ 2. Extracted text sent   │  (no image stored — processed in memory only)
-│    to GPT-4o for         │
-│    simplification +      │
-│    translation           │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│ 3. Medicine names        │
-│    matched against       │
-│    drug DB for context   │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│ 4. Translated text sent  │
-│    to Bhashini TTS →     │
-│    audio file generated  │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│ 5. Text + audio sent     │
-│    back to patient via   │
-│    WhatsApp              │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│ 6. Image deleted from    │
-│    memory. Only metadata │
-│    logged (no PHI).      │
-└─────────────────────────┘
+┌──────────────────────────────────┐
+│ 1. Image sent to GPT-4o Vision   │
+│    for extraction                │
+│    (encrypted in transit, HTTPS) │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│ 2. Extracted text sent to GPT-4o │
+│    for simplification +          │
+│    translation into target       │
+│    language                      │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│ 3. Medicine names matched        │
+│    against drug DB (Redis cache) │
+│    for context enrichment        │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│ 4. Translated text sent to       │
+│    Bhashini TTS → audio file     │
+│    generated and compressed      │
+│    (< 500KB)                     │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│ 5. Text + audio delivered to     │
+│    patient via WhatsApp          │
+└──────────────┬───────────────────┘
+               │
+               ▼
+┌──────────────────────────────────┐
+│ 6. Original image purged from    │
+│    memory after processing.      │
+│    Only metadata logged:         │
+│    timestamp, language, doc type,│
+│    confidence scores, latency.   │
+│    No PHI retained.              │
+└──────────────────────────────────┘
 ```
 
 **Privacy-by-design principles:**
-- Patient images are never written to disk — processed in-memory and discarded
-- No personally identifiable health information (PHI) is stored in the database
-- Metadata logged: timestamp, language selected, document type (prescription/lab/discharge), confidence score, processing time
-- Consent collected at first interaction via WhatsApp message ("By sending your document, you consent to AI-powered translation. We do not store your medical data.")
+
+- Patient images are processed in-memory and never written to persistent storage. Purged immediately after response delivery, with a maximum 24-hour retention window only if flagged for manual quality review.
+- No personally identifiable health information (PHI) is stored in the database. Metadata logged: timestamp, language selected, document type, confidence score, processing time.
+- Consent is collected at first interaction: "By sending your document, you consent to AI-powered translation. We do not store your medical data."
+- All infrastructure hosted in India (AWS Mumbai or equivalent) for data residency compliance.
+- Encryption: TLS 1.3 in transit, AES-256 at rest for any temporary storage.
 
 ## Prompt Engineering Strategy
 
@@ -111,94 +131,105 @@ The core intelligence lives in two chained GPT-4o calls:
 
 **Call 1 — Extraction (Vision)**
 ```
-System: You are a medical document reader specializing in Indian prescriptions 
-and medical reports. Extract ALL of the following from the image:
+System: You are a medical document reader specializing in Indian
+prescriptions and medical reports. Extract ALL of the following
+from the image:
 - Patient name (if visible)
-- Doctor name and specialization (if visible)  
+- Doctor name and specialization (if visible)
 - Each medicine: name, dosage, frequency, duration
 - Diagnosis or clinical notes
-- Lab values (if lab report)
+- Lab values with reference ranges (if lab report)
 - Any warnings or special instructions
 
-Output as structured JSON. If any field is unclear or illegible, 
-set confidence: "low" for that field. Never guess dosage values — 
-mark them uncertain instead.
+Output as structured JSON. If any field is unclear or illegible,
+set confidence: "low" for that field and include your best guess
+in a separate "guess" field. Never present uncertain dosage values
+as definitive.
 ```
 
 **Call 2 — Simplification + Translation**
 ```
-System: You are a caring health educator explaining medical information 
-to a patient in {language}. The patient has no medical background and 
-may have limited reading ability.
+System: You are a caring health educator explaining medical
+information to a patient in {language}. The patient has no medical
+background and may have limited reading ability.
 
 Rules:
 - Explain what each medicine does in one simple sentence
-- Convert medical terms to everyday words (e.g., "hypertension" → 
-  "high blood pressure" → "{vernacular equivalent}")
-- For dosages, use familiar references ("one tablet the size of a 
-  small dal" is NOT needed — just "1 tablet, morning, after food")
+- Convert medical terms to everyday words
+  (e.g., "hypertension" → "high blood pressure" →
+  "{vernacular equivalent with context}")
+- For dosages, use clear simple language
+  ("1 tablet, morning, after food")
+- Preserve drug names, dosage numbers, and frequencies in
+  original English alongside the translation
 - NEVER add medical advice not present in the original document
-- NEVER interpret lab values as good/bad — just state the value 
-  and what it measures
-- Flag anything marked as low-confidence from extraction
-- Keep the total output under 300 words
+- NEVER interpret lab values as good or bad — state the value,
+  what it measures, and the normal range
+- Flag anything marked low-confidence from extraction
+- Keep total output under 300 words
 
-Tone: Warm, respectful, clear. As if a trusted family member is 
-reading the prescription to you.
+Tone: Warm, respectful, clear. As if a trusted family member
+who happens to understand medicine is reading the document to you.
 ```
 
 ## Safety Design
 
 | Risk | Mitigation |
 |------|-----------|
-| Wrong dosage extracted from blurry image | Confidence scoring on extraction. Low-confidence dosages displayed with ⚠️ warning and "Please confirm with your pharmacist" |
-| Translation error changes medical meaning | Critical terms (drug names, dosage numbers, frequency) are preserved in original English alongside translation. Never translated phonetically — only explained |
-| Patient treats output as medical advice | Every response includes disclaimer. Product never says "you should take" — only "your doctor has prescribed" |
-| Allergies or contraindications missed | Drug DB lookup surfaces known major side effects. System adds "Tell your doctor if you experience..." but does NOT perform interaction checking (out of scope for v1) |
-| Patient sends sensitive personal information beyond medical docs | Auto-detection prompt: if non-medical content detected, respond with generic "This doesn't appear to be a medical document" and discard |
+| Wrong dosage extracted from blurry image | Confidence scoring on every extracted field. Low-confidence dosages displayed with ⚠️ warning and "Please confirm with your pharmacist." Audio output emphasizes the uncertainty verbally |
+| Translation error changes medical meaning | Critical terms (drug names, dosage numbers, frequency) preserved in original English alongside translation. Never translated phonetically — only explained contextually. IndicTrans2 cross-check flags divergent translations for review |
+| Patient treats output as medical advice | Every response includes disclaimer in text and audio. Product language consistently uses "your doctor has prescribed" framing, never "you should take" |
+| Drug interaction or contraindication missed | Drug DB lookup surfaces known major side effects and interactions as informational context. System explicitly states it does NOT perform comprehensive interaction checking and advises consulting a pharmacist |
+| Patient sends sensitive non-medical content | Auto-detection: if non-medical content detected, respond with "This doesn't appear to be a medical document" and discard without processing |
 
-## MVP Scope — What We Build in 1 Week (Prototype)
+## Medical Glossary System
 
-| Day | Deliverable |
-|-----|------------|
-| 1 | Set up WhatsApp Business API sandbox (Twilio/AiSensy). Build basic message handler in FastAPI |
-| 2 | Integrate GPT-4o Vision — extraction prompt tuned on 20 sample Indian prescriptions (sourced from research papers + team's own prescriptions) |
-| 3 | Build simplification + translation chain. Test on Hindi with 30 sample documents. Integrate drug DB lookup |
-| 4 | Integrate Bhashini TTS for Hindi audio. Add Tamil and Telugu translation paths |
-| 5 | Safety layer — confidence scoring, disclaimers, edge case handling. Basic error handling |
-| 6 | End-to-end testing with 20 real prescriptions across 3 languages. Fix accuracy issues |
-| 7 | Demo prep. Record 3 compelling demo videos (one per language). Prepare pitch deck |
+A core differentiator is the continuously curated medical glossary — a per-language mapping of medical terms to validated vernacular explanations.
 
-**Prototype output:** A working WhatsApp bot that accepts a prescription photo and returns a plain-language translated summary (text + audio) in Hindi, Tamil, or Telugu within 30 seconds.
+- Initial glossary covers the 500 most common diagnoses, 1,000 most prescribed medicines, and 200 most common lab tests in Indian hospitals.
+- Each entry is reviewed by a bilingual medical professional fluent in the target language.
+- The glossary is used as grounding context injected into the GPT-4o translation prompt, improving consistency and accuracy over pure LLM generation.
+- Over time, processed documents expand the glossary — new terms encountered in real documents are flagged for human review and addition.
+- This glossary becomes a compounding data moat: the more documents processed, the more accurate and comprehensive translations become across every language.
 
-## 3-Month MVP Roadmap (Post-Hackathon)
+## Deployment & Distribution
 
-**Month 1 — Validate accuracy**
-- Partner with 1 hospital (target: government hospital in Chennai or Hyderabad)
-- Process 200+ real documents with bilingual medical professional review
-- Achieve ≥95% accuracy benchmark
-- Add support for discharge summaries and basic lab reports
+### Hospital and pharmacy partnerships (primary revenue)
 
-**Month 2 — Distribution infrastructure**
-- Begin ABDM sandbox integration (using Eka Care ABDM Connect middleware)
-- Build pharmacy counter integration (tablet-based kiosk for scanning at dispensing)
-- Expand to 5 languages (add Kannada, Bengali)
+- Hospitals deploy SehatSamjho by promoting the WhatsApp number at discharge counters, OPD waiting areas, and pharmacy windows. Every patient who receives a document is directed to scan a QR code and send their document for translation.
+- Pharmacy chains (Apollo, MedPlus, Tata 1mg retail) promote the service at dispensing counters — patients send their prescription photo while waiting for medicines and receive the translation before they leave.
+- Revenue model: per-document fee or monthly subscription based on partner volume. Break-even at ₹8–10 per document or ₹5,000–15,000/month per facility.
 
-**Month 3 — PMF signals**
-- Deploy at 2–3 hospital discharge counters
-- Target: 500+ documents processed, ≥80% patient comprehension, ≥30% repeat usage
-- Pitch to Apollo Pharmacy, state health missions, and Ayushman Bharat empanelled hospital networks
-- Explore insurance company partnerships (translated discharge summaries → better patient compliance → fewer readmissions)
+### Government and insurance
 
-## Cost Estimate (Prototype Phase)
+- State health missions and Ayushman Bharat empanelled hospitals adopt SehatSamjho for PM-JAY beneficiaries — 500M+ covered lives who disproportionately need language access.
+- Insurance companies integrate to improve patient compliance and reduce readmission rates.
+- Revenue model: government procurement contracts, per-beneficiary pricing for insurers.
 
-| Item | Monthly Cost |
-|------|-------------|
-| GPT-4o API (500 documents × ~$0.05 each) | ~$25 |
-| WhatsApp Business API (AiSensy starter) | ₹999 (~$12) |
-| Bhashini TTS API | Free |
-| Hosting (Railway/Render) | Free tier |
-| Domain + misc | ~$10 |
-| **Total** | **~$50/month** |
+### ASHA worker network
 
-Scales to ~$500/month at 5,000 documents — well within seed/grant funding range.
+- India's 1 million ASHA workers use the WhatsApp bot on behalf of patients during home visits in rural areas, reading translated summaries aloud.
+- Precedent: Khushi Baby's ASHABot onboarded 869 ASHAs in Rajasthan with 24,000+ messages exchanged.
+
+### Organic patient acquisition
+
+- Zero-CAC channel: patients who receive a translated summary share the bot number with family and community members. Hospital signage and pharmacy QR codes seed initial adoption.
+- Estimated CAC: ₹50–200 per user via social channels; near-zero marginal CAC through institutional partnerships.
+
+## Future Expansion
+
+The WhatsApp-first architecture is designed to extend into deeper integrations as institutional partnerships grow: ABDM/ABHA integration for pulling patient health records directly with consent, tablet-based kiosk mode for pharmacy dispensing counters and hospital discharge desks, and EMR/HIS system webhooks (HealthPlix, Bahmni) for auto-translating discharge summaries at the point of generation. These channels serve the same paying customers through tighter workflow integration.
+
+## Cost Structure
+
+| Item | Per-document cost | At 10,000 docs/month |
+|------|-------------------|----------------------|
+| GPT-4o Vision (extraction) | ~₹2.5 ($0.03) | ₹25,000 |
+| GPT-4o (simplification + translation) | ~₹2.0 ($0.025) | ₹20,000 |
+| Drug DB lookup | Negligible (cached) | — |
+| Bhashini TTS | Free | — |
+| WhatsApp Business API (message fees) | ~₹0.5 per conversation | ₹5,000 |
+| Hosting (AWS Mumbai) | — | ₹5,000 |
+| **Total** | **~₹5 per document** | **~₹55,000 (~$650)** |
+
+Break-even pricing: charging hospitals ₹8–10 per translated document or ₹5,000–15,000/month per facility covers infrastructure costs with margin from day one.
