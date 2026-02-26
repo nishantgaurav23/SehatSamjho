@@ -1,0 +1,59 @@
+# Secrets — NEVER commit
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+*.log
+
+# Node (frontend)
+node_modules/
+frontend/dist/
+frontend/.next/
+frontend/build/
+
+# Docker
+*.tar
+
+# AWS
+.aws/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Audio temp files
+*.mp3
+*.ogg
+*.wav
+/tmp/
+
+# Data — don't commit large datasets but do commit seeds/glossary
+data/drugs/downloaded/
+data/raw/
+
+# Alembic
+# (keep alembic.ini and versions/ tracked)
