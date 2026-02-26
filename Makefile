@@ -31,54 +31,59 @@ local-migrate:
 
 # ── Docker: Local Development ─────────────────────────────────────
 dev:
-	docker-compose up --build
+	docker compose up --build
 
 up:
-	docker-compose up -d
+	docker compose up -d
+
+# Start only postgres + redis (no API build) — use this during development
+# before main.py is implemented, and for running local tests
+services:
+	docker compose up -d postgres redis
 
 down:
-	docker-compose down
+	docker compose down
 
 logs:
-	docker-compose logs -f api
+	docker compose logs -f api
 
 build:
-	docker-compose build
+	docker compose build
 
 shell:
-	docker-compose run --rm api python
+	docker compose run --rm api python
 
 # ── Database ─────────────────────────────────────────────────────
 migrate:
-	docker-compose run --rm api alembic upgrade head
+	docker compose run --rm api alembic upgrade head
 
 migrate-down:
-	docker-compose run --rm api alembic downgrade -1
+	docker compose run --rm api alembic downgrade -1
 
 makemigrations:
-	docker-compose run --rm api alembic revision --autogenerate -m "$(msg)"
+	docker compose run --rm api alembic revision --autogenerate -m "$(msg)"
 
 # ── Data ─────────────────────────────────────────────────────────
 seed:
-	docker-compose run --rm api python scripts/seed_drug_db.py
-	docker-compose run --rm api python scripts/seed_glossary.py
+	docker compose run --rm api python scripts/seed_drug_db.py
+	docker compose run --rm api python scripts/seed_glossary.py
 
 fetch-drugs:
-	docker-compose run --rm api python scripts/fetch_drug_data.py
+	docker compose run --rm api python scripts/fetch_drug_data.py
 
 # ── Code Quality ─────────────────────────────────────────────────
 lint:
-	docker-compose run --rm api ruff check app/ scripts/
-	docker-compose run --rm api ruff format --check app/ scripts/
+	docker compose run --rm api ruff check app/ scripts/
+	docker compose run --rm api ruff format --check app/ scripts/
 
 format:
-	docker-compose run --rm api ruff format app/ scripts/
+	docker compose run --rm api ruff format app/ scripts/
 
 test:
-	docker-compose run --rm api pytest tests/ -v --tb=short
+	docker compose run --rm api pytest tests/ -v --tb=short
 
 test-cov:
-	docker-compose run --rm api pytest tests/ -v --cov=app --cov-report=term-missing
+	docker compose run --rm api pytest tests/ -v --cov=app --cov-report=term-missing
 
 # ── Tunnel (Twilio webhook dev) ───────────────────────────────────
 ngrok:
@@ -130,8 +135,8 @@ clean:
 # ── Setup (first time) ────────────────────────────────────────────
 setup:
 	cp -n .env.example .env || true
-	docker-compose pull
-	docker-compose build
+	docker compose pull
+	docker compose build
 	$(MAKE) migrate
 	$(MAKE) seed
 	@echo ""

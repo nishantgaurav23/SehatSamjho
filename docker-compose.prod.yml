@@ -1,5 +1,3 @@
-version: "3.9"
-
 # Production overrides — used in AWS ECS (no local volumes, external DB/Redis)
 # Run with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
 

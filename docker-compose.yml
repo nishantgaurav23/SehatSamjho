@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build:
@@ -30,7 +28,7 @@ services:
       POSTGRES_USER: sehat
       POSTGRES_PASSWORD: sehatpassword
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
