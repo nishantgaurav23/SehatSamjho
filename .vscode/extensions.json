@@ -1,0 +1,31 @@
+{
+  // Recommended extensions for SehatSamjho development.
+  // VS Code will prompt teammates to install these when they open the repo.
+  "recommendations": [
+    // ── Python ──────────────────────────────────────────────────
+    "ms-python.python",           // Python language support
+    "ms-python.vscode-pylance",   // Fast type checking and IntelliSense
+    "charliermarsh.ruff",         // Linter + formatter (replaces flake8 + black)
+
+    // ── FastAPI / API ────────────────────────────────────────────
+    "rangav.vscode-thunder-client", // Lightweight REST client (test webhook endpoints)
+
+    // ── Docker ───────────────────────────────────────────────────
+    "ms-azuretools.vscode-docker",  // Docker file syntax, container management
+
+    // ── Database ─────────────────────────────────────────────────
+    "mtxr.sqltools",                         // SQL editor
+    "mtxr.sqltools-driver-pg",               // PostgreSQL driver for SQLTools
+
+    // ── Git & Collaboration ───────────────────────────────────────
+    "eamodio.gitlens",            // Git blame, history, branch comparison
+    "github.vscode-pull-request-github", // Review PRs directly in VS Code
+
+    // ── Environment & Config ──────────────────────────────────────
+    "mikestead.dotenv",           // .env file syntax highlighting
+
+    // ── General Productivity ──────────────────────────────────────
+    "usernamehw.errorlens",       // Inline error messages on the line they occur
+    "streetsidesoftware.code-spell-checker" // Catches typos in code and comments
+  ]
+}
