@@ -10,10 +10,11 @@ venv:
 	@echo "Activate with: source .venv/bin/activate"
 
 install:
-	uv pip install -r backend/requirements.txt
+	uv pip install -r pyproject.toml
 
 install-dev:
-	uv pip install -r backend/requirements.txt
+	uv pip install -r pyproject.toml
+	uv pip install pytest==8.3.3 pytest-asyncio==0.24.0 pytest-mock==3.14.0 ruff==0.6.9
 
 local-dev:
 	cd backend && ../.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -89,7 +90,7 @@ IMAGE_NAME    ?= sehatsamjho/api
 IMAGE_TAG     ?= $(shell git rev-parse --short HEAD)
 
 build-image:
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) ./backend
+	docker build -f backend/Dockerfile -t $(IMAGE_NAME):$(IMAGE_TAG) .
 	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(ECR_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(ECR_REGISTRY)/$(IMAGE_NAME):latest
 
