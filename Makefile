@@ -14,8 +14,6 @@ install:
 
 install-dev:
 	uv pip install -r backend/requirements.txt
-	uv pip install --group dev --project pyproject.toml 2>/dev/null || \
-	  uv pip install pytest==8.3.3 pytest-asyncio==0.24.0 pytest-mock==3.14.0 ruff==0.6.9
 
 local-dev:
 	cd backend && ../.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
