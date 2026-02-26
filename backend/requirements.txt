@@ -24,7 +24,7 @@ asyncpg==0.29.0
 alembic==1.13.3
 
 # Redis
-redis[asyncio]==5.1.1
+redis==5.1.1
 
 # AWS
 boto3==1.35.32

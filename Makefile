@@ -1,6 +1,36 @@
-.PHONY: dev up down logs build test migrate seed lint shell ngrok build-push clean
+.PHONY: dev up down logs build test migrate seed lint shell ngrok build-push clean \
+        install install-dev local-dev local-test local-lint local-migrate venv
 
-# ── Local Development ────────────────────────────────────────────
+# ── uv / Local Dev (no Docker) ───────────────────────────────────
+# Use these for fast iteration without spinning up containers.
+# Requires: PostgreSQL + Redis running locally (or via `make up`).
+
+venv:
+	uv venv .venv --python 3.11
+	@echo "Activate with: source .venv/bin/activate"
+
+install:
+	uv pip install -r backend/requirements.txt
+
+install-dev:
+	uv pip install -r backend/requirements.txt
+	uv pip install --group dev --project pyproject.toml 2>/dev/null || \
+	  uv pip install pytest==8.3.3 pytest-asyncio==0.24.0 pytest-mock==3.14.0 ruff==0.6.9
+
+local-dev:
+	cd backend && ../.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+local-test:
+	cd backend && ../.venv/bin/pytest tests/ -v --tb=short
+
+local-lint:
+	.venv/bin/ruff check backend/app/ scripts/
+	.venv/bin/ruff format --check backend/app/ scripts/
+
+local-migrate:
+	cd backend && ../.venv/bin/alembic upgrade head
+
+# ── Docker: Local Development ─────────────────────────────────────
 dev:
 	docker-compose up --build
 
