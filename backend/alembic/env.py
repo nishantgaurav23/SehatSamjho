@@ -21,6 +21,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # Add backend/ to sys.path so app imports resolve when running alembic from backend/
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+# Load .env from project root before importing settings (pydantic-settings reads
+# env_file relative to CWD, but alembic may be run from backend/ not root)
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
 from app.core.config import settings  # noqa: E402
 from app.db.models import Base  # noqa: E402
 

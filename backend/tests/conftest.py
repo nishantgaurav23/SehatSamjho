@@ -51,18 +51,27 @@ def anyio_backend():
 
 
 @pytest.fixture
-async def db_session() -> AsyncSession:
-    """Yield a real async DB session, rolled back after every test.
+def db_session(event_loop) -> AsyncSession:
+    """Yield a real async DB session, closed (and auto-rolled-back) after every test.
 
-    Using rollback instead of commit means every test starts with a
-    clean DB state — no leftover rows between tests.
+    Intentionally a *sync* fixture so that teardown runs in pytest's sync call
+    frame, not inside pytest-asyncio's function-scoped async finalizer.  Using
+    an async fixture causes teardown to run on a different loop than the test
+    body (pytest-asyncio 0.24 limitation), which makes asyncpg raise
+    "Future attached to a different loop" when the connection tries to close.
+
+    By calling event_loop.run_until_complete(session.close()) explicitly, the
+    close always runs on the same session-scoped loop the connection was opened
+    on during the test body.  session.close() auto-rolls back any uncommitted
+    transaction, so no explicit rollback is needed.
 
     Yields:
         AsyncSession: Live session connected to the test database.
     """
-    async with AsyncSessionLocal() as session:
-        yield session
-        await session.rollback()  # undo anything the test wrote
+    session = AsyncSessionLocal()
+    yield session
+    # Close on the session loop — same loop the connection was created on.
+    event_loop.run_until_complete(session.close())
 
 
 @pytest.fixture(scope="session")
