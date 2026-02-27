@@ -32,7 +32,7 @@ Functions:
         - Commits the session if the request succeeds
         - Rolls back automatically if any exception is raised
         - Always closes the session (releases connection to pool)
-        - Used as db: AsyncSession = Depends(get_db) i nroute handlers
+        - Used as db: AsyncSession = Depends(get_db) in route handlers
 
 ---
 Async SQLAlchemy engine, session factory, and FastAPI DB dependency
@@ -108,7 +108,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         Exception: Re-raises any exception from the route handler after
                    rolling back, so FastAPI's error handlers receive it normally.
 
-    Exampl usage in a route:
+    Example usage in a route:
         from fastapi import Depends
         from sqlalchemy.ext.asyncio import AsyncSession
         from app.db.database import get_db

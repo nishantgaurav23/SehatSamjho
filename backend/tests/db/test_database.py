@@ -4,7 +4,7 @@ Tests:
     - engine can connect to PostgreSQL
     - AsyncSessionLocal creates a working session
     - get_db() commits on clean exit
-    - get_db() tolls back on exception
+    - get_db() rolls back on exception
 
 Run: 
     cd backend/
@@ -24,19 +24,13 @@ cd backend
 pytest tests/db/test_database.py -v
 
 """
-import pytest 
+import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import AsyncSessionLocal, engine, get_db
 
 # ── Engine tests ──────────────────────────────────────────────────────────────
- 
-import pytest
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.database import AsyncSessionLocal, engine, get_db
 
 
 @pytest.mark.asyncio

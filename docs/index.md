@@ -11,7 +11,10 @@ instructions live here. Read in order if you're new to the project.
 - [Architecture & Flow](./01-architecture.md) — How the system works end to end
 - [Tech Stack Decisions](./01-architecture.md#tech-stack) — Why each tool was chosen
 
-### 2. Configuration Files
+### 2. Infrastructure Guide (Start Here)
+- [**Infrastructure Guide**](./03-infrastructure-guide.md) — File integration map, how to run, send data, verify results, common errors
+
+### 3. Configuration Files
 - [`.env.example`](./config/02-env-example.md) — All environment variables explained
 - [`Makefile`](./config/03-makefile.md) — Every developer command explained
 - [`docker-compose.yml`](./config/04-docker-compose.md) — Local services setup

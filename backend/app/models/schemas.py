@@ -2,7 +2,7 @@
 app/models/schemas.py : Pydantic models — everything else depends on these
 
 What it does:
-    Defines all Pydantic models used across the app - the data contracts between layers. Nothinh imports
+    Defines all Pydantic models used across the app - the data contracts between layers. Nothing imports
     from service files; everything imports from here.
 
 Why first:
@@ -28,7 +28,7 @@ Integration map:
     TranslationLogRead           <- api/dashboard.py        (analytics)
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -106,8 +106,8 @@ class UserSession(BaseModel):
     language_name: Optional[str] = None # e.g. "Hindi"
     prescription: Optional[PrescriptionData] = None
     request_id: Optional[str] = None # Twilio MessageSid
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ── Database log (zero PHI) ────────────────────────────────────────────────────
 
