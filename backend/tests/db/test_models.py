@@ -29,7 +29,7 @@ def test_all_columns_exist():
     cols = {c.key for c in inspect(TranslationLog).columns}
     expected = {
         "id", "created_at", "request_id", "phone_hash",
-        "language_code", "doc_type", "latency_ms",
+        "language_code", "doc_type", "latency_ms", "confidence_avg",
         "drug_count", "has_audio", "status", "error_code",
     }
     assert expected.issubset(cols)

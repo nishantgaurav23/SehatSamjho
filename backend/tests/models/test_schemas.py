@@ -151,7 +151,7 @@ def test_prescription_with_medications():
 
 def test_user_session_defaults():
     session = UserSession()
-    assert session.state         == ConversationState.WAITING_FOR_IMAGE
+    assert session.state         == ConversationState.WAITING_FOR_LANGUAGE  # language selection is step 1 (design.md)
     assert session.language_code is None
     assert session.prescription  is None
     assert isinstance(session.created_at, datetime)
@@ -195,10 +195,11 @@ def test_translation_log_create_defaults():
         doc_type="prescription",
         latency_ms=1200,
     )
-    assert log.drug_count  == 0
-    assert log.has_audio   is False
-    assert log.status      == "success"
-    assert log.error_code  is None
+    assert log.drug_count    == 0
+    assert log.has_audio     is False
+    assert log.status        == "success"
+    assert log.error_code    is None
+    assert log.confidence_avg is None
 
 
 # ── TranslationLogRead ─────────────────────────────────────────────────────────
@@ -206,17 +207,18 @@ def test_translation_log_create_defaults():
 def test_translation_log_read_from_orm():
     """from_attributes=True lets us build from an ORM object (or a mock)."""
     class FakeRow:
-        id            = 1
-        request_id    = "SMxxx"
-        phone_hash    = "a" * 64
-        language_code = "hi"
-        doc_type      = "prescription"
-        latency_ms    = 800
-        drug_count    = 2
-        has_audio     = True
-        status        = "success"
-        error_code    = None
-        created_at    = datetime(2026, 2, 26, 12, 0, 0)
+        id             = 1
+        request_id     = "SMxxx"
+        phone_hash     = "a" * 64
+        language_code  = "hi"
+        doc_type       = "prescription"
+        latency_ms     = 800
+        confidence_avg = 0.92
+        drug_count     = 2
+        has_audio      = True
+        status         = "success"
+        error_code     = None
+        created_at     = datetime(2026, 2, 26, 12, 0, 0)
 
     log = TranslationLogRead.model_validate(FakeRow())
     assert log.id         == 1

@@ -101,7 +101,7 @@ class UserSession(BaseModel):
     TTL = settings.session_ttl_seconds (default 30 min)
     Serialised as JSON via model_dump_json() / model_validate_json().
     """
-    state: ConversationState = ConversationState.WAITING_FOR_IMAGE
+    state: ConversationState = ConversationState.WAITING_FOR_LANGUAGE  # first action is language selection (design.md step 1)
     language_code: Optional[str] = None # e.g. "hi", "ta"
     language_name: Optional[str] = None # e.g. "Hindi"
     prescription: Optional[PrescriptionData] = None
@@ -118,11 +118,12 @@ class TranslationLogCreate(BaseModel):
     No prescription content, patient name, or diagnosis is ever stored.
     """
 
-    request_id: str         # Twilio MessageSid - unique per message
-    phone_hash: str         # SHA-256(phone) - 64-char hex string
+    request_id: str              # Twilio MessageSid - unique per message
+    phone_hash: str              # SHA-256(phone) - 64-char hex string
     language_code: str
     doc_type: str
     latency_ms: int
+    confidence_avg: Optional[float] = None  # avg extraction confidence score (0.0–1.0); None on error
     drug_count: int = 0
     has_audio: bool = False
     status: str = "success"
