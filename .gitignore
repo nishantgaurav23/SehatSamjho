@@ -54,6 +54,12 @@ frontend/build/
 # Data — don't commit large datasets but do commit seeds/glossary
 data/drugs/downloaded/
 data/raw/
+# Prescription images may contain PHI — never commit
+data/prescriptions/
+
+# Jupyter
+.ipynb_checkpoints/
+.virtual_documents/
 
 # Alembic
 # (keep alembic.ini and versions/ tracked)

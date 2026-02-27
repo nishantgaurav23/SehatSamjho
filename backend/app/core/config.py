@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     twilio_auth_token: str
     twilio_whatsapp_number: str
     validate_twilio_signature: bool = False
+    # When True: log outbound messages instead of calling Twilio API (local dev)
+    twilio_dry_run: bool = False
 
     # Bhashini TTS
     bhashini_api_key: str = ""

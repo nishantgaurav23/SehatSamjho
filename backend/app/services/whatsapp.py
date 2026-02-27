@@ -104,6 +104,9 @@ async def send_text_message(to: str, body: str, *, request_id: str = "") -> str:
     thread pool via asyncio.to_thread() so it never blocks the event loop.
     Retries 3 times with exponential backoff on transient errors.
 
+    When TWILIO_DRY_RUN=true (local dev): logs the message body instead of
+    calling Twilio, returning a fake SID. Useful for curl testing.
+
     Args:
         to:         Recipient WhatsApp number, e.g. "whatsapp:+919876543210".
         body:       Message text (plain text or WhatsApp markdown).
@@ -112,8 +115,14 @@ async def send_text_message(to: str, body: str, *, request_id: str = "") -> str:
     Returns:
         Twilio message SID.
     """
-    client = _get_twilio_client()
     log = logger.bind(request_id=request_id)
+
+    # Dry-run mode: log instead of calling Twilio (set TWILIO_DRY_RUN=true in .env)
+    if settings.twilio_dry_run:
+        log.info(f"[DRY RUN] → {to}\n{body}")
+        return "SM_dry_run_000000000000000000000000"
+
+    client = _get_twilio_client()
 
     def _sync_send() -> str:
         msg = client.messages.create(
