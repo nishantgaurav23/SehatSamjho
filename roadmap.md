@@ -121,11 +121,11 @@ All Twilio send/receive helpers. Stateless utilities — no session logic here, 
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S3.1 | `specs/spec-S3.1-supported-languages/` | S2.4 | `backend/app/services/whatsapp.py` | SUPPORTED_LANGUAGES | Dict mapping language code → `{name, display_name, bhashini_code}` for all 22 scheduled Indian languages. Hindi = "hi", Tamil = "ta", etc. | pending |
-| S3.2 | `specs/spec-S3.2-parse-language/` | S3.1 | `backend/app/services/whatsapp.py` | `parse_language_selection()` | Accepts user input (number 1–8, language code, or language name). Returns `(language_name, language_code)` tuple or `None` if unrecognised. Case-insensitive matching | pending |
-| S3.3 | `specs/spec-S3.3-send-text-message/` | S1.3 | `backend/app/services/whatsapp.py` | `send_text_message()` | Async wrapper: `asyncio.to_thread` around Twilio `messages.create()`. Params: to, body. Retry via tenacity (3 attempts, 2s backoff) on Twilio API errors | pending |
-| S3.4 | `specs/spec-S3.4-send-language-selection/` | S3.1, S3.3 | `backend/app/services/whatsapp.py` | `send_language_selection()` | Sends WhatsApp quick-reply buttons (max 3 per row) listing top 8 languages + "More" option. Uses Twilio ContentSid or manual button formatting | pending |
-| S3.5 | `specs/spec-S3.5-send-audio-message/` | S3.3 | `backend/app/services/whatsapp.py` | `send_audio_message()` | Send S3 presigned audio URL as Twilio WhatsApp media message. Params: to, media_url. Falls back to text-only if media fails | pending |
+| S3.1 | `specs/spec-S3.1-supported-languages/` | S2.4 | `backend/app/services/whatsapp.py` | SUPPORTED_LANGUAGES | Dict mapping language code → `{name, display_name, bhashini_code}` for all 22 scheduled Indian languages. Hindi = "hi", Tamil = "ta", etc. | done |
+| S3.2 | `specs/spec-S3.2-parse-language/` | S3.1 | `backend/app/services/whatsapp.py` | `parse_language_selection()` | Accepts user input (number 1–8, language code, or language name). Returns `(language_name, language_code)` tuple or `None` if unrecognised. Case-insensitive matching | done |
+| S3.3 | `specs/spec-S3.3-send-text-message/` | S1.3 | `backend/app/services/whatsapp.py` | `send_text_message()` | Async wrapper: `asyncio.to_thread` around Twilio `messages.create()`. Params: to, body. Retry via tenacity (3 attempts, 2s backoff) on Twilio API errors | done |
+| S3.4 | `specs/spec-S3.4-send-language-selection/` | S3.1, S3.3 | `backend/app/services/whatsapp.py` | `send_language_selection()` | Sends WhatsApp quick-reply buttons (max 3 per row) listing top 8 languages + "More" option. Uses Twilio ContentSid or manual button formatting | done |
+| S3.5 | `specs/spec-S3.5-send-audio-message/` | S3.3 | `backend/app/services/whatsapp.py` | `send_audio_message()` | Send S3 presigned audio URL as Twilio WhatsApp media message. Params: to, media_url. Falls back to text-only if media fails | done |
 
 ---
 
@@ -287,11 +287,11 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S2.3 | Data Layer | `backend/app/db/models.py` | interaction_log table | `specs/spec-S2.3-interaction-log-table/` | done |
 | S2.4 | Data Layer | `backend/app/models/schemas.py` | All Pydantic models | `specs/spec-S2.4-pydantic-models/` | done |
 | S2.5 | Data Layer | `backend/alembic/` | Alembic migrations setup | `specs/spec-S2.5-alembic-migrations/` | done |
-| S3.1 | WhatsApp Channel | `backend/app/services/whatsapp.py` | SUPPORTED_LANGUAGES | `specs/spec-S3.1-supported-languages/` | pending |
-| S3.2 | WhatsApp Channel | `backend/app/services/whatsapp.py` | parse_language_selection() | `specs/spec-S3.2-parse-language/` | pending |
-| S3.3 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_text_message() | `specs/spec-S3.3-send-text-message/` | pending |
-| S3.4 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_language_selection() | `specs/spec-S3.4-send-language-selection/` | pending |
-| S3.5 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_audio_message() | `specs/spec-S3.5-send-audio-message/` | pending |
+| S3.1 | WhatsApp Channel | `backend/app/services/whatsapp.py` | SUPPORTED_LANGUAGES | `specs/spec-S3.1-supported-languages/` | done |
+| S3.2 | WhatsApp Channel | `backend/app/services/whatsapp.py` | parse_language_selection() | `specs/spec-S3.2-parse-language/` | done |
+| S3.3 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_text_message() | `specs/spec-S3.3-send-text-message/` | done |
+| S3.4 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_language_selection() | `specs/spec-S3.4-send-language-selection/` | done |
+| S3.5 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_audio_message() | `specs/spec-S3.5-send-audio-message/` | done |
 | S4.1 | Webhook State Machine | `backend/app/api/webhooks.py` | Webhook router + POST endpoint | `specs/spec-S4.1-webhook-endpoint/` | pending |
 | S4.2 | Webhook State Machine | `backend/app/api/webhooks.py` | _dispatch() | `specs/spec-S4.2-dispatch/` | pending |
 | S4.3 | Webhook State Machine | `backend/app/api/webhooks.py` | _handle_welcome_state() | `specs/spec-S4.3-welcome-state/` | pending |
