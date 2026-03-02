@@ -135,8 +135,8 @@ The central orchestration layer. Manages conversation sessions in Redis, routes 
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S4.1 | `specs/spec-S4.1-webhook-endpoint/` | S1.5, S2.2, S3.3 | `backend/app/api/webhooks.py` | Webhook router + POST endpoint | `POST /webhook/whatsapp`. Parses Twilio form body (Form data). Validates HMAC signature via S1.5. Extracts: From, Body, NumMedia, MediaUrl0, MediaContentType0 | pending |
-| S4.2 | `specs/spec-S4.2-dispatch/` | S4.1, S2.2, S2.4 | `backend/app/api/webhooks.py` | `_dispatch()` | Load session from Redis (key: `session:{phone}`). Route to handler based on SessionStatus. Default (new session) → welcome handler. TTL: 30 minutes per session | pending |
+| S4.1 | `specs/spec-S4.1-webhook-endpoint/` | S1.5, S2.2, S3.3 | `backend/app/api/webhooks.py` | Webhook router + POST endpoint | `POST /webhook/whatsapp`. Parses Twilio form body (Form data). Validates HMAC signature via S1.5. Extracts: From, Body, NumMedia, MediaUrl0, MediaContentType0 | done |
+| S4.2 | `specs/spec-S4.2-dispatch/` | S4.1, S2.2, S2.4 | `backend/app/api/webhooks.py` | `_dispatch()` | Load session from Redis (key: `session:{phone}`). Route to handler based on SessionStatus. Default (new session) → welcome handler. TTL: 30 minutes per session | done |
 | S4.3 | `specs/spec-S4.3-welcome-state/` | S4.2, S3.4 | `backend/app/api/webhooks.py` | `_handle_welcome_state()` | Send consent message + language selection buttons. Store `SessionState(status=WAITING_FOR_LANGUAGE)` in Redis. Return Twilio empty TwiML response | pending |
 | S4.4 | `specs/spec-S4.4-language-state/` | S4.2, S3.3 | `backend/app/api/webhooks.py` | `_handle_language_state()` | Parse language from message body via S3.2. If valid: store language in session, set status=WAITING_FOR_IMAGE, send "Please send a photo of your prescription". If invalid: re-send language buttons | pending |
 | S4.5 | `specs/spec-S4.5-image-state/` | S4.2, S3.3 | `backend/app/api/webhooks.py` | `_handle_image_state()` | Validate NumMedia > 0 and MediaContentType is image/*. Send "Translating your document, please wait 20–30 seconds..." acknowledgement. Trigger async pipeline (placeholder hook for Phase 10) | pending |
@@ -292,8 +292,8 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S3.3 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_text_message() | `specs/spec-S3.3-send-text-message/` | done |
 | S3.4 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_language_selection() | `specs/spec-S3.4-send-language-selection/` | done |
 | S3.5 | WhatsApp Channel | `backend/app/services/whatsapp.py` | send_audio_message() | `specs/spec-S3.5-send-audio-message/` | done |
-| S4.1 | Webhook State Machine | `backend/app/api/webhooks.py` | Webhook router + POST endpoint | `specs/spec-S4.1-webhook-endpoint/` | pending |
-| S4.2 | Webhook State Machine | `backend/app/api/webhooks.py` | _dispatch() | `specs/spec-S4.2-dispatch/` | pending |
+| S4.1 | Webhook State Machine | `backend/app/api/webhooks.py` | Webhook router + POST endpoint | `specs/spec-S4.1-webhook-endpoint/` | done |
+| S4.2 | Webhook State Machine | `backend/app/api/webhooks.py` | _dispatch() | `specs/spec-S4.2-dispatch/` | done |
 | S4.3 | Webhook State Machine | `backend/app/api/webhooks.py` | _handle_welcome_state() | `specs/spec-S4.3-welcome-state/` | pending |
 | S4.4 | Webhook State Machine | `backend/app/api/webhooks.py` | _handle_language_state() | `specs/spec-S4.4-language-state/` | pending |
 | S4.5 | Webhook State Machine | `backend/app/api/webhooks.py` | _handle_image_state() | `specs/spec-S4.5-image-state/` | pending |
