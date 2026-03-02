@@ -37,3 +37,8 @@ line-length = 100
 asyncio_mode = "auto"
 testpaths = ["backend/tests"]
 pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+]

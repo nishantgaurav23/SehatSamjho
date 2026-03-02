@@ -17,6 +17,10 @@ __pycache__/
 # Pytest
 .pytest_cache/
 
+# Jupyter
+.ipynb_checkpoints/
+.virtual_documents/
+
 # Data (large files)
 *.csv
 data/prescriptions/
