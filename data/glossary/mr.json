@@ -1,0 +1,127 @@
+[
+  {
+    "term": "hypertension",
+    "explanation": "high blood pressure — when the force of blood against artery walls is too high",
+    "vernacular": "उच्च रक्तदाब"
+  },
+  {
+    "term": "diabetes",
+    "explanation": "a condition where your body cannot properly use sugar from food, causing high blood sugar levels",
+    "vernacular": "मधुमेह"
+  },
+  {
+    "term": "fever",
+    "explanation": "body temperature higher than normal, usually a sign that your body is fighting an infection",
+    "vernacular": "ताप"
+  },
+  {
+    "term": "antibiotic",
+    "explanation": "a medicine that kills bacteria or stops them from growing, used to treat bacterial infections",
+    "vernacular": "प्रतिजैविक"
+  },
+  {
+    "term": "analgesic",
+    "explanation": "a pain-relieving medicine such as paracetamol or ibuprofen",
+    "vernacular": "वेदनाशामक"
+  },
+  {
+    "term": "twice daily",
+    "explanation": "take the medicine two times a day, usually morning and evening",
+    "vernacular": "दिवसातून दोन वेळा"
+  },
+  {
+    "term": "before meals",
+    "explanation": "take the medicine 30 minutes before eating food",
+    "vernacular": "जेवणापूर्वी"
+  },
+  {
+    "term": "after meals",
+    "explanation": "take the medicine right after eating food",
+    "vernacular": "जेवणानंतर"
+  },
+  {
+    "term": "once daily",
+    "explanation": "take the medicine one time a day, usually at the same time each day",
+    "vernacular": "दिवसातून एकदा"
+  },
+  {
+    "term": "thrice daily",
+    "explanation": "take the medicine three times a day, usually morning, afternoon, and night",
+    "vernacular": "दिवसातून तीन वेळा"
+  },
+  {
+    "term": "cholesterol",
+    "explanation": "a fatty substance in your blood — too much can block arteries and cause heart problems",
+    "vernacular": "कोलेस्टेरॉल"
+  },
+  {
+    "term": "inflammation",
+    "explanation": "swelling, redness, and pain in a part of the body, often due to injury or infection",
+    "vernacular": "दाह"
+  },
+  {
+    "term": "thyroid",
+    "explanation": "a gland in your neck that controls how fast your body uses energy",
+    "vernacular": "थायरॉईड"
+  },
+  {
+    "term": "anemia",
+    "explanation": "a condition where you do not have enough healthy red blood cells to carry oxygen, causing tiredness",
+    "vernacular": "रक्तक्षय"
+  },
+  {
+    "term": "asthma",
+    "explanation": "a lung condition that makes it hard to breathe, causing wheezing and coughing",
+    "vernacular": "दमा"
+  },
+  {
+    "term": "fracture",
+    "explanation": "a break or crack in a bone",
+    "vernacular": "हाड मोडणे"
+  },
+  {
+    "term": "hemoglobin",
+    "explanation": "the protein in red blood cells that carries oxygen throughout your body",
+    "vernacular": "हिमोग्लोबिन"
+  },
+  {
+    "term": "creatinine",
+    "explanation": "a waste product in blood filtered by kidneys — high levels may mean kidney problems",
+    "vernacular": "क्रिएटिनिन"
+  },
+  {
+    "term": "blood pressure",
+    "explanation": "the force of blood pushing against artery walls as the heart pumps",
+    "vernacular": "रक्तदाब"
+  },
+  {
+    "term": "insulin",
+    "explanation": "a hormone that helps your body use sugar from food for energy",
+    "vernacular": "इन्सुलिन"
+  },
+  {
+    "term": "tablet",
+    "explanation": "a solid pill form of medicine to be swallowed with water",
+    "vernacular": "गोळी"
+  },
+  {
+    "term": "capsule",
+    "explanation": "medicine enclosed in a small shell that dissolves in your stomach",
+    "vernacular": "कॅप्सूल"
+  },
+  {
+    "term": "injection",
+    "explanation": "medicine given using a needle, usually into a muscle or vein",
+    "vernacular": "इंजेक्शन"
+  },
+  {
+    "term": "allergy",
+    "explanation": "when your body reacts badly to something harmless like pollen, food, or medicine",
+    "vernacular": "ॲलर्जी"
+  },
+  {
+    "term": "infection",
+    "explanation": "when harmful germs like bacteria or viruses enter your body and make you sick",
+    "vernacular": "संसर्ग"
+  }
+]

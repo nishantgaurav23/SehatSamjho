@@ -1,0 +1,127 @@
+[
+  {
+    "term": "hypertension",
+    "explanation": "high blood pressure — when the force of blood against artery walls is too high",
+    "vernacular": "உயர் இரத்த அழுத்தம்"
+  },
+  {
+    "term": "diabetes",
+    "explanation": "a condition where your body cannot properly use sugar from food, causing high blood sugar levels",
+    "vernacular": "நீரிழிவு நோய்"
+  },
+  {
+    "term": "fever",
+    "explanation": "body temperature higher than normal, usually a sign that your body is fighting an infection",
+    "vernacular": "காய்ச்சல்"
+  },
+  {
+    "term": "antibiotic",
+    "explanation": "a medicine that kills bacteria or stops them from growing, used to treat bacterial infections",
+    "vernacular": "நுண்ணுயிர் எதிர்ப்பி"
+  },
+  {
+    "term": "analgesic",
+    "explanation": "a pain-relieving medicine such as paracetamol or ibuprofen",
+    "vernacular": "வலி நிவாரணி"
+  },
+  {
+    "term": "twice daily",
+    "explanation": "take the medicine two times a day, usually morning and evening",
+    "vernacular": "ஒரு நாளைக்கு இரண்டு முறை"
+  },
+  {
+    "term": "before meals",
+    "explanation": "take the medicine 30 minutes before eating food",
+    "vernacular": "உணவுக்கு முன்"
+  },
+  {
+    "term": "after meals",
+    "explanation": "take the medicine right after eating food",
+    "vernacular": "உணவுக்குப் பின்"
+  },
+  {
+    "term": "once daily",
+    "explanation": "take the medicine one time a day, usually at the same time each day",
+    "vernacular": "ஒரு நாளைக்கு ஒரு முறை"
+  },
+  {
+    "term": "thrice daily",
+    "explanation": "take the medicine three times a day, usually morning, afternoon, and night",
+    "vernacular": "ஒரு நாளைக்கு மூன்று முறை"
+  },
+  {
+    "term": "cholesterol",
+    "explanation": "a fatty substance in your blood — too much can block arteries and cause heart problems",
+    "vernacular": "கொழுப்பு"
+  },
+  {
+    "term": "inflammation",
+    "explanation": "swelling, redness, and pain in a part of the body, often due to injury or infection",
+    "vernacular": "வீக்கம்"
+  },
+  {
+    "term": "thyroid",
+    "explanation": "a gland in your neck that controls how fast your body uses energy",
+    "vernacular": "தைராய்டு"
+  },
+  {
+    "term": "anemia",
+    "explanation": "a condition where you do not have enough healthy red blood cells to carry oxygen, causing tiredness",
+    "vernacular": "இரத்தசோகை"
+  },
+  {
+    "term": "asthma",
+    "explanation": "a lung condition that makes it hard to breathe, causing wheezing and coughing",
+    "vernacular": "ஆஸ்துமா"
+  },
+  {
+    "term": "fracture",
+    "explanation": "a break or crack in a bone",
+    "vernacular": "எலும்பு முறிவு"
+  },
+  {
+    "term": "hemoglobin",
+    "explanation": "the protein in red blood cells that carries oxygen throughout your body",
+    "vernacular": "ஹீமோகுளோபின்"
+  },
+  {
+    "term": "creatinine",
+    "explanation": "a waste product in blood filtered by kidneys — high levels may mean kidney problems",
+    "vernacular": "கிரியேட்டினின்"
+  },
+  {
+    "term": "blood pressure",
+    "explanation": "the force of blood pushing against artery walls as the heart pumps",
+    "vernacular": "இரத்த அழுத்தம்"
+  },
+  {
+    "term": "insulin",
+    "explanation": "a hormone that helps your body use sugar from food for energy",
+    "vernacular": "இன்சுலின்"
+  },
+  {
+    "term": "tablet",
+    "explanation": "a solid pill form of medicine to be swallowed with water",
+    "vernacular": "மாத்திரை"
+  },
+  {
+    "term": "capsule",
+    "explanation": "medicine enclosed in a small shell that dissolves in your stomach",
+    "vernacular": "காப்ஸ்யூல்"
+  },
+  {
+    "term": "injection",
+    "explanation": "medicine given using a needle, usually into a muscle or vein",
+    "vernacular": "ஊசி"
+  },
+  {
+    "term": "allergy",
+    "explanation": "when your body reacts badly to something harmless like pollen, food, or medicine",
+    "vernacular": "ஒவ்வாமை"
+  },
+  {
+    "term": "infection",
+    "explanation": "when harmful germs like bacteria or viruses enter your body and make you sick",
+    "vernacular": "தொற்றுநோய்"
+  }
+]
