@@ -150,11 +150,11 @@ Uses OpenAI GPT-4O Vision to extract structured medical data from prescription i
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S5.1 | `specs/spec-S5.1-openai-client/` | S1.3, S2.4 | `backend/app/services/extraction.py` | OpenAI async client init | `openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)`. Module-level singleton via `_get_client()` (lazy init, testable via mock) | pending |
-| S5.2 | `specs/spec-S5.2-extraction-prompt/` | S5.1 | `backend/app/services/extraction.py` | `_build_extraction_prompt()` | System prompt: medical document reader persona, output structured JSON with confidence scores per field. Instruct GPT-4O to never guess low-confidence dosages as definitive. Output schema matches `PrescriptionData` | pending |
-| S5.3 | `specs/spec-S5.3-gpt4o-vision-call/` | S5.1, S5.2 | `backend/app/services/extraction.py` | `_call_gpt4o_vision()` | Download image from MediaUrl (httpx async GET), base64 encode, pass to `client.chat.completions.create()` with image_url content block + system prompt. Model: `gpt-4o`. Max tokens: 1024 | pending |
-| S5.4 | `specs/spec-S5.4-extract-prescription/` | S5.3, S2.4 | `backend/app/services/extraction.py` | `extract_prescription()` | Orchestrate: validate image URL → call GPT-4O → parse JSON response → validate as `PrescriptionData` → return. Public API for Phase 10 pipeline wiring | pending |
-| S5.5 | `specs/spec-S5.5-extraction-errors/` | S5.4 | `backend/app/services/extraction.py` | Error taxonomy + retry | Custom exceptions: `NotMedicalDocumentError`, `ImageNotReadableError` (semantic, not retried). Transient OpenAI API errors: retry with tenacity (3 attempts, exponential backoff). Log all failures with request_id | pending |
+| S5.1 | `specs/spec-S5.1-openai-client/` | S1.3, S2.4 | `backend/app/services/extraction.py` | OpenAI async client init | `openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)`. Module-level singleton via `_get_client()` (lazy init, testable via mock) | done |
+| S5.2 | `specs/spec-S5.2-extraction-prompt/` | S5.1 | `backend/app/services/extraction.py` | `_build_extraction_prompt()` | System prompt: medical document reader persona, output structured JSON with confidence scores per field. Instruct GPT-4O to never guess low-confidence dosages as definitive. Output schema matches `PrescriptionData` | done |
+| S5.3 | `specs/spec-S5.3-gpt4o-vision-call/` | S5.1, S5.2 | `backend/app/services/extraction.py` | `_call_gpt4o_vision()` | Download image from MediaUrl (httpx async GET), base64 encode, pass to `client.chat.completions.create()` with image_url content block + system prompt. Model: `gpt-4o`. Max tokens: 1024 | done |
+| S5.4 | `specs/spec-S5.4-extract-prescription/` | S5.3, S2.4 | `backend/app/services/extraction.py` | `extract_prescription()` | Orchestrate: validate image URL → call GPT-4O → parse JSON response → validate as `PrescriptionData` → return. Public API for Phase 10 pipeline wiring | done |
+| S5.5 | `specs/spec-S5.5-extraction-errors/` | S5.4 | `backend/app/services/extraction.py` | Error taxonomy + retry | Custom exceptions: `NotMedicalDocumentError`, `ImageNotReadableError` (semantic, not retried). Transient OpenAI API errors: retry with tenacity (3 attempts, exponential backoff). Log all failures with request_id | done |
 
 ---
 
@@ -164,10 +164,10 @@ Curated per-language mappings of medical terms → plain-language vernacular exp
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S6.1 | `specs/spec-S6.1-glossary-data/` | — | `data/glossary/{lang_code}.json` | Glossary data files | JSON files for: hi, ta, te, kn, bn, mr (top 6 by usage). Each entry: `{"term": "hypertension", "explanation": "high blood pressure — when the force of blood against artery walls is too high", "vernacular": "..."}`. ~100 terms per language for prototype | pending |
-| S6.2 | `specs/spec-S6.2-glossary-loader/` | S2.2, S6.1 | `backend/app/services/glossary.py` | `GlossaryLoader` + `load_glossary()` | On startup (or `make seed`): read all JSON files, load into Redis as hash `glossary:{lang_code}`. Key = term (lowercase), value = JSON string of full entry | pending |
-| S6.3 | `specs/spec-S6.3-lookup-terms/` | S6.2, S2.4 | `backend/app/services/glossary.py` | `lookup_terms()` | Given a set of medical terms (from PrescriptionData) and a language_code → batch Redis HGET → return list of matching `GlossaryEntry` objects | pending |
-| S6.4 | `specs/spec-S6.4-format-glossary/` | S6.3 | `backend/app/services/glossary.py` | `format_glossary_context()` | Format matched glossary entries as a structured string block: `"Term: X → {language}: Y"`. Returned string injected into Claude translation system prompt. Max ~500 tokens of context | pending |
+| S6.1 | `specs/spec-S6.1-glossary-data/` | — | `data/glossary/{lang_code}.json` | Glossary data files | JSON files for: hi, ta, te, kn, bn, mr (top 6 by usage). Each entry: `{"term": "hypertension", "explanation": "high blood pressure — when the force of blood against artery walls is too high", "vernacular": "..."}`. ~100 terms per language for prototype | done |
+| S6.2 | `specs/spec-S6.2-glossary-loader/` | S2.2, S6.1 | `backend/app/services/glossary.py` | `GlossaryLoader` + `load_glossary()` | On startup (or `make seed`): read all JSON files, load into Redis as hash `glossary:{lang_code}`. Key = term (lowercase), value = JSON string of full entry | done |
+| S6.3 | `specs/spec-S6.3-lookup-terms/` | S6.2, S2.4 | `backend/app/services/glossary.py` | `lookup_terms()` | Given a set of medical terms (from PrescriptionData) and a language_code → batch Redis HGET → return list of matching `GlossaryEntry` objects | done |
+| S6.4 | `specs/spec-S6.4-format-glossary/` | S6.3 | `backend/app/services/glossary.py` | `format_glossary_context()` | Format matched glossary entries as a structured string block: `"Term: X → {language}: Y"`. Returned string injected into Claude translation system prompt. Max ~500 tokens of context | done |
 
 ---
 
@@ -298,15 +298,15 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S4.4 | Webhook State Machine | `backend/app/api/webhooks.py` | _handle_language_state() | `specs/spec-S4.4-language-state/` | done |
 | S4.5 | Webhook State Machine | `backend/app/api/webhooks.py` | _handle_image_state() | `specs/spec-S4.5-image-state/` | done |
 | S4.6 | Webhook State Machine | `backend/app/api/webhooks.py` | _log_interaction() | `specs/spec-S4.6-log-interaction/` | done |
-| S5.1 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | OpenAI async client | `specs/spec-S5.1-openai-client/` | pending |
-| S5.2 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | _build_extraction_prompt() | `specs/spec-S5.2-extraction-prompt/` | pending |
-| S5.3 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | _call_gpt4o_vision() | `specs/spec-S5.3-gpt4o-vision-call/` | pending |
-| S5.4 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | extract_prescription() | `specs/spec-S5.4-extract-prescription/` | pending |
-| S5.5 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | Error taxonomy + retry | `specs/spec-S5.5-extraction-errors/` | pending |
-| S6.1 | Medical Glossary | `data/glossary/{lang}.json` | Glossary data files | `specs/spec-S6.1-glossary-data/` | pending |
-| S6.2 | Medical Glossary | `backend/app/services/glossary.py` | GlossaryLoader + load_glossary() | `specs/spec-S6.2-glossary-loader/` | pending |
-| S6.3 | Medical Glossary | `backend/app/services/glossary.py` | lookup_terms() | `specs/spec-S6.3-lookup-terms/` | pending |
-| S6.4 | Medical Glossary | `backend/app/services/glossary.py` | format_glossary_context() | `specs/spec-S6.4-format-glossary/` | pending |
+| S5.1 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | OpenAI async client | `specs/spec-S5.1-openai-client/` | done |
+| S5.2 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | _build_extraction_prompt() | `specs/spec-S5.2-extraction-prompt/` | done |
+| S5.3 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | _call_gpt4o_vision() | `specs/spec-S5.3-gpt4o-vision-call/` | done |
+| S5.4 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | extract_prescription() | `specs/spec-S5.4-extract-prescription/` | done |
+| S5.5 | GPT-4O Vision Extraction | `backend/app/services/extraction.py` | Error taxonomy + retry | `specs/spec-S5.5-extraction-errors/` | done |
+| S6.1 | Medical Glossary | `data/glossary/{lang}.json` | Glossary data files | `specs/spec-S6.1-glossary-data/` | done |
+| S6.2 | Medical Glossary | `backend/app/services/glossary.py` | GlossaryLoader + load_glossary() | `specs/spec-S6.2-glossary-loader/` | done |
+| S6.3 | Medical Glossary | `backend/app/services/glossary.py` | lookup_terms() | `specs/spec-S6.3-lookup-terms/` | done |
+| S6.4 | Medical Glossary | `backend/app/services/glossary.py` | format_glossary_context() | `specs/spec-S6.4-format-glossary/` | done |
 | S7.1 | Translation | `backend/app/services/translation.py` | Anthropic client + prompts | `specs/spec-S7.1-anthropic-client/` | pending |
 | S7.2 | Translation | `backend/app/services/translation.py` | _build_system_prompt() | `specs/spec-S7.2-system-prompt/` | pending |
 | S7.3 | Translation | `backend/app/services/translation.py` | _build_user_prompt() | `specs/spec-S7.3-user-prompt/` | pending |
