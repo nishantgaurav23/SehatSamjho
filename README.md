@@ -14,6 +14,90 @@ Patient sends prescription photo via WhatsApp
   → Patient receives text + audio reply on WhatsApp
 ```
 
+## Architecture
+
+### Processing Pipeline
+
+```mermaid
+flowchart LR
+    A["📱<br/><b>Photo Sent</b><br/>WhatsApp"]:::s1
+    B["📲<br/><b>Received</b><br/>Twilio"]:::s2
+    C["👁️<br/><b>Extracted</b><br/>GPT-4O"]:::s3
+    D["💊<br/><b>Enriched</b><br/>Drug DB"]:::s4
+    E["📖<br/><b>Grounded</b><br/>Glossary"]:::s5
+    F["🤖<br/><b>Translated</b><br/>Claude"]:::s6
+    G["🔊<br/><b>Spoken</b><br/>Bhashini"]:::s7
+    H["📱<br/><b>Delivered</b><br/>Text + Audio"]:::s8
+
+    A --> B --> C --> D --> E --> F --> G --> H
+
+    classDef s1 fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    classDef s2 fill:#9C27B0,stroke:#7B1FA2,stroke-width:2px,color:#fff
+    classDef s3 fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef s4 fill:#00BCD4,stroke:#00838F,stroke-width:2px,color:#fff
+    classDef s5 fill:#009688,stroke:#00695C,stroke-width:2px,color:#fff
+    classDef s6 fill:#3F51B5,stroke:#283593,stroke-width:2px,color:#fff
+    classDef s7 fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    classDef s8 fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+```
+
+### System Overview
+
+```mermaid
+flowchart TB
+    P["📱 Patient · WhatsApp"]:::green
+
+    subgraph GW["📲 Messaging Gateway"]
+        TW["Twilio WhatsApp Business API"]
+    end
+
+    subgraph BE["⚡ FastAPI Backend · Python 3.11 Async"]
+        WH["🔗 Webhook Endpoint"]:::blue
+        SEC["🔒 HMAC Verification"]:::blue
+        SM["🔄 Session State Machine"]:::blue
+        EXT["👁️ GPT-4O Vision · Extraction"]:::orange
+        DRUG["💊 Drug Lookup · Redis/CSV"]:::cyan
+        GLOSS["📖 Medical Glossary · RAG"]:::teal
+        TRANS["🤖 Claude Sonnet 4.6 · Translation"]:::indigo
+        TTS["🔊 Bhashini TTS · 22 Languages"]:::pink
+        SEND["📨 WhatsApp Reply Sender"]:::blue
+    end
+
+    subgraph DS["💾 Data Stores"]
+        PG[("🐘 PostgreSQL<br/><i>Metadata · Zero PHI</i>")]:::grey
+        REDIS[("⚡ Redis<br/><i>Sessions · Cache</i>")]:::grey
+        S3[("☁️ AWS S3<br/><i>Audio · 24hr TTL</i>")]:::grey
+    end
+
+    P <-->|"Messages"| TW
+    TW -->|"POST /webhook"| WH
+    WH --> SEC --> SM
+    SM --> EXT --> DRUG --> GLOSS --> TRANS --> TTS --> SEND
+    SEND -->|"Text + Audio"| TW
+
+    SM <-.->|"Sessions"| REDIS
+    DRUG <-.->|"Drug Cache"| REDIS
+    GLOSS <-.->|"Term Cache"| REDIS
+    SM -.->|"Log"| PG
+    TTS -.->|"Upload"| S3
+
+    style GW fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px,color:#4A148C
+    style BE fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#0D47A1
+    style DS fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#37474F
+
+    classDef green fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    classDef purple fill:#9C27B0,stroke:#7B1FA2,stroke-width:2px,color:#fff
+    classDef blue fill:#1976D2,stroke:#0D47A1,stroke-width:2px,color:#fff
+    classDef orange fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef indigo fill:#3F51B5,stroke:#283593,stroke-width:2px,color:#fff
+    classDef cyan fill:#00BCD4,stroke:#00838F,stroke-width:2px,color:#fff
+    classDef teal fill:#009688,stroke:#00695C,stroke-width:2px,color:#fff
+    classDef pink fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    classDef grey fill:#607D8B,stroke:#37474F,stroke-width:2px,color:#fff
+
+    class TW purple
+```
+
 ## Tech Stack
 
 | Layer | Technology |
