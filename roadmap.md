@@ -177,11 +177,11 @@ Uses Anthropic Claude Sonnet 4.6 to simplify medical jargon and translate into t
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S7.1 | `specs/spec-S7.1-anthropic-client/` | S1.3 | `backend/app/services/translation.py` | Anthropic async client + prompt templates | `anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)`. Module-level singleton via `_get_client()` (lazy init, testable via mock). Store system + user prompt templates as module-level constants | pending |
-| S7.2 | `specs/spec-S7.2-system-prompt/` | S7.1 | `backend/app/services/translation.py` | `_build_system_prompt()` | Persona: caring health educator. Rules: explain not translate, preserve drug names + dosages in English, never add clinical advice, flag low-confidence items with ⚠️, keep output ≤300 words, add disclaimer at end. Injected with glossary_context block | pending |
-| S7.3 | `specs/spec-S7.3-user-prompt/` | S7.1, S2.4 | `backend/app/services/translation.py` | `_build_user_prompt()` | Serialize `PrescriptionData` + `DrugInfo` list + `glossary_context` into structured user turn. Language target in prompt header. Low-confidence fields explicitly labelled | pending |
-| S7.4 | `specs/spec-S7.4-translate/` | S7.2, S7.3, S5.5 | `backend/app/services/translation.py` | `simplify_and_translate()` | Call `client.messages.create()` with system + user prompts. Model: `claude-sonnet-4-6`. Parse response into `TranslationResult` (translated_text, per_medicine_summaries, disclaimer). Public API for Phase 10 | pending |
-| S7.5 | `specs/spec-S7.5-translation-errors/` | S7.4 | `backend/app/services/translation.py` | Retry + error handling | Tenacity retry on transient Anthropic errors (3 attempts). `TranslationError` raised on parse failure or empty response. Log with request_id and language_code | pending |
+| S7.1 | `specs/spec-S7.1-anthropic-client/` | S1.3 | `backend/app/services/translation.py` | Anthropic async client + prompt templates | `anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)`. Module-level singleton via `_get_client()` (lazy init, testable via mock). Store system + user prompt templates as module-level constants | done |
+| S7.2 | `specs/spec-S7.2-system-prompt/` | S7.1 | `backend/app/services/translation.py` | `_build_system_prompt()` | Persona: caring health educator. Rules: explain not translate, preserve drug names + dosages in English, never add clinical advice, flag low-confidence items with ⚠️, keep output ≤300 words, add disclaimer at end. Injected with glossary_context block | done |
+| S7.3 | `specs/spec-S7.3-user-prompt/` | S7.1, S2.4 | `backend/app/services/translation.py` | `_build_user_prompt()` | Serialize `PrescriptionData` + `DrugInfo` list + `glossary_context` into structured user turn. Language target in prompt header. Low-confidence fields explicitly labelled | done |
+| S7.4 | `specs/spec-S7.4-translate/` | S7.2, S7.3, S5.5 | `backend/app/services/translation.py` | `simplify_and_translate()` | Call `client.messages.create()` with system + user prompts. Model: `claude-sonnet-4-6`. Parse response into `TranslationResult` (translated_text, per_medicine_summaries, disclaimer). Public API for Phase 10 | done |
+| S7.5 | `specs/spec-S7.5-translation-errors/` | S7.4 | `backend/app/services/translation.py` | Retry + error handling | Tenacity retry on transient Anthropic errors (3 attempts). `TranslationError` raised on parse failure or empty response. Log with request_id and language_code | done |
 
 ---
 
@@ -191,11 +191,11 @@ Matches medicine names from extracted prescriptions against a local CSV cache (R
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S8.1 | `specs/spec-S8.1-drug-csv/` | — | `data/drugs/medicines.csv` | Drug database CSV | Columns: brand_name, generic_name, therapeutic_class, purpose_en, side_effects_en, timing_instructions, known_interactions. ~1000 most-prescribed Indian medicines. Source: public domain / OpenFDA-equivalent Indian data | pending |
-| S8.2 | `specs/spec-S8.2-load-drug-csv/` | S2.2, S8.1 | `backend/app/services/drug_lookup.py` | `load_drug_csv()` | Read CSV, normalize brand + generic names (lowercase, strip). Load into Redis as hash `drugs:{brand_name_normalized}` and `drugs:{generic_name_normalized}`. Called by `make seed` | pending |
-| S8.3 | `specs/spec-S8.3-lookup-drug/` | S8.2, S2.4 | `backend/app/services/drug_lookup.py` | `lookup_drug()` | Redis HGET on normalized name → return `DrugInfo` if found. Cache miss → call IndianMedicineDB API (GET with retry). Cache API result for 7 days. Return `DrugInfo` or `None` if not found | pending |
-| S8.4 | `specs/spec-S8.4-enrich-prescription/` | S8.3, S2.4 | `backend/app/services/drug_lookup.py` | `enrich_prescription()` | For each `MedicineEntry` in `PrescriptionData` → `lookup_drug()` → collect `DrugInfo` list. Run lookups concurrently with `asyncio.gather`. Return `List[DrugInfo]` (aligned with medicines list) | pending |
-| S8.5 | `specs/spec-S8.5-indian-medicine-api/` | S8.3 | `backend/app/services/drug_lookup.py` | IndianMedicineDB API client | `_call_indianmedicinedb()`: httpx async GET to IndianMedicineDatabase.com API. Parse JSON response. Tenacity retry (3 attempts). Return normalized `DrugInfo` or `None` on 404/timeout | pending |
+| S8.1 | `specs/spec-S8.1-drug-csv/` | — | `data/drugs/medicines.csv` | Drug database CSV | Columns: brand_name, generic_name, therapeutic_class, purpose_en, side_effects_en, timing_instructions, known_interactions. ~1000 most-prescribed Indian medicines. Source: public domain / OpenFDA-equivalent Indian data | done |
+| S8.2 | `specs/spec-S8.2-load-drug-csv/` | S2.2, S8.1 | `backend/app/services/drug_lookup.py` | `load_drug_csv()` | Read CSV, normalize brand + generic names (lowercase, strip). Load into Redis as hash `drugs:{brand_name_normalized}` and `drugs:{generic_name_normalized}`. Called by `make seed` | done |
+| S8.3 | `specs/spec-S8.3-lookup-drug/` | S8.2, S2.4 | `backend/app/services/drug_lookup.py` | `lookup_drug()` | Redis HGET on normalized name → return `DrugInfo` if found. Cache miss → call IndianMedicineDB API (GET with retry). Cache API result for 7 days. Return `DrugInfo` or `None` if not found | done |
+| S8.4 | `specs/spec-S8.4-enrich-prescription/` | S8.3, S2.4 | `backend/app/services/drug_lookup.py` | `enrich_prescription()` | For each `MedicineEntry` in `PrescriptionData` → `lookup_drug()` → collect `DrugInfo` list. Run lookups concurrently with `asyncio.gather`. Return `List[DrugInfo]` (aligned with medicines list) | done |
+| S8.5 | `specs/spec-S8.5-indian-medicine-api/` | S8.3 | `backend/app/services/drug_lookup.py` | IndianMedicineDB API client | `_call_indianmedicinedb()`: httpx async GET to IndianMedicineDatabase.com API. Parse JSON response. Tenacity retry (3 attempts). Return normalized `DrugInfo` or `None` on 404/timeout | done |
 
 ---
 
@@ -307,16 +307,16 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S6.2 | Medical Glossary | `backend/app/services/glossary.py` | GlossaryLoader + load_glossary() | `specs/spec-S6.2-glossary-loader/` | done |
 | S6.3 | Medical Glossary | `backend/app/services/glossary.py` | lookup_terms() | `specs/spec-S6.3-lookup-terms/` | done |
 | S6.4 | Medical Glossary | `backend/app/services/glossary.py` | format_glossary_context() | `specs/spec-S6.4-format-glossary/` | done |
-| S7.1 | Translation | `backend/app/services/translation.py` | Anthropic client + prompts | `specs/spec-S7.1-anthropic-client/` | pending |
-| S7.2 | Translation | `backend/app/services/translation.py` | _build_system_prompt() | `specs/spec-S7.2-system-prompt/` | pending |
-| S7.3 | Translation | `backend/app/services/translation.py` | _build_user_prompt() | `specs/spec-S7.3-user-prompt/` | pending |
-| S7.4 | Translation | `backend/app/services/translation.py` | simplify_and_translate() | `specs/spec-S7.4-translate/` | pending |
-| S7.5 | Translation | `backend/app/services/translation.py` | Retry + error handling | `specs/spec-S7.5-translation-errors/` | pending |
-| S8.1 | Drug Lookup | `data/drugs/medicines.csv` | Drug database CSV | `specs/spec-S8.1-drug-csv/` | pending |
-| S8.2 | Drug Lookup | `backend/app/services/drug_lookup.py` | load_drug_csv() | `specs/spec-S8.2-load-drug-csv/` | pending |
-| S8.3 | Drug Lookup | `backend/app/services/drug_lookup.py` | lookup_drug() | `specs/spec-S8.3-lookup-drug/` | pending |
-| S8.4 | Drug Lookup | `backend/app/services/drug_lookup.py` | enrich_prescription() | `specs/spec-S8.4-enrich-prescription/` | pending |
-| S8.5 | Drug Lookup | `backend/app/services/drug_lookup.py` | IndianMedicineDB API client | `specs/spec-S8.5-indian-medicine-api/` | pending |
+| S7.1 | Translation | `backend/app/services/translation.py` | Anthropic client + prompts | `specs/spec-S7.1-anthropic-client/` | done |
+| S7.2 | Translation | `backend/app/services/translation.py` | _build_system_prompt() | `specs/spec-S7.2-system-prompt/` | done |
+| S7.3 | Translation | `backend/app/services/translation.py` | _build_user_prompt() | `specs/spec-S7.3-user-prompt/` | done |
+| S7.4 | Translation | `backend/app/services/translation.py` | simplify_and_translate() | `specs/spec-S7.4-translate/` | done |
+| S7.5 | Translation | `backend/app/services/translation.py` | Retry + error handling | `specs/spec-S7.5-translation-errors/` | done |
+| S8.1 | Drug Lookup | `data/drugs/medicines.csv` | Drug database CSV | `specs/spec-S8.1-drug-csv/` | done |
+| S8.2 | Drug Lookup | `backend/app/services/drug_lookup.py` | load_drug_csv() | `specs/spec-S8.2-load-drug-csv/` | done |
+| S8.3 | Drug Lookup | `backend/app/services/drug_lookup.py` | lookup_drug() | `specs/spec-S8.3-lookup-drug/` | done |
+| S8.4 | Drug Lookup | `backend/app/services/drug_lookup.py` | enrich_prescription() | `specs/spec-S8.4-enrich-prescription/` | done |
+| S8.5 | Drug Lookup | `backend/app/services/drug_lookup.py` | IndianMedicineDB API client | `specs/spec-S8.5-indian-medicine-api/` | done |
 | S9.1 | TTS & Audio | `backend/app/services/tts.py` | Bhashini TTS API client | `specs/spec-S9.1-bhashini-client/` | pending |
 | S9.2 | TTS & Audio | `backend/app/services/tts.py` | text_to_speech() | `specs/spec-S9.2-text-to-speech/` | pending |
 | S9.3 | TTS & Audio | `backend/app/services/tts.py` | _upload_to_s3() | `specs/spec-S9.3-s3-upload/` | pending |
