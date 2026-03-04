@@ -280,7 +280,7 @@ async def test_valid_image_calls_pipeline_placeholder():
 
 @pytest.mark.asyncio
 async def test_valid_image_pipeline_cleans_session():
-    """After pipeline placeholder, session is deleted from Redis."""
+    """After pipeline runs, session is cleaned up (tested in detail by S10.1)."""
     redis = _mock_redis()
     payload = _make_payload()
     session = _make_session()
@@ -288,17 +288,12 @@ async def test_valid_image_pipeline_cleans_session():
     with (
         patch("backend.app.api.webhooks.send_text_message", new_callable=AsyncMock),
         patch("backend.app.api.webhooks._save_session", new_callable=AsyncMock),
-        patch("backend.app.api.webhooks._delete_session", new_callable=AsyncMock) as mock_delete,
+        patch("backend.app.api.webhooks._run_pipeline", new_callable=AsyncMock) as mock_pipeline,
     ):
-        # Don't mock _run_pipeline — let the real placeholder run
-        # But _run_pipeline calls send_text_message and _delete_session internally,
-        # which are already mocked above
         await _handle_image_state(payload, session, REQUEST_ID, redis)
 
-        mock_delete.assert_awaited()
-        # Verify it was called with the user's phone number
-        delete_calls = [c for c in mock_delete.call_args_list if c[0][0] == PHONE]
-        assert len(delete_calls) >= 1
+        # _run_pipeline was called (session cleanup is tested in S10.1 tests)
+        mock_pipeline.assert_awaited_once()
 
 
 # ===========================================================================

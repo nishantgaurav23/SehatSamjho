@@ -41,6 +41,7 @@ from backend.app.services.whatsapp import (
 # build_language_menu_text() tests
 # ===========================================================================
 
+
 class TestBuildLanguageMenuText:
     """Tests for the pure build_language_menu_text() function."""
 
@@ -89,14 +90,13 @@ class TestBuildLanguageMenuText:
 # send_language_selection() tests
 # ===========================================================================
 
+
 class TestSendLanguageSelection:
     """Tests for the async send_language_selection() function."""
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
-    async def test_send_language_selection_text_fallback(
-        self, mock_send: AsyncMock
-    ) -> None:
+    async def test_send_language_selection_text_fallback(self, mock_send: AsyncMock) -> None:
         """When no ContentSid configured, calls send_text_message() with menu text."""
         mock_send.return_value = "SM_MENU_123"
 
@@ -167,9 +167,7 @@ class TestSendLanguageSelection:
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
-    async def test_send_language_selection_logs_hash_not_phone(
-        self, mock_send: AsyncMock
-    ) -> None:
+    async def test_send_language_selection_logs_hash_not_phone(self, mock_send: AsyncMock) -> None:
         """Log output contains hashed phone, not raw number."""
         from io import StringIO
 
@@ -196,14 +194,13 @@ class TestSendLanguageSelection:
 # send_more_languages() tests
 # ===========================================================================
 
+
 class TestSendMoreLanguages:
     """Tests for the async send_more_languages() function."""
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
-    async def test_send_more_languages_sends_14_languages(
-        self, mock_send: AsyncMock
-    ) -> None:
+    async def test_send_more_languages_sends_14_languages(self, mock_send: AsyncMock) -> None:
         """Message body contains exactly 14 language entries."""
         mock_send.return_value = "SM_MORE_123"
 
@@ -217,9 +214,7 @@ class TestSendMoreLanguages:
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
-    async def test_send_more_languages_excludes_top_8(
-        self, mock_send: AsyncMock
-    ) -> None:
+    async def test_send_more_languages_excludes_top_8(self, mock_send: AsyncMock) -> None:
         """None of the TOP_LANGUAGES appear in the output."""
         mock_send.return_value = "SM_MORE_123"
 
@@ -239,9 +234,7 @@ class TestSendMoreLanguages:
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
-    async def test_send_more_languages_sorted_alphabetically(
-        self, mock_send: AsyncMock
-    ) -> None:
+    async def test_send_more_languages_sorted_alphabetically(self, mock_send: AsyncMock) -> None:
         """Languages are sorted by English name."""
         mock_send.return_value = "SM_MORE_123"
 
@@ -261,9 +254,7 @@ class TestSendMoreLanguages:
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
-    async def test_send_more_languages_uses_code_not_number(
-        self, mock_send: AsyncMock
-    ) -> None:
+    async def test_send_more_languages_uses_code_not_number(self, mock_send: AsyncMock) -> None:
         """Lines use language codes (e.g. 'as: Assamese') not numbers."""
         mock_send.return_value = "SM_MORE_123"
 

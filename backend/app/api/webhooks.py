@@ -8,6 +8,8 @@ generates request_id, dispatches to handler based on session state, and returns 
 from __future__ import annotations
 
 import hashlib
+import re
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -17,11 +19,30 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.security import validate_twilio_signature
+from backend.app.db.database import AsyncSessionLocal
 from backend.app.db.models import InteractionLog, InteractionStatus
 from backend.app.db.redis import get_redis
-from backend.app.models.schemas import SessionState, SessionStatus, WebhookPayload
+from backend.app.models.schemas import (
+    DrugInfo,
+    PrescriptionData,
+    SessionState,
+    SessionStatus,
+    TranslationResult,
+    WebhookPayload,
+)
+from backend.app.services.drug_lookup import enrich_prescription
+from backend.app.services.extraction import (
+    ExtractionError,
+    ImageNotReadableError,
+    NotMedicalDocumentError,
+    extract_prescription,
+)
+from backend.app.services.glossary import format_glossary_context, lookup_terms
+from backend.app.services.tts import generate_and_deliver_audio
+from backend.app.services.translation import TranslationError, simplify_and_translate
 from backend.app.services.whatsapp import (
     parse_language_selection,
+    send_audio_message_with_fallback,
     send_language_selection,
     send_more_languages,
     send_text_message,
@@ -38,6 +59,32 @@ TWIML_MEDIA_TYPE = "text/xml"
 # Patient-friendly error message (never expose internals)
 ERROR_MESSAGE = (
     "We're sorry, something went wrong while processing your message. "
+    "Please try again in a moment."
+)
+
+# ---------------------------------------------------------------------------
+# S10.4 Pipeline error message constants
+# ---------------------------------------------------------------------------
+NOT_MEDICAL_DOC_MESSAGE = (
+    "This doesn't appear to be a medical document. "
+    "Please send a photo of a prescription, lab report, or discharge summary."
+)
+
+IMAGE_NOT_READABLE_MESSAGE = (
+    "We couldn't read your image clearly. "
+    "Please try again with better lighting and make sure the text is in focus."
+)
+
+TRANSLATION_ERROR_MESSAGE = (
+    "We had trouble translating your prescription. " "Please try sending the image again."
+)
+
+EXTRACTION_ERROR_MESSAGE = (
+    "We had trouble reading your prescription. " "Please try sending a clearer photo."
+)
+
+GENERIC_PIPELINE_ERROR_MESSAGE = (
+    "We're sorry, something went wrong while processing your prescription. "
     "Please try again in a moment."
 )
 
@@ -267,19 +314,492 @@ async def _handle_image_state(
         await _run_pipeline(payload, updated_session, request_id, redis)
 
 
+# ---------------------------------------------------------------------------
+# S10.2 Constants
+# ---------------------------------------------------------------------------
+WHATSAPP_MAX_CHARS = 1600
+LOW_CONFIDENCE_THRESHOLD = 0.7
+LOW_CONFIDENCE_WARNING = (
+    "\u26a0\ufe0f This item could not be read clearly"
+    " \u2014 please verify with your doctor/pharmacist"
+)
+TRUNCATION_NOTE = "(Message truncated \u2014 ask for the full version)"
+GREETING_LINE = "Here is your prescription summary:"
+
+
+# ---------------------------------------------------------------------------
+# S10.2 FR-1 through FR-6: Format reply for WhatsApp
+# ---------------------------------------------------------------------------
+
+
+def _format_reply(
+    prescription: PrescriptionData,
+    drug_info_list: list[DrugInfo | None],
+    translation: TranslationResult,
+    language_name: str,
+) -> str:
+    """Build patient-facing WhatsApp text from pipeline results.
+
+    Constructs greeting + per-medicine cards + disclaimer.
+    Output guaranteed <= 1600 characters (WhatsApp limit).
+    Never includes PHI (patient_name, doctor_name).
+    """
+    greeting = GREETING_LINE
+    disclaimer = translation.disclaimer
+    summaries = translation.per_medicine_summaries
+
+    # Edge case: empty medicines → greeting + translated_text + disclaimer
+    if not prescription.medicines:
+        body = f"{greeting}\n\n{translation.translated_text}\n\n{disclaimer}"
+        return _enforce_limit(body, greeting, disclaimer)
+
+    # Build per-medicine cards (full detail)
+    cards = _build_medicine_cards(
+        prescription.medicines, summaries, include_frequency=True, include_duration=True
+    )
+    body = _assemble(greeting, cards, disclaimer)
+    if len(body) <= WHATSAPP_MAX_CHARS:
+        return body
+
+    # Truncation level 1: drop frequency/duration
+    cards = _build_medicine_cards(
+        prescription.medicines, summaries, include_frequency=False, include_duration=False
+    )
+    body = _assemble(greeting, cards, disclaimer)
+    if len(body) <= WHATSAPP_MAX_CHARS:
+        return _append_truncation_note(body)
+
+    # Truncation level 2: also truncate per-medicine summaries
+    cards = _build_medicine_cards(
+        prescription.medicines, [], include_frequency=False, include_duration=False
+    )
+    body = _assemble(greeting, cards, disclaimer)
+    if len(body) <= WHATSAPP_MAX_CHARS:
+        return _append_truncation_note(body)
+
+    # Truncation level 3: limit number of cards
+    return _truncate_cards(greeting, prescription.medicines, disclaimer)
+
+
+def _build_medicine_cards(
+    medicines,
+    summaries: list[str],
+    include_frequency: bool = True,
+    include_duration: bool = True,
+) -> list[str]:
+    """Build a list of card strings, one per medicine."""
+    cards = []
+    for i, med in enumerate(medicines):
+        lines = [f"\u2022 {med.medicine_name}"]
+        if med.dosage:
+            lines.append(f"  Dosage: {med.dosage}")
+        if include_frequency and med.frequency:
+            lines.append(f"  Frequency: {med.frequency}")
+        if include_duration and med.duration:
+            lines.append(f"  Duration: {med.duration}")
+        if i < len(summaries) and summaries[i]:
+            lines.append(f"  {summaries[i]}")
+        if med.confidence is not None and med.confidence < LOW_CONFIDENCE_THRESHOLD:
+            lines.append(f"  {LOW_CONFIDENCE_WARNING}")
+        cards.append("\n".join(lines))
+    return cards
+
+
+def _assemble(greeting: str, cards: list[str], disclaimer: str) -> str:
+    """Combine greeting, cards, and disclaimer into a single message."""
+    card_block = "\n\n".join(cards)
+    return f"{greeting}\n\n{card_block}\n\n{disclaimer}"
+
+
+def _append_truncation_note(body: str) -> str:
+    """Add truncation note, ensuring total stays within limit."""
+    with_note = f"{body}\n\n{TRUNCATION_NOTE}"
+    if len(with_note) <= WHATSAPP_MAX_CHARS:
+        return with_note
+    # Trim body to fit note
+    available = WHATSAPP_MAX_CHARS - len(f"\n\n{TRUNCATION_NOTE}")
+    return f"{body[:available]}\n\n{TRUNCATION_NOTE}"
+
+
+def _enforce_limit(body: str, greeting: str, disclaimer: str) -> str:
+    """Ensure body fits within WhatsApp limit."""
+    if len(body) <= WHATSAPP_MAX_CHARS:
+        return body
+    # Keep greeting + disclaimer, truncate middle
+    available = (
+        WHATSAPP_MAX_CHARS - len(greeting) - len(disclaimer) - len(f"\n\n\n\n{TRUNCATION_NOTE}")
+    )
+    middle = body[len(greeting) + 2 : len(greeting) + 2 + max(available, 0)]
+    return f"{greeting}\n\n{middle}\n\n{disclaimer}\n\n{TRUNCATION_NOTE}"
+
+
+def _truncate_cards(greeting: str, medicines, disclaimer: str) -> str:
+    """Last-resort truncation: include as many name-only cards as fit."""
+    overhead = len(greeting) + len(disclaimer) + len(f"\n\n\n\n{TRUNCATION_NOTE}")
+    available = WHATSAPP_MAX_CHARS - overhead
+    card_lines = []
+    for med in medicines:
+        line = f"\u2022 {med.medicine_name}"
+        if med.dosage:
+            line += f" ({med.dosage})"
+        if med.confidence is not None and med.confidence < LOW_CONFIDENCE_THRESHOLD:
+            line += f"\n  {LOW_CONFIDENCE_WARNING}"
+        candidate = "\n".join(card_lines + [line])
+        if len(candidate) > available:
+            break
+        card_lines.append(line)
+
+    card_block = "\n".join(card_lines)
+    return f"{greeting}\n\n{card_block}\n\n{disclaimer}\n\n{TRUNCATION_NOTE}"
+
+
+# ---------------------------------------------------------------------------
+# S10.3 Constants
+# ---------------------------------------------------------------------------
+AUDIO_MAX_CHARS = 2000
+AUDIO_TRUNCATION_NOTE = "For full details, please read the text message."
+
+# Regex: emoji + variation selectors + ZWJ
+_EMOJI_RE = re.compile(
+    "[\U0001f600-\U0001f64f"
+    "\U0001f300-\U0001f5ff"
+    "\U0001f680-\U0001f6ff"
+    "\U0001f1e0-\U0001f1ff"
+    "\U00002702-\U000027b0"
+    "\U000024c2-\U0001f251"
+    "\U0000fe0f"
+    "\U0000200d"
+    "\U00002600-\U000026ff"
+    "\U0000231a-\U0000231b"
+    "\U0001f900-\U0001f9ff"
+    "\U0001fa00-\U0001fa6f"
+    "\U0001fa70-\U0001faff"
+    "]+"
+)
+
+
+# ---------------------------------------------------------------------------
+# S10.3 FR-2: Strip emoji, markdown, bullets, special characters
+# ---------------------------------------------------------------------------
+
+
+def _strip_for_speech(text: str) -> str:
+    """Remove emoji, markdown formatting, bullet points, and special Unicode."""
+    # Remove emoji
+    result = _EMOJI_RE.sub("", text)
+    # Remove markdown: bold, italic, code, heading markers
+    result = result.replace("**", "")
+    result = result.replace("`", "")
+    result = re.sub(r"(?<!\w)_(\S)", r"\1", result)  # leading underscore (italic)
+    result = re.sub(r"(\S)_(?!\w)", r"\1", result)  # trailing underscore (italic)
+    # Remove heading markers at line start
+    lines = result.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            stripped = re.sub(r"^#+\s*", "", stripped)
+        # Remove bullet points at line start
+        if stripped.startswith("\u2022"):
+            stripped = stripped[1:].lstrip()
+        if stripped.startswith("- ") or stripped.startswith("* "):
+            stripped = stripped[2:].lstrip()
+        cleaned_lines.append(stripped)
+    result = "\n".join(cleaned_lines)
+    # Remove warning symbols and decorative em-dashes
+    result = result.replace("\u26a0", "")
+    result = result.replace("\u2014", ",")  # em-dash → comma for speech
+    # Clean up multiple spaces/newlines
+    result = re.sub(r"[ \t]+", " ", result)
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result.strip()
+
+
+# ---------------------------------------------------------------------------
+# S10.3 FR-3: Build spoken sentences for medicines
+# ---------------------------------------------------------------------------
+
+
+def _build_spoken_medicines(medicines, summaries: list[str]) -> str:
+    """Convert medicine entries into flowing spoken text."""
+    parts = []
+    for i, med in enumerate(medicines):
+        # Medicine name
+        sentence = med.medicine_name
+        # Dosage in spoken form
+        if med.dosage:
+            sentence += f", dosage is {med.dosage}"
+        # Frequency in spoken form
+        if med.frequency:
+            sentence += f", to be taken {med.frequency}"
+        # Duration in spoken form
+        if med.duration:
+            sentence += f", for {med.duration}"
+        sentence += "."
+        # Per-medicine summary
+        if i < len(summaries) and summaries[i]:
+            clean_summary = _strip_for_speech(summaries[i])
+            if clean_summary:
+                sentence += f" {clean_summary}."
+
+        # Prefix with "Next medicine:" for 2nd+ medicines
+        if i > 0 and len(medicines) > 1:
+            sentence = f"Next medicine: {sentence}"
+
+        parts.append(sentence)
+
+    return " ".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# S10.3 FR-5: Enforce TTS length limit
+# ---------------------------------------------------------------------------
+
+
+def _enforce_audio_limit(text: str) -> str:
+    """Cap text at AUDIO_MAX_CHARS, truncating at sentence boundary."""
+    if len(text) <= AUDIO_MAX_CHARS:
+        return text
+
+    # Reserve space for fallback note
+    note_space = len(f" {AUDIO_TRUNCATION_NOTE}")
+    available = AUDIO_MAX_CHARS - note_space
+
+    truncated = text[:available]
+
+    # Find last sentence boundary (period followed by space or end)
+    last_period = truncated.rfind(". ")
+    if last_period == -1:
+        last_period = truncated.rfind(".")
+    if last_period > 0:
+        truncated = truncated[: last_period + 1]
+    else:
+        # No sentence boundary — truncate at last word boundary
+        last_space = truncated.rfind(" ")
+        if last_space > 0:
+            truncated = truncated[:last_space] + "."
+
+    return f"{truncated} {AUDIO_TRUNCATION_NOTE}"
+
+
+# ---------------------------------------------------------------------------
+# S10.3 FR-1: _format_audio_text()
+# ---------------------------------------------------------------------------
+
+
+def _format_audio_text(
+    prescription: PrescriptionData,
+    translation: TranslationResult,
+    language_name: str,
+) -> str:
+    """Build a spoken-friendly version of the prescription summary for TTS.
+
+    Strips emoji, markdown, bullet points, and special characters.
+    Produces flowing spoken sentences instead of card-style formatting.
+    Caps output at 2000 characters for Bhashini TTS.
+    Never includes PHI (patient_name, doctor_name).
+    """
+    # Spoken greeting
+    greeting = "Here is your prescription summary."
+
+    # Build medicine section
+    if prescription.medicines:
+        summaries = translation.per_medicine_summaries or []
+        medicine_text = _build_spoken_medicines(prescription.medicines, summaries)
+    else:
+        # Fallback to translated_text when no medicines
+        medicine_text = _strip_for_speech(translation.translated_text)
+
+    # Build spoken disclaimer
+    raw_disclaimer = translation.disclaimer or ""
+    clean_disclaimer = _strip_for_speech(raw_disclaimer)
+    if clean_disclaimer:
+        disclaimer_text = f"Important note: {clean_disclaimer}"
+    else:
+        disclaimer_text = ""
+
+    # Assemble
+    parts = [greeting, medicine_text]
+    if disclaimer_text:
+        parts.append(disclaimer_text)
+    assembled = " ".join(p for p in parts if p)
+
+    # Final cleanup: strip any remaining artifacts
+    assembled = _strip_for_speech(assembled)
+
+    # Enforce length limit
+    return _enforce_audio_limit(assembled)
+
+
+def _handle_pipeline_error(exc: Exception) -> str:
+    """Map a pipeline exception to a patient-friendly WhatsApp error message.
+
+    isinstance checks are ordered most-specific-first so subclasses match correctly.
+    Never exposes internals, stack traces, or PHI.
+    """
+    if isinstance(exc, NotMedicalDocumentError):
+        return NOT_MEDICAL_DOC_MESSAGE
+    if isinstance(exc, ImageNotReadableError):
+        return IMAGE_NOT_READABLE_MESSAGE
+    if isinstance(exc, TranslationError):
+        return TRANSLATION_ERROR_MESSAGE
+    if isinstance(exc, ExtractionError):
+        return EXTRACTION_ERROR_MESSAGE
+    return GENERIC_PIPELINE_ERROR_MESSAGE
+
+
 async def _run_pipeline(
     payload: WebhookPayload, session: SessionState, request_id: str, redis
 ) -> None:
-    """Placeholder pipeline — will be replaced in S10.1 with full extraction/translation/TTS."""
+    """S10.1: Full pipeline — extract → enrich → glossary → translate → TTS → send."""
     with logger.contextualize(request_id=request_id):
-        logger.info("Pipeline placeholder invoked (not yet implemented)")
-        await send_text_message(
-            payload.from_number,
-            "Translation pipeline coming soon! Your session has been reset "
-            "so you can start a new conversation.",
-        )
-        await _delete_session(payload.from_number, redis)
-        logger.info("Session cleaned up after pipeline placeholder")
+        start = time.monotonic()
+        try:
+            # Step 1: Extract prescription from image (GPT-4O Vision)
+            logger.info("Pipeline started: extraction")
+            prescription_data = await extract_prescription(
+                image_url=payload.media_url,
+                content_type=payload.media_content_type,
+                request_id=request_id,
+            )
+            logger.info("Extraction complete")
+
+            # Step 2: Enrich with drug lookup
+            logger.info("Pipeline: drug enrichment")
+            drug_info_list = await enrich_prescription(
+                redis_client=redis,
+                prescription=prescription_data,
+                request_id=request_id,
+            )
+            logger.info("Drug enrichment complete")
+
+            # Step 3: Glossary lookup
+            logger.info("Pipeline: glossary lookup")
+            medicine_terms = [m.medicine_name for m in prescription_data.medicines]
+            glossary_entries = await lookup_terms(medicine_terms, session.language_code, redis)
+            glossary_context = format_glossary_context(glossary_entries, session.language_name)
+            logger.info("Glossary lookup complete")
+
+            # Step 4: Translate with Claude Sonnet 4.6
+            logger.info("Pipeline: translation")
+            translation_result = await simplify_and_translate(
+                prescription=prescription_data,
+                language_name=session.language_name,
+                language_code=session.language_code,
+                drug_info_list=drug_info_list,
+                glossary_context=glossary_context,
+                request_id=request_id,
+            )
+            logger.info("Translation complete")
+
+            # Step 5: Format audio text for TTS (S10.3)
+            logger.info("Pipeline: formatting audio text")
+            audio_text = _format_audio_text(
+                prescription=prescription_data,
+                translation=translation_result,
+                language_name=session.language_name,
+            )
+            logger.info("Audio text formatted")
+
+            # Step 6: Generate TTS audio
+            logger.info("Pipeline: TTS audio generation")
+            audio_url = await generate_and_deliver_audio(
+                text=audio_text,
+                language_code=session.language_code,
+                request_id=request_id,
+            )
+            logger.info("TTS complete: audio_available={avail}", avail=audio_url is not None)
+
+            # Step 7: Format and send text reply
+            logger.info("Pipeline: formatting reply")
+            reply_text = _format_reply(
+                prescription=prescription_data,
+                drug_info_list=drug_info_list,
+                translation=translation_result,
+                language_name=session.language_name,
+            )
+            logger.info("Pipeline: sending text reply")
+            await send_text_message(payload.from_number, reply_text)
+            logger.info("Text reply sent")
+
+            # Step 8: Send audio if available
+            if audio_url is not None:
+                logger.info("Pipeline: sending audio message")
+                await send_audio_message_with_fallback(
+                    payload.from_number,
+                    audio_url,
+                    fallback_text=audio_text,
+                )
+                logger.info("Audio message sent")
+
+            # Compute metrics
+            latency_ms = int((time.monotonic() - start) * 1000)
+            confidence_avg = _compute_confidence_avg(prescription_data)
+
+            # Log interaction to DB
+            logger.info("Pipeline: logging interaction")
+            async with AsyncSessionLocal() as db:
+                await _log_interaction(
+                    phone_number=payload.from_number,
+                    language_code=session.language_code,
+                    status=InteractionStatus.SUCCESS,
+                    request_id=request_id,
+                    db=db,
+                    confidence_avg=confidence_avg,
+                    latency_ms=latency_ms,
+                )
+                await db.commit()
+            logger.info(
+                "Pipeline complete: latency_ms={lat}, confidence_avg={conf}",
+                lat=latency_ms,
+                conf=confidence_avg,
+            )
+
+        except Exception as exc:
+            # S10.4: Map exception to patient-friendly message
+            error_msg = _handle_pipeline_error(exc)
+            error_code = type(exc).__name__[:100]
+
+            logger.error(
+                "Pipeline error: error_code={code}",
+                code=error_code,
+            )
+
+            # Send error message to user (gracefully handle send failure)
+            try:
+                await send_text_message(payload.from_number, error_msg)
+            except Exception:
+                logger.error("Failed to send pipeline error message to user")
+
+            # Log interaction with error status
+            latency_ms = int((time.monotonic() - start) * 1000)
+            try:
+                async with AsyncSessionLocal() as db:
+                    await _log_interaction(
+                        phone_number=payload.from_number,
+                        language_code=session.language_code,
+                        status=InteractionStatus.ERROR,
+                        request_id=request_id,
+                        db=db,
+                        latency_ms=latency_ms,
+                        error_code=error_code,
+                    )
+                    await db.commit()
+            except Exception:
+                logger.error("Failed to log pipeline error interaction")
+
+        finally:
+            # Always clean up session (success or failure)
+            await _delete_session(payload.from_number, redis)
+            logger.info("Session cleaned up")
+
+
+def _compute_confidence_avg(prescription: PrescriptionData) -> float | None:
+    """Compute average confidence from medicine entries, or None if empty."""
+    confidences = [m.confidence for m in prescription.medicines if m.confidence is not None]
+    if not confidences:
+        return None
+    return sum(confidences) / len(confidences)
 
 
 # ---------------------------------------------------------------------------
