@@ -41,6 +41,7 @@ from backend.app.services.whatsapp import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_twilio_error(status: int = 500, uri: str = "/test") -> TwilioRestException:
     """Create a TwilioRestException for testing."""
     return TwilioRestException(status=status, uri=uri, msg="Server Error")
@@ -57,6 +58,7 @@ def _reset_twilio_client() -> None:
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _reset_singleton():
     """Reset the Twilio client singleton before each test."""
@@ -72,6 +74,7 @@ MEDIA_URL = "https://s3.amazonaws.com/bucket/audio/test.ogg"
 # ---------------------------------------------------------------------------
 # FR-1: send_audio_message basic tests
 # ---------------------------------------------------------------------------
+
 
 class TestSendAudioMessage:
     """Tests for the async send_audio_message function."""
@@ -150,6 +153,7 @@ class TestSendAudioMessage:
 # FR-1: Validation edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestSendAudioMessageValidation:
     """Validation tests for send_audio_message."""
 
@@ -181,6 +185,7 @@ class TestSendAudioMessageValidation:
 # ---------------------------------------------------------------------------
 # FR-2: Retry tests
 # ---------------------------------------------------------------------------
+
 
 class TestSendAudioMessageRetry:
     """Tests for tenacity retry behavior."""
@@ -230,6 +235,7 @@ class TestSendAudioMessageRetry:
 # Singleton + asyncio.to_thread tests
 # ---------------------------------------------------------------------------
 
+
 class TestSendAudioMessageInternals:
     """Tests for singleton usage and asyncio.to_thread wrapping."""
 
@@ -271,6 +277,7 @@ class TestSendAudioMessageInternals:
 # ---------------------------------------------------------------------------
 # FR-3: Fallback tests
 # ---------------------------------------------------------------------------
+
 
 class TestSendAudioMessageWithFallback:
     """Tests for send_audio_message_with_fallback."""
@@ -333,6 +340,7 @@ class TestSendAudioMessageWithFallback:
 # ---------------------------------------------------------------------------
 # FR-4: PHI-safe logging tests
 # ---------------------------------------------------------------------------
+
 
 class TestSendAudioMessageLogging:
     """Tests for PHI-safe logging."""

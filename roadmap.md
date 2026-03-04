@@ -219,11 +219,11 @@ Wires all services (extraction → drug lookup → glossary → translation → 
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S10.1 | `specs/spec-S10.1-pipeline-wiring/` | S4.5, S5.4, S6.3, S7.4, S8.4, S9.4 | `backend/app/api/webhooks.py` | `_handle_image_state()` full pipeline | Replace Phase 4 placeholder: call extraction (GPT-4O) → enrich → glossary lookup → translate (Claude) → TTS. All steps in sequence. Pass request_id (UUID) through all service calls for log correlation | pending |
-| S10.2 | `specs/spec-S10.2-format-reply/` | S10.1, S2.4 | `backend/app/api/webhooks.py` | `_format_reply()` | Build WhatsApp text body: greeting, per-medicine cards (name EN + purpose in language + dosage), low-confidence warnings (⚠️), disclaimer. Max 1600 chars (WhatsApp message limit) | pending |
-| S10.3 | `specs/spec-S10.3-format-audio-text/` | S7.4 | `backend/app/api/webhooks.py` | `_format_audio_text()` | Produce a clean spoken version of the summary (no emoji, no markdown, simpler sentence structure) for Bhashini TTS input | pending |
-| S10.4 | `specs/spec-S10.4-pipeline-errors/` | S10.1 | `backend/app/api/webhooks.py` | `_handle_pipeline_error()` | Map exception types to patient-friendly WhatsApp messages. `NotMedicalDocumentError` → "This doesn't appear to be a medical document." `ImageNotReadableError` → "We couldn't read this clearly, please try better lighting." Generic error → "Something went wrong, please try again." | pending |
-| S10.5 | `specs/spec-S10.5-pipeline-integration-test/` | S10.1, S10.2, S10.3, S10.4 | `backend/tests/api/test_pipeline.py` | Integration test: full pipeline | Mock all external services (OpenAI, Anthropic, Bhashini, S3, Twilio, Redis, DB). Send a fake WhatsApp image webhook. Assert: correct Twilio send calls, correct log entry, correct session state cleanup | pending |
+| S10.1 | `specs/spec-S10.1-pipeline-wiring/` | S4.5, S5.4, S6.3, S7.4, S8.4, S9.4 | `backend/app/api/webhooks.py` | `_handle_image_state()` full pipeline | Replace Phase 4 placeholder: call extraction (GPT-4O) → enrich → glossary lookup → translate (Claude) → TTS. All steps in sequence. Pass request_id (UUID) through all service calls for log correlation | done |
+| S10.2 | `specs/spec-S10.2-format-reply/` | S10.1, S2.4 | `backend/app/api/webhooks.py` | `_format_reply()` | Build WhatsApp text body: greeting, per-medicine cards (name EN + purpose in language + dosage), low-confidence warnings (⚠️), disclaimer. Max 1600 chars (WhatsApp message limit) | done |
+| S10.3 | `specs/spec-S10.3-format-audio-text/` | S7.4 | `backend/app/api/webhooks.py` | `_format_audio_text()` | Produce a clean spoken version of the summary (no emoji, no markdown, simpler sentence structure) for Bhashini TTS input | done |
+| S10.4 | `specs/spec-S10.4-pipeline-errors/` | S10.1 | `backend/app/api/webhooks.py` | `_handle_pipeline_error()` | Map exception types to patient-friendly WhatsApp messages. `NotMedicalDocumentError` → "This doesn't appear to be a medical document." `ImageNotReadableError` → "We couldn't read this clearly, please try better lighting." Generic error → "Something went wrong, please try again." | done |
+| S10.5 | `specs/spec-S10.5-pipeline-integration-test/` | S10.1, S10.2, S10.3, S10.4 | `backend/tests/api/test_pipeline.py` | Integration test: full pipeline | Mock all external services (OpenAI, Anthropic, Bhashini, S3, Twilio, Redis, DB). Send a fake WhatsApp image webhook. Assert: correct Twilio send calls, correct log entry, correct session state cleanup | done |
 
 ---
 
@@ -322,11 +322,11 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S9.3 | TTS & Audio | `backend/app/services/tts.py` | _upload_to_s3() | `specs/spec-S9.3-s3-upload/` | done |
 | S9.4 | TTS & Audio | `backend/app/services/tts.py` | generate_and_deliver_audio() | `specs/spec-S9.4-audio-delivery/` | done |
 | S9.5 | TTS & Audio | `backend/app/services/tts.py` | Graceful degradation | `specs/spec-S9.5-graceful-degradation/` | done |
-| S10.1 | Pipeline Integration | `backend/app/api/webhooks.py` | Full pipeline wiring | `specs/spec-S10.1-pipeline-wiring/` | pending |
-| S10.2 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_reply() | `specs/spec-S10.2-format-reply/` | pending |
-| S10.3 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_audio_text() | `specs/spec-S10.3-format-audio-text/` | pending |
-| S10.4 | Pipeline Integration | `backend/app/api/webhooks.py` | _handle_pipeline_error() | `specs/spec-S10.4-pipeline-errors/` | pending |
-| S10.5 | Pipeline Integration | `backend/tests/api/test_pipeline.py` | Integration test: full pipeline | `specs/spec-S10.5-pipeline-integration-test/` | pending |
+| S10.1 | Pipeline Integration | `backend/app/api/webhooks.py` | Full pipeline wiring | `specs/spec-S10.1-pipeline-wiring/` | done |
+| S10.2 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_reply() | `specs/spec-S10.2-format-reply/` | done |
+| S10.3 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_audio_text() | `specs/spec-S10.3-format-audio-text/` | done |
+| S10.4 | Pipeline Integration | `backend/app/api/webhooks.py` | _handle_pipeline_error() | `specs/spec-S10.4-pipeline-errors/` | done |
+| S10.5 | Pipeline Integration | `backend/tests/api/test_pipeline.py` | Integration test: full pipeline | `specs/spec-S10.5-pipeline-integration-test/` | done |
 | S11.1 | Infra & Seeding | `backend/Dockerfile` | Multi-stage Dockerfile | `specs/spec-S11.1-dockerfile/` | pending |
 | S11.2 | Infra & Seeding | `docker-compose.yml` | Local dev stack | `specs/spec-S11.2-docker-compose-dev/` | pending |
 | S11.3 | Infra & Seeding | `docker-compose.prod.yml` | Prod overrides | `specs/spec-S11.3-docker-compose-prod/` | pending |

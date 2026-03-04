@@ -36,6 +36,7 @@ from backend.app.services.whatsapp import _get_twilio_client, send_text_message
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_twilio_error(status: int = 500, uri: str = "/test") -> TwilioRestException:
     """Create a TwilioRestException for testing."""
     return TwilioRestException(status=status, uri=uri, msg="Server Error")
@@ -44,12 +45,14 @@ def _make_twilio_error(status: int = 500, uri: str = "/test") -> TwilioRestExcep
 def _reset_twilio_client() -> None:
     """Reset the module-level Twilio client singleton between tests."""
     import backend.app.services.whatsapp as ws
+
     ws._twilio_client = None
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(autouse=True)
 def _reset_singleton():
@@ -62,6 +65,7 @@ def _reset_singleton():
 # ---------------------------------------------------------------------------
 # FR-1: _get_twilio_client tests
 # ---------------------------------------------------------------------------
+
 
 class TestGetTwilioClient:
     """Tests for the lazy singleton Twilio client."""
@@ -105,6 +109,7 @@ class TestGetTwilioClient:
 # ---------------------------------------------------------------------------
 # FR-2: send_text_message tests
 # ---------------------------------------------------------------------------
+
 
 class TestSendTextMessage:
     """Tests for the async send_text_message function."""
@@ -207,6 +212,7 @@ class TestSendTextMessage:
 # FR-3: Retry tests
 # ---------------------------------------------------------------------------
 
+
 class TestSendTextMessageRetry:
     """Tests for tenacity retry behavior."""
 
@@ -271,6 +277,7 @@ class TestSendTextMessageRetry:
 # ---------------------------------------------------------------------------
 # FR-4: Logging tests
 # ---------------------------------------------------------------------------
+
 
 class TestSendTextMessageLogging:
     """Tests for PHI-safe logging."""

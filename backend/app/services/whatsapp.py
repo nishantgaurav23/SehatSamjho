@@ -336,9 +336,7 @@ _DEFAULT_AUDIO_CAPTION = "Audio summary of your prescription"
     retry=retry_if_exception_type(TwilioRestException),
     reraise=True,
 )
-async def send_audio_message(
-    to: str, media_url: str, caption: str | None = None
-) -> str:
+async def send_audio_message(to: str, media_url: str, caption: str | None = None) -> str:
     """Send a WhatsApp media message containing an audio file via Twilio.
 
     Args:
