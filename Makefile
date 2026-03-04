@@ -1,7 +1,7 @@
 # SehatSamjho — Developer Commands
 # Usage: make <target>
 
-.PHONY: venv install install-dev local-dev local-test local-lint local-migrate seed dev test migrate
+.PHONY: venv install install-dev local-dev local-test local-lint local-migrate local-seed seed dev test migrate
 
 # ── Local Development ────────────────────────────────────────────────────────
 
@@ -25,6 +25,9 @@ local-lint:
 
 local-migrate:
 	cd backend && alembic upgrade head
+
+local-seed:
+	cd backend && python -m scripts.seed
 
 # ── Docker ───────────────────────────────────────────────────────────────────
 

@@ -123,5 +123,380 @@
     "term": "infection",
     "explanation": "when harmful germs like bacteria or viruses enter your body and make you sick",
     "vernacular": "సంక్రమణ"
+  },
+  {
+    "term": "arthritis",
+    "explanation": "pain, swelling, and stiffness in your joints, making movement difficult",
+    "vernacular": "కీళ్ల నొప్పి"
+  },
+  {
+    "term": "pneumonia",
+    "explanation": "a serious lung infection that fills the air sacs with fluid, causing breathing difficulty",
+    "vernacular": "న్యుమోనియా"
+  },
+  {
+    "term": "jaundice",
+    "explanation": "yellowing of skin and eyes caused by too much bilirubin, often due to liver problems",
+    "vernacular": "కామెర్లు"
+  },
+  {
+    "term": "malaria",
+    "explanation": "a disease spread by mosquito bites that causes high fever, chills, and body ache",
+    "vernacular": "మలేరియా"
+  },
+  {
+    "term": "dengue",
+    "explanation": "a mosquito-borne viral illness causing high fever, severe body pain, and low platelets",
+    "vernacular": "డెంగ్యూ"
+  },
+  {
+    "term": "tuberculosis",
+    "explanation": "a bacterial infection mainly in the lungs causing persistent cough, weight loss, and night sweats",
+    "vernacular": "క్షయ వ్యాధి"
+  },
+  {
+    "term": "epilepsy",
+    "explanation": "a brain condition that causes repeated seizures or fits",
+    "vernacular": "మూర్ఛ వ్యాధి"
+  },
+  {
+    "term": "migraine",
+    "explanation": "a severe headache, usually on one side, often with nausea and sensitivity to light",
+    "vernacular": "మైగ్రేన్"
+  },
+  {
+    "term": "gastritis",
+    "explanation": "irritation or swelling of the stomach lining, causing pain, nausea, or bloating",
+    "vernacular": "జఠర శోథం"
+  },
+  {
+    "term": "kidney disease",
+    "explanation": "when kidneys are damaged and cannot filter blood properly",
+    "vernacular": "మూత్రపిండ వ్యాధి"
+  },
+  {
+    "term": "at bedtime",
+    "explanation": "take the medicine just before going to sleep at night",
+    "vernacular": "నిద్రపోయే ముందు"
+  },
+  {
+    "term": "with water",
+    "explanation": "swallow the medicine with a full glass of water",
+    "vernacular": "నీళ్లతో"
+  },
+  {
+    "term": "on empty stomach",
+    "explanation": "take the medicine when you have not eaten for at least 2 hours",
+    "vernacular": "ఖాళీ కడుపుతో"
+  },
+  {
+    "term": "every 8 hours",
+    "explanation": "take the medicine once every 8 hours, spacing doses evenly through the day",
+    "vernacular": "ప్రతి 8 గంటలకు"
+  },
+  {
+    "term": "every 12 hours",
+    "explanation": "take the medicine once every 12 hours, usually morning and night",
+    "vernacular": "ప్రతి 12 గంటలకు"
+  },
+  {
+    "term": "as needed",
+    "explanation": "take the medicine only when you feel symptoms, not on a fixed schedule",
+    "vernacular": "అవసరమైనప్పుడు"
+  },
+  {
+    "term": "with food",
+    "explanation": "take the medicine during or immediately after a meal to reduce stomach upset",
+    "vernacular": "ఆహారంతో"
+  },
+  {
+    "term": "liver",
+    "explanation": "a large organ that cleans your blood, makes bile, and helps digest food",
+    "vernacular": "కాలేయం"
+  },
+  {
+    "term": "kidney",
+    "explanation": "one of two organs that filter waste from blood and produce urine",
+    "vernacular": "మూత్రపిండం"
+  },
+  {
+    "term": "heart",
+    "explanation": "the organ that pumps blood throughout your body",
+    "vernacular": "గుండె"
+  },
+  {
+    "term": "lung",
+    "explanation": "one of two organs in your chest used for breathing",
+    "vernacular": "ఊపిరితిత్తి"
+  },
+  {
+    "term": "stomach",
+    "explanation": "the organ where food is broken down after you eat",
+    "vernacular": "కడుపు"
+  },
+  {
+    "term": "brain",
+    "explanation": "the organ inside your head that controls thinking, movement, and all body functions",
+    "vernacular": "మెదడు"
+  },
+  {
+    "term": "skin",
+    "explanation": "the outer covering of your body that protects against germs and injury",
+    "vernacular": "చర్మం"
+  },
+  {
+    "term": "bone",
+    "explanation": "the hard tissue that forms the skeleton and supports your body",
+    "vernacular": "ఎముక"
+  },
+  {
+    "term": "eye",
+    "explanation": "the organ used for seeing",
+    "vernacular": "కన్ను"
+  },
+  {
+    "term": "ear",
+    "explanation": "the organ used for hearing and balance",
+    "vernacular": "చెవి"
+  },
+  {
+    "term": "blood sugar",
+    "explanation": "the amount of glucose in your blood — too high or too low can be dangerous",
+    "vernacular": "రక్తంలో చక్కెర"
+  },
+  {
+    "term": "urine test",
+    "explanation": "a lab test of your urine to check for infections, kidney problems, or diabetes",
+    "vernacular": "మూత్ర పరీక్ష"
+  },
+  {
+    "term": "blood test",
+    "explanation": "a lab test where a small sample of blood is checked for health problems",
+    "vernacular": "రక్త పరీక్ష"
+  },
+  {
+    "term": "platelet count",
+    "explanation": "measures how many platelets are in your blood — platelets help stop bleeding",
+    "vernacular": "ప్లేట్లెట్ల సంఖ్య"
+  },
+  {
+    "term": "white blood cells",
+    "explanation": "cells in your blood that fight infection — high or low counts may signal illness",
+    "vernacular": "తెల్ల రక్త కణాలు"
+  },
+  {
+    "term": "red blood cells",
+    "explanation": "cells that carry oxygen from your lungs to the rest of your body",
+    "vernacular": "ఎర్ర రక్త కణాలు"
+  },
+  {
+    "term": "bilirubin",
+    "explanation": "a yellow substance made when red blood cells break down — high levels can cause jaundice",
+    "vernacular": "బిలిరుబిన్"
+  },
+  {
+    "term": "x-ray",
+    "explanation": "a quick imaging test that uses radiation to take pictures of bones and organs inside your body",
+    "vernacular": "ఎక్స్-రే"
+  },
+  {
+    "term": "ultrasound",
+    "explanation": "a painless scan using sound waves to see organs and tissues inside your body",
+    "vernacular": "అల్ట్రాసౌండ్"
+  },
+  {
+    "term": "ecg",
+    "explanation": "a test that records the electrical activity of your heart to check for heart problems",
+    "vernacular": "ఈసీజీ"
+  },
+  {
+    "term": "ct scan",
+    "explanation": "a detailed imaging test that takes cross-section pictures of your body using X-rays",
+    "vernacular": "సీటీ స్కాన్"
+  },
+  {
+    "term": "mri",
+    "explanation": "a scan using magnets and radio waves to create detailed pictures of organs and tissues",
+    "vernacular": "ఎంఆర్ఐ"
+  },
+  {
+    "term": "biopsy",
+    "explanation": "removing a small piece of tissue from the body to test for disease like cancer",
+    "vernacular": "కణజాల పరీక్ష"
+  },
+  {
+    "term": "surgery",
+    "explanation": "a medical procedure where a doctor cuts open the body to fix or remove a problem",
+    "vernacular": "శస్త్రచికిత్స"
+  },
+  {
+    "term": "dialysis",
+    "explanation": "a treatment that cleans your blood when your kidneys can no longer do it on their own",
+    "vernacular": "డయాలసిస్"
+  },
+  {
+    "term": "nausea",
+    "explanation": "a feeling of wanting to vomit, often caused by illness, medicine, or motion",
+    "vernacular": "వికారం"
+  },
+  {
+    "term": "headache",
+    "explanation": "pain in the head that can be mild or severe, caused by many different things",
+    "vernacular": "తలనొప్పి"
+  },
+  {
+    "term": "dizziness",
+    "explanation": "feeling lightheaded or unsteady, as if the room is spinning",
+    "vernacular": "తల తిరగడం"
+  },
+  {
+    "term": "vomiting",
+    "explanation": "when food or liquid comes back up from your stomach through your mouth",
+    "vernacular": "వాంతి"
+  },
+  {
+    "term": "diarrhea",
+    "explanation": "frequent loose or watery stools, often caused by infection or bad food",
+    "vernacular": "అతిసారం"
+  },
+  {
+    "term": "cough",
+    "explanation": "a sudden burst of air from the lungs to clear the throat or airways",
+    "vernacular": "దగ్గు"
+  },
+  {
+    "term": "fatigue",
+    "explanation": "extreme tiredness that does not go away with rest",
+    "vernacular": "అలసట"
+  },
+  {
+    "term": "chest pain",
+    "explanation": "pain or discomfort in the chest area — can be from heart, lung, or muscle problems",
+    "vernacular": "ఛాతీ నొప్పి"
+  },
+  {
+    "term": "shortness of breath",
+    "explanation": "difficulty breathing or feeling like you cannot get enough air",
+    "vernacular": "ఊపిరి ఆడకపోవడం"
+  },
+  {
+    "term": "body pain",
+    "explanation": "aching or soreness felt throughout the body, common with fever or flu",
+    "vernacular": "ఒళ్ళు నొప్పి"
+  },
+  {
+    "term": "antacid",
+    "explanation": "a medicine that reduces stomach acid to relieve heartburn and indigestion",
+    "vernacular": "ఆమ్ల నిరోధకం"
+  },
+  {
+    "term": "antifungal",
+    "explanation": "a medicine that treats infections caused by fungi, such as ringworm or thrush",
+    "vernacular": "యాంటీఫంగల్"
+  },
+  {
+    "term": "antiviral",
+    "explanation": "a medicine that fights viral infections like flu or herpes",
+    "vernacular": "యాంటీవైరల్"
+  },
+  {
+    "term": "steroid",
+    "explanation": "a strong medicine that reduces swelling and calms the immune system",
+    "vernacular": "స్టెరాయిడ్"
+  },
+  {
+    "term": "antiseptic",
+    "explanation": "a substance applied to the skin to kill germs and prevent infection in wounds",
+    "vernacular": "క్రిమిసంహారకం"
+  },
+  {
+    "term": "laxative",
+    "explanation": "a medicine that helps you have a bowel movement when you are constipated",
+    "vernacular": "భేదిమందు"
+  },
+  {
+    "term": "diuretic",
+    "explanation": "a medicine that helps your body remove extra water and salt through urine",
+    "vernacular": "మూత్రవర్ధకం"
+  },
+  {
+    "term": "sedative",
+    "explanation": "a medicine that calms you down or helps you sleep",
+    "vernacular": "నిద్ర మందు"
+  },
+  {
+    "term": "syrup",
+    "explanation": "liquid medicine taken by mouth, often measured with a spoon or cup",
+    "vernacular": "సిరప్"
+  },
+  {
+    "term": "ointment",
+    "explanation": "a thick cream or paste applied to the skin to treat pain, rashes, or infections",
+    "vernacular": "లేపనం"
+  },
+  {
+    "term": "drops",
+    "explanation": "liquid medicine given in small drops, usually into the eyes, ears, or nose",
+    "vernacular": "చుక్కల మందు"
+  },
+  {
+    "term": "inhaler",
+    "explanation": "a device that lets you breathe medicine directly into your lungs",
+    "vernacular": "ఇన్హేలర్"
+  },
+  {
+    "term": "suppository",
+    "explanation": "a small solid medicine inserted into the rectum where it dissolves and is absorbed",
+    "vernacular": "మలద్వార మందు"
+  },
+  {
+    "term": "bp",
+    "explanation": "short for blood pressure — the force of blood against your artery walls",
+    "vernacular": "బీపీ"
+  },
+  {
+    "term": "od",
+    "explanation": "short for once daily — take the medicine one time per day",
+    "vernacular": "ఓడీ"
+  },
+  {
+    "term": "bd",
+    "explanation": "short for twice daily — take the medicine two times per day",
+    "vernacular": "బీడీ"
+  },
+  {
+    "term": "sos",
+    "explanation": "take the medicine only when needed, for example when pain occurs",
+    "vernacular": "ఎస్ఓఎస్"
+  },
+  {
+    "term": "iv",
+    "explanation": "short for intravenous — medicine given directly into a vein through a needle",
+    "vernacular": "ఐవీ"
+  },
+  {
+    "term": "diagnosis",
+    "explanation": "the identification of a disease or condition based on symptoms and test results",
+    "vernacular": "వ్యాధి నిర్ధారణ"
+  },
+  {
+    "term": "prescription",
+    "explanation": "a written order from a doctor telling the pharmacy which medicine to give you",
+    "vernacular": "మందుల చీటి"
+  },
+  {
+    "term": "dosage",
+    "explanation": "the amount of medicine you should take and how often",
+    "vernacular": "మోతాదు"
+  },
+  {
+    "term": "side effect",
+    "explanation": "an unwanted reaction caused by a medicine, such as nausea or drowsiness",
+    "vernacular": "దుష్ప్రభావం"
+  },
+  {
+    "term": "follow up",
+    "explanation": "a return visit to the doctor to check your progress after treatment",
+    "vernacular": "తదుపరి సందర్శన"
   }
 ]

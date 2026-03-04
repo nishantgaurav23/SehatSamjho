@@ -1,0 +1,1 @@
+"""SehatSamjho seed scripts package."""

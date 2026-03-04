@@ -405,6 +405,6 @@ class TestIntegrationStyle:
         assert len(result) == 6
         expected_langs = {"hi", "ta", "te", "kn", "bn", "mr"}
         assert set(result.keys()) == expected_langs
-        # Each should have 25 entries
+        # Each should have >= 25 entries (expanded from 25 to 100 in S11.6)
         for lang, count in result.items():
-            assert count == 25, f"{lang} has {count} entries, expected 25"
+            assert count >= 25, f"{lang} has {count} entries, expected >= 25"
