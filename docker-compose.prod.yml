@@ -1,0 +1,11 @@
+services:
+  # ── FastAPI Application (prod stage) ──────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: prod
+    ports:
+      - "8000:8000"
+    env_file: .env
+    restart: unless-stopped

@@ -233,13 +233,13 @@ Docker setup for local dev and production. Drug CSV and glossary JSON data files
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S11.1 | `specs/spec-S11.1-dockerfile/` | S1.1 | `backend/Dockerfile` | Multi-stage Dockerfile | Stage 1 (base): Python 3.11-slim, install uv, copy pyproject.toml, `uv pip install`. Stage 2 (dev): add pytest + ruff. Stage 3 (prod): copy app, non-root user, uvicorn CMD. Build context: repo root (not ./backend) | pending |
-| S11.2 | `specs/spec-S11.2-docker-compose-dev/` | S11.1 | `docker-compose.yml` | Local dev stack | Services: postgres (postgres:15), redis (redis:7), app (build from Dockerfile dev stage). Volumes for postgres data. Env from .env file | pending |
-| S11.3 | `specs/spec-S11.3-docker-compose-prod/` | S11.1 | `docker-compose.prod.yml` | Prod overrides | Override app image to prod stage. No local postgres/redis — use DATABASE_URL (RDS) and REDIS_URL (Upstash) from environment. Expose port 8000 | pending |
-| S11.4 | `specs/spec-S11.4-dockerignore/` | — | `.dockerignore` | Docker ignore rules | Exclude: `.venv`, `data/*.csv` (large), `.env`, `notebooks/`, `docs/`, `**/__pycache__`, `*.pyc`, `.git` | pending |
-| S11.5 | `specs/spec-S11.5-drug-csv-data/` | S8.1 | `data/drugs/medicines.csv` | Drug database CSV (data file) | 1000 most-prescribed Indian medicines. Columns: brand_name, generic_name, therapeutic_class, purpose_en, side_effects_en, timing_instructions, known_interactions. Manually curated or sourced from open datasets | pending |
-| S11.6 | `specs/spec-S11.6-glossary-data-files/` | S6.1 | `data/glossary/*.json` | Glossary JSON files (data files) | Files: hi.json, ta.json, te.json, kn.json, bn.json, mr.json. ~100 entries each. Term → explanation + vernacular mapping | pending |
-| S11.7 | `specs/spec-S11.7-seed-script/` | S8.2, S6.2, S2.5 | `backend/scripts/seed.py` + `Makefile` | `make seed` command | Load medicines.csv into Redis. Load all glossary JSON files into Redis. Run as: `python backend/scripts/seed.py`. Also runnable inside Docker via `make seed` target | pending |
+| S11.1 | `specs/spec-S11.1-dockerfile/` | S1.1 | `backend/Dockerfile` | Multi-stage Dockerfile | Stage 1 (base): Python 3.11-slim, install uv, copy pyproject.toml, `uv pip install`. Stage 2 (dev): add pytest + ruff. Stage 3 (prod): copy app, non-root user, uvicorn CMD. Build context: repo root (not ./backend) | done |
+| S11.2 | `specs/spec-S11.2-docker-compose-dev/` | S11.1 | `docker-compose.yml` | Local dev stack | Services: postgres (postgres:15), redis (redis:7), app (build from Dockerfile dev stage). Volumes for postgres data. Env from .env file | done |
+| S11.3 | `specs/spec-S11.3-docker-compose-prod/` | S11.1 | `docker-compose.prod.yml` | Prod overrides | Override app image to prod stage. No local postgres/redis — use DATABASE_URL (RDS) and REDIS_URL (Upstash) from environment. Expose port 8000 | done |
+| S11.4 | `specs/spec-S11.4-dockerignore/` | — | `.dockerignore` | Docker ignore rules | Exclude: `.venv`, `data/*.csv` (large), `.env`, `notebooks/`, `docs/`, `**/__pycache__`, `*.pyc`, `.git` | done |
+| S11.5 | `specs/spec-S11.5-drug-csv-data/` | S8.1 | `data/drugs/medicines.csv` | Drug database CSV (data file) | 1000 most-prescribed Indian medicines. Columns: brand_name, generic_name, therapeutic_class, purpose_en, side_effects_en, timing_instructions, known_interactions. Manually curated or sourced from open datasets | done |
+| S11.6 | `specs/spec-S11.6-glossary-data-files/` | S6.1 | `data/glossary/*.json` | Glossary JSON files (data files) | Files: hi.json, ta.json, te.json, kn.json, bn.json, mr.json. ~100 entries each. Term → explanation + vernacular mapping | done |
+| S11.7 | `specs/spec-S11.7-seed-script/` | S8.2, S6.2, S2.5 | `backend/scripts/seed.py` + `Makefile` | `make seed` command | Load medicines.csv into Redis. Load all glossary JSON files into Redis. Run as: `python backend/scripts/seed.py`. Also runnable inside Docker via `make seed` target | done |
 
 ---
 
@@ -327,13 +327,13 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S10.3 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_audio_text() | `specs/spec-S10.3-format-audio-text/` | done |
 | S10.4 | Pipeline Integration | `backend/app/api/webhooks.py` | _handle_pipeline_error() | `specs/spec-S10.4-pipeline-errors/` | done |
 | S10.5 | Pipeline Integration | `backend/tests/api/test_pipeline.py` | Integration test: full pipeline | `specs/spec-S10.5-pipeline-integration-test/` | done |
-| S11.1 | Infra & Seeding | `backend/Dockerfile` | Multi-stage Dockerfile | `specs/spec-S11.1-dockerfile/` | pending |
-| S11.2 | Infra & Seeding | `docker-compose.yml` | Local dev stack | `specs/spec-S11.2-docker-compose-dev/` | pending |
-| S11.3 | Infra & Seeding | `docker-compose.prod.yml` | Prod overrides | `specs/spec-S11.3-docker-compose-prod/` | pending |
-| S11.4 | Infra & Seeding | `.dockerignore` | Docker ignore rules | `specs/spec-S11.4-dockerignore/` | pending |
-| S11.5 | Infra & Seeding | `data/drugs/medicines.csv` | Drug database CSV (data file) | `specs/spec-S11.5-drug-csv-data/` | pending |
-| S11.6 | Infra & Seeding | `data/glossary/*.json` | Glossary JSON files | `specs/spec-S11.6-glossary-data-files/` | pending |
-| S11.7 | Infra & Seeding | `backend/scripts/seed.py` | make seed command | `specs/spec-S11.7-seed-script/` | pending |
+| S11.1 | Infra & Seeding | `backend/Dockerfile` | Multi-stage Dockerfile | `specs/spec-S11.1-dockerfile/` | done |
+| S11.2 | Infra & Seeding | `docker-compose.yml` | Local dev stack | `specs/spec-S11.2-docker-compose-dev/` | done |
+| S11.3 | Infra & Seeding | `docker-compose.prod.yml` | Prod overrides | `specs/spec-S11.3-docker-compose-prod/` | done |
+| S11.4 | Infra & Seeding | `.dockerignore` | Docker ignore rules | `specs/spec-S11.4-dockerignore/` | done |
+| S11.5 | Infra & Seeding | `data/drugs/medicines.csv` | Drug database CSV (data file) | `specs/spec-S11.5-drug-csv-data/` | done |
+| S11.6 | Infra & Seeding | `data/glossary/*.json` | Glossary JSON files | `specs/spec-S11.6-glossary-data-files/` | done |
+| S11.7 | Infra & Seeding | `backend/scripts/seed.py` | make seed command | `specs/spec-S11.7-seed-script/` | done |
 | S12.1 | AWS Deployment | AWS Console | EC2 t3.micro setup | `specs/spec-S12.1-ec2-setup/` | pending |
 | S12.2 | AWS Deployment | AWS Console | RDS db.t3.micro PostgreSQL | `specs/spec-S12.2-rds-setup/` | pending |
 | S12.3 | AWS Deployment | AWS Console | S3 bucket setup | `specs/spec-S12.3-s3-bucket/` | pending |

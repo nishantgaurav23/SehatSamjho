@@ -123,5 +123,380 @@
     "term": "infection",
     "explanation": "when harmful germs like bacteria or viruses enter your body and make you sick",
     "vernacular": "தொற்றுநோய்"
+  },
+  {
+    "term": "arthritis",
+    "explanation": "pain, swelling, and stiffness in your joints, making movement difficult",
+    "vernacular": "மூட்டுவலி"
+  },
+  {
+    "term": "pneumonia",
+    "explanation": "a serious lung infection that fills the air sacs with fluid, causing breathing difficulty",
+    "vernacular": "நிமோனியா"
+  },
+  {
+    "term": "jaundice",
+    "explanation": "yellowing of skin and eyes caused by too much bilirubin, often due to liver problems",
+    "vernacular": "மஞ்சள் காமாலை"
+  },
+  {
+    "term": "malaria",
+    "explanation": "a disease spread by mosquito bites that causes high fever, chills, and body ache",
+    "vernacular": "மலேரியா"
+  },
+  {
+    "term": "dengue",
+    "explanation": "a mosquito-borne viral illness causing high fever, severe body pain, and low platelets",
+    "vernacular": "டெங்கு"
+  },
+  {
+    "term": "tuberculosis",
+    "explanation": "a bacterial infection mainly in the lungs causing persistent cough, weight loss, and night sweats",
+    "vernacular": "காசநோய்"
+  },
+  {
+    "term": "epilepsy",
+    "explanation": "a brain condition that causes repeated seizures or fits",
+    "vernacular": "வலிப்பு நோய்"
+  },
+  {
+    "term": "migraine",
+    "explanation": "a severe headache, usually on one side, often with nausea and sensitivity to light",
+    "vernacular": "ஒற்றைத் தலைவலி"
+  },
+  {
+    "term": "gastritis",
+    "explanation": "irritation or swelling of the stomach lining, causing pain, nausea, or bloating",
+    "vernacular": "இரைப்பை அழற்சி"
+  },
+  {
+    "term": "kidney disease",
+    "explanation": "when kidneys are damaged and cannot filter blood properly",
+    "vernacular": "சிறுநீரக நோய்"
+  },
+  {
+    "term": "at bedtime",
+    "explanation": "take the medicine just before going to sleep at night",
+    "vernacular": "படுக்கும் நேரத்தில்"
+  },
+  {
+    "term": "with water",
+    "explanation": "swallow the medicine with a full glass of water",
+    "vernacular": "தண்ணீருடன்"
+  },
+  {
+    "term": "on empty stomach",
+    "explanation": "take the medicine when you have not eaten for at least 2 hours",
+    "vernacular": "வெறும் வயிற்றில்"
+  },
+  {
+    "term": "every 8 hours",
+    "explanation": "take the medicine once every 8 hours, spacing doses evenly through the day",
+    "vernacular": "ஒவ்வொரு 8 மணி நேரத்திற்கும்"
+  },
+  {
+    "term": "every 12 hours",
+    "explanation": "take the medicine once every 12 hours, usually morning and night",
+    "vernacular": "ஒவ்வொரு 12 மணி நேரத்திற்கும்"
+  },
+  {
+    "term": "as needed",
+    "explanation": "take the medicine only when you feel symptoms, not on a fixed schedule",
+    "vernacular": "தேவைப்படும்போது"
+  },
+  {
+    "term": "with food",
+    "explanation": "take the medicine during or immediately after a meal to reduce stomach upset",
+    "vernacular": "உணவுடன்"
+  },
+  {
+    "term": "liver",
+    "explanation": "a large organ that cleans your blood, makes bile, and helps digest food",
+    "vernacular": "கல்லீரல்"
+  },
+  {
+    "term": "kidney",
+    "explanation": "one of two organs that filter waste from blood and produce urine",
+    "vernacular": "சிறுநீரகம்"
+  },
+  {
+    "term": "heart",
+    "explanation": "the organ that pumps blood throughout your body",
+    "vernacular": "இதயம்"
+  },
+  {
+    "term": "lung",
+    "explanation": "one of two organs in your chest used for breathing",
+    "vernacular": "நுரையீரல்"
+  },
+  {
+    "term": "stomach",
+    "explanation": "the organ where food is broken down after you eat",
+    "vernacular": "வயிறு"
+  },
+  {
+    "term": "brain",
+    "explanation": "the organ inside your head that controls thinking, movement, and all body functions",
+    "vernacular": "மூளை"
+  },
+  {
+    "term": "skin",
+    "explanation": "the outer covering of your body that protects against germs and injury",
+    "vernacular": "தோல்"
+  },
+  {
+    "term": "bone",
+    "explanation": "the hard tissue that forms the skeleton and supports your body",
+    "vernacular": "எலும்பு"
+  },
+  {
+    "term": "eye",
+    "explanation": "the organ used for seeing",
+    "vernacular": "கண்"
+  },
+  {
+    "term": "ear",
+    "explanation": "the organ used for hearing and balance",
+    "vernacular": "காது"
+  },
+  {
+    "term": "blood sugar",
+    "explanation": "the amount of glucose in your blood — too high or too low can be dangerous",
+    "vernacular": "இரத்த சர்க்கரை"
+  },
+  {
+    "term": "urine test",
+    "explanation": "a lab test of your urine to check for infections, kidney problems, or diabetes",
+    "vernacular": "சிறுநீர் பரிசோதனை"
+  },
+  {
+    "term": "blood test",
+    "explanation": "a lab test where a small sample of blood is checked for health problems",
+    "vernacular": "இரத்தப் பரிசோதனை"
+  },
+  {
+    "term": "platelet count",
+    "explanation": "measures how many platelets are in your blood — platelets help stop bleeding",
+    "vernacular": "இரத்தத்தட்டு எண்ணிக்கை"
+  },
+  {
+    "term": "white blood cells",
+    "explanation": "cells in your blood that fight infection — high or low counts may signal illness",
+    "vernacular": "வெள்ளை இரத்த அணுக்கள்"
+  },
+  {
+    "term": "red blood cells",
+    "explanation": "cells that carry oxygen from your lungs to the rest of your body",
+    "vernacular": "சிவப்பு இரத்த அணுக்கள்"
+  },
+  {
+    "term": "bilirubin",
+    "explanation": "a yellow substance made when red blood cells break down — high levels can cause jaundice",
+    "vernacular": "பிலிரூபின்"
+  },
+  {
+    "term": "x-ray",
+    "explanation": "a quick imaging test that uses radiation to take pictures of bones and organs inside your body",
+    "vernacular": "எக்ஸ்-ரே"
+  },
+  {
+    "term": "ultrasound",
+    "explanation": "a painless scan using sound waves to see organs and tissues inside your body",
+    "vernacular": "அல்ட்ராசவுண்ட்"
+  },
+  {
+    "term": "ecg",
+    "explanation": "a test that records the electrical activity of your heart to check for heart problems",
+    "vernacular": "ஈசிஜி"
+  },
+  {
+    "term": "ct scan",
+    "explanation": "a detailed imaging test that takes cross-section pictures of your body using X-rays",
+    "vernacular": "சிடி ஸ்கேன்"
+  },
+  {
+    "term": "mri",
+    "explanation": "a scan using magnets and radio waves to create detailed pictures of organs and tissues",
+    "vernacular": "எம்ஆர்ஐ"
+  },
+  {
+    "term": "biopsy",
+    "explanation": "removing a small piece of tissue from the body to test for disease like cancer",
+    "vernacular": "திசுப் பரிசோதனை"
+  },
+  {
+    "term": "surgery",
+    "explanation": "a medical procedure where a doctor cuts open the body to fix or remove a problem",
+    "vernacular": "அறுவை சிகிச்சை"
+  },
+  {
+    "term": "dialysis",
+    "explanation": "a treatment that cleans your blood when your kidneys can no longer do it on their own",
+    "vernacular": "டயாலிசிஸ்"
+  },
+  {
+    "term": "nausea",
+    "explanation": "a feeling of wanting to vomit, often caused by illness, medicine, or motion",
+    "vernacular": "குமட்டல்"
+  },
+  {
+    "term": "headache",
+    "explanation": "pain in the head that can be mild or severe, caused by many different things",
+    "vernacular": "தலைவலி"
+  },
+  {
+    "term": "dizziness",
+    "explanation": "feeling lightheaded or unsteady, as if the room is spinning",
+    "vernacular": "தலைச்சுற்றல்"
+  },
+  {
+    "term": "vomiting",
+    "explanation": "when food or liquid comes back up from your stomach through your mouth",
+    "vernacular": "வாந்தி"
+  },
+  {
+    "term": "diarrhea",
+    "explanation": "frequent loose or watery stools, often caused by infection or bad food",
+    "vernacular": "வயிற்றுப்போக்கு"
+  },
+  {
+    "term": "cough",
+    "explanation": "a sudden burst of air from the lungs to clear the throat or airways",
+    "vernacular": "இருமல்"
+  },
+  {
+    "term": "fatigue",
+    "explanation": "extreme tiredness that does not go away with rest",
+    "vernacular": "சோர்வு"
+  },
+  {
+    "term": "chest pain",
+    "explanation": "pain or discomfort in the chest area — can be from heart, lung, or muscle problems",
+    "vernacular": "நெஞ்சு வலி"
+  },
+  {
+    "term": "shortness of breath",
+    "explanation": "difficulty breathing or feeling like you cannot get enough air",
+    "vernacular": "மூச்சுத் திணறல்"
+  },
+  {
+    "term": "body pain",
+    "explanation": "aching or soreness felt throughout the body, common with fever or flu",
+    "vernacular": "உடல் வலி"
+  },
+  {
+    "term": "antacid",
+    "explanation": "a medicine that reduces stomach acid to relieve heartburn and indigestion",
+    "vernacular": "அமில நிவாரணி"
+  },
+  {
+    "term": "antifungal",
+    "explanation": "a medicine that treats infections caused by fungi, such as ringworm or thrush",
+    "vernacular": "பூஞ்சை எதிர்ப்பி"
+  },
+  {
+    "term": "antiviral",
+    "explanation": "a medicine that fights viral infections like flu or herpes",
+    "vernacular": "வைரஸ் எதிர்ப்பி"
+  },
+  {
+    "term": "steroid",
+    "explanation": "a strong medicine that reduces swelling and calms the immune system",
+    "vernacular": "ஸ்டீராய்டு"
+  },
+  {
+    "term": "antiseptic",
+    "explanation": "a substance applied to the skin to kill germs and prevent infection in wounds",
+    "vernacular": "கிருமிநாசினி"
+  },
+  {
+    "term": "laxative",
+    "explanation": "a medicine that helps you have a bowel movement when you are constipated",
+    "vernacular": "மலமிளக்கி"
+  },
+  {
+    "term": "diuretic",
+    "explanation": "a medicine that helps your body remove extra water and salt through urine",
+    "vernacular": "சிறுநீர் பெருக்கி"
+  },
+  {
+    "term": "sedative",
+    "explanation": "a medicine that calms you down or helps you sleep",
+    "vernacular": "மயக்க மருந்து"
+  },
+  {
+    "term": "syrup",
+    "explanation": "liquid medicine taken by mouth, often measured with a spoon or cup",
+    "vernacular": "சிரப்"
+  },
+  {
+    "term": "ointment",
+    "explanation": "a thick cream or paste applied to the skin to treat pain, rashes, or infections",
+    "vernacular": "களிம்பு"
+  },
+  {
+    "term": "drops",
+    "explanation": "liquid medicine given in small drops, usually into the eyes, ears, or nose",
+    "vernacular": "சொட்டு மருந்து"
+  },
+  {
+    "term": "inhaler",
+    "explanation": "a device that lets you breathe medicine directly into your lungs",
+    "vernacular": "உள்ளிழுப்பான்"
+  },
+  {
+    "term": "suppository",
+    "explanation": "a small solid medicine inserted into the rectum where it dissolves and is absorbed",
+    "vernacular": "மலக்குடல் மருந்து"
+  },
+  {
+    "term": "bp",
+    "explanation": "short for blood pressure — the force of blood against your artery walls",
+    "vernacular": "பிபி"
+  },
+  {
+    "term": "od",
+    "explanation": "short for once daily — take the medicine one time per day",
+    "vernacular": "ஓடி"
+  },
+  {
+    "term": "bd",
+    "explanation": "short for twice daily — take the medicine two times per day",
+    "vernacular": "பிடி"
+  },
+  {
+    "term": "sos",
+    "explanation": "take the medicine only when needed, for example when pain occurs",
+    "vernacular": "எஸ்ஓஎஸ்"
+  },
+  {
+    "term": "iv",
+    "explanation": "short for intravenous — medicine given directly into a vein through a needle",
+    "vernacular": "ஐவி"
+  },
+  {
+    "term": "diagnosis",
+    "explanation": "the identification of a disease or condition based on symptoms and test results",
+    "vernacular": "நோய் கண்டறிதல்"
+  },
+  {
+    "term": "prescription",
+    "explanation": "a written order from a doctor telling the pharmacy which medicine to give you",
+    "vernacular": "மருந்துச் சீட்டு"
+  },
+  {
+    "term": "dosage",
+    "explanation": "the amount of medicine you should take and how often",
+    "vernacular": "மருந்தின் அளவு"
+  },
+  {
+    "term": "side effect",
+    "explanation": "an unwanted reaction caused by a medicine, such as nausea or drowsiness",
+    "vernacular": "பக்க விளைவு"
+  },
+  {
+    "term": "follow up",
+    "explanation": "a return visit to the doctor to check your progress after treatment",
+    "vernacular": "தொடர் சிகிச்சை"
   }
 ]
