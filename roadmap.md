@@ -205,11 +205,11 @@ Calls Bhashini TTS to generate audio from the translated text. Uploads to S3. Re
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S9.1 | `specs/spec-S9.1-bhashini-client/` | S1.3 | `backend/app/services/tts.py` | Bhashini TTS API client | `_call_bhashini()`: POST to Bhashini pipeline inference endpoint. Payload: `{pipelineTasks: [{taskType: "tts", config: {language: {sourceLanguage: lang_code}, gender: "female"}}], inputData: {input: [{source: text}]}}`. Returns audio bytes (base64 decoded) | pending |
-| S9.2 | `specs/spec-S9.2-text-to-speech/` | S9.1 | `backend/app/services/tts.py` | `text_to_speech()` | Call `_call_bhashini()` with translated_text + language_code. Validate audio bytes (non-empty, reasonable size). Return audio bytes. Tenacity retry on Bhashini API errors | pending |
-| S9.3 | `specs/spec-S9.3-s3-upload/` | S1.3, S9.2 | `backend/app/services/tts.py` | `_upload_to_s3()` | `boto3.client("s3").put_object()` wrapped in `asyncio.to_thread`. Key: `audio/{uuid4()}.ogg`. ContentType: `audio/ogg`. Set S3 object expiry metadata. Return presigned URL with 3600s expiry | pending |
-| S9.4 | `specs/spec-S9.4-audio-delivery/` | S9.2, S9.3 | `backend/app/services/tts.py` | `generate_and_deliver_audio()` | Orchestrate: `text_to_speech()` → `_upload_to_s3()` → return presigned URL. Public API for Phase 10 | pending |
-| S9.5 | `specs/spec-S9.5-graceful-degradation/` | S9.4 | `backend/app/services/tts.py` | Graceful degradation | If Bhashini fails after retries or S3 upload fails: log warning, return `None`. Caller (Phase 10) handles `None` by sending text-only reply with note: "Audio not available, please read the text below." Never block the text response | pending |
+| S9.1 | `specs/spec-S9.1-bhashini-client/` | S1.3 | `backend/app/services/tts.py` | Bhashini TTS API client | `_call_bhashini()`: POST to Bhashini pipeline inference endpoint. Payload: `{pipelineTasks: [{taskType: "tts", config: {language: {sourceLanguage: lang_code}, gender: "female"}}], inputData: {input: [{source: text}]}}`. Returns audio bytes (base64 decoded) | done |
+| S9.2 | `specs/spec-S9.2-text-to-speech/` | S9.1 | `backend/app/services/tts.py` | `text_to_speech()` | Call `_call_bhashini()` with translated_text + language_code. Validate audio bytes (non-empty, reasonable size). Return audio bytes. Tenacity retry on Bhashini API errors | done |
+| S9.3 | `specs/spec-S9.3-s3-upload/` | S1.3, S9.2 | `backend/app/services/tts.py` | `_upload_to_s3()` | `boto3.client("s3").put_object()` wrapped in `asyncio.to_thread`. Key: `audio/{uuid4()}.ogg`. ContentType: `audio/ogg`. Set S3 object expiry metadata. Return presigned URL with 3600s expiry | done |
+| S9.4 | `specs/spec-S9.4-audio-delivery/` | S9.2, S9.3 | `backend/app/services/tts.py` | `generate_and_deliver_audio()` | Orchestrate: `text_to_speech()` → `_upload_to_s3()` → return presigned URL. Public API for Phase 10 | done |
+| S9.5 | `specs/spec-S9.5-graceful-degradation/` | S9.4 | `backend/app/services/tts.py` | Graceful degradation | If Bhashini fails after retries or S3 upload fails: log warning, return `None`. Caller (Phase 10) handles `None` by sending text-only reply with note: "Audio not available, please read the text below." Never block the text response | done |
 
 ---
 
@@ -317,11 +317,11 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S8.3 | Drug Lookup | `backend/app/services/drug_lookup.py` | lookup_drug() | `specs/spec-S8.3-lookup-drug/` | done |
 | S8.4 | Drug Lookup | `backend/app/services/drug_lookup.py` | enrich_prescription() | `specs/spec-S8.4-enrich-prescription/` | done |
 | S8.5 | Drug Lookup | `backend/app/services/drug_lookup.py` | IndianMedicineDB API client | `specs/spec-S8.5-indian-medicine-api/` | done |
-| S9.1 | TTS & Audio | `backend/app/services/tts.py` | Bhashini TTS API client | `specs/spec-S9.1-bhashini-client/` | pending |
-| S9.2 | TTS & Audio | `backend/app/services/tts.py` | text_to_speech() | `specs/spec-S9.2-text-to-speech/` | pending |
-| S9.3 | TTS & Audio | `backend/app/services/tts.py` | _upload_to_s3() | `specs/spec-S9.3-s3-upload/` | pending |
-| S9.4 | TTS & Audio | `backend/app/services/tts.py` | generate_and_deliver_audio() | `specs/spec-S9.4-audio-delivery/` | pending |
-| S9.5 | TTS & Audio | `backend/app/services/tts.py` | Graceful degradation | `specs/spec-S9.5-graceful-degradation/` | pending |
+| S9.1 | TTS & Audio | `backend/app/services/tts.py` | Bhashini TTS API client | `specs/spec-S9.1-bhashini-client/` | done |
+| S9.2 | TTS & Audio | `backend/app/services/tts.py` | text_to_speech() | `specs/spec-S9.2-text-to-speech/` | done |
+| S9.3 | TTS & Audio | `backend/app/services/tts.py` | _upload_to_s3() | `specs/spec-S9.3-s3-upload/` | done |
+| S9.4 | TTS & Audio | `backend/app/services/tts.py` | generate_and_deliver_audio() | `specs/spec-S9.4-audio-delivery/` | done |
+| S9.5 | TTS & Audio | `backend/app/services/tts.py` | Graceful degradation | `specs/spec-S9.5-graceful-degradation/` | done |
 | S10.1 | Pipeline Integration | `backend/app/api/webhooks.py` | Full pipeline wiring | `specs/spec-S10.1-pipeline-wiring/` | pending |
 | S10.2 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_reply() | `specs/spec-S10.2-format-reply/` | pending |
 | S10.3 | Pipeline Integration | `backend/app/api/webhooks.py` | _format_audio_text() | `specs/spec-S10.3-format-audio-text/` | pending |
