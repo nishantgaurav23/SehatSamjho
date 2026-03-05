@@ -103,26 +103,21 @@ class TestDocumentation:
 
 # ---------- Test 11-12: Data files (FR-6) ----------
 class TestDataFiles:
-    def test_excludes_drug_csv_data(self, dockerignore_lines: list[str]):
-        """T11: Drug CSV data files are excluded."""
-        assert any(
-            "data/drugs" in line or ("data" in line and "csv" in line.lower())
-            for line in dockerignore_lines
-        ), "Drug CSV data must be excluded in .dockerignore"
-
-    def test_does_not_exclude_glossary(self, dockerignore_content: str):
-        """T12: data/glossary/ is NOT excluded (or explicitly included via !)."""
-        lines = [
-            line.strip()
-            for line in dockerignore_content.splitlines()
-            if line.strip() and not line.strip().startswith("#")
-        ]
-        # Either glossary is explicitly included with ! override, or not mentioned at all
-        has_negation = any("!data/glossary" in line for line in lines)
-        has_exclusion = any(line == "data/glossary" or line == "data/glossary/" for line in lines)
-        assert has_negation or not has_exclusion, (
-            "data/glossary/ must NOT be excluded (or must have ! override)"
+    def test_excludes_prescription_images(self, dockerignore_lines: list[str]):
+        """T11: Sample prescription images are excluded (not needed in production)."""
+        assert any("data/prescriptions" in line for line in dockerignore_lines), (
+            "data/prescriptions/ must be excluded in .dockerignore"
         )
+
+    def test_does_not_exclude_data_needed_for_seeding(self, dockerignore_lines: list[str]):
+        """T12: data/glossary/ and data/drugs/ are NOT excluded (needed for seed script)."""
+        for data_dir in ["data/glossary", "data/drugs"]:
+            excluded = any(
+                line == data_dir or line == f"{data_dir}/" for line in dockerignore_lines
+            )
+            assert not excluded, (
+                f"{data_dir}/ must NOT be excluded — seed script needs it in the container"
+            )
 
 
 # ---------- Test 13-15: Test/dev artifacts (FR-7) ----------
