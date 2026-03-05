@@ -44,7 +44,6 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
           envs: OPENAI_API_KEY,ANTHROPIC_API_KEY,TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN,TWILIO_WHATSAPP_FROM,BHASHINI_API_KEY,BHASHINI_USER_ID,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,S3_BUCKET,DATABASE_URL,REDIS_URL
           script: |
             set -euo pipefail
