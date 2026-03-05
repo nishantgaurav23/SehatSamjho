@@ -167,9 +167,9 @@ class TestDataQuality:
         seen: dict[str, int] = {}
         for i, row in enumerate(rows, start=2):
             key = row["brand_name"].strip().lower()
-            assert (
-                key not in seen
-            ), f"Duplicate brand_name '{row['brand_name']}' at rows {seen[key]} and {i}"
+            assert key not in seen, (
+                f"Duplicate brand_name '{row['brand_name']}' at rows {seen[key]} and {i}"
+            )
             seen[key] = i
 
     def test_csv_parseable_by_dictreader(self):
@@ -181,9 +181,9 @@ class TestDataQuality:
     def test_csv_covers_common_categories(self):
         rows = _load_rows()
         categories = {row["therapeutic_class"].strip().lower() for row in rows}
-        assert (
-            len(categories) >= MIN_CATEGORIES
-        ), f"Expected >= {MIN_CATEGORIES} distinct therapeutic classes, got {len(categories)}"
+        assert len(categories) >= MIN_CATEGORIES, (
+            f"Expected >= {MIN_CATEGORIES} distinct therapeutic classes, got {len(categories)}"
+        )
 
     def test_csv_brand_name_no_duplicates_with_generic(self):
         """brand_name and generic_name should be different fields."""

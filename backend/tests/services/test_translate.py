@@ -44,10 +44,7 @@ SAMPLE_RESPONSE_TEXT = (
 )
 
 RESPONSE_NO_DISCLAIMER = (
-    "## Your Prescription Summary\n"
-    "\n"
-    "### Metformin 500mg\n"
-    "Take 500mg twice a day, after meals.\n"
+    "## Your Prescription Summary\n\n### Metformin 500mg\nTake 500mg twice a day, after meals.\n"
 )
 
 RESPONSE_NO_MEDICINES = (

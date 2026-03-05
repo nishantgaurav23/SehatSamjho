@@ -106,14 +106,14 @@ class TestEnvironment:
         env = app.get("environment", {})
         if env:
             if isinstance(env, dict):
-                assert (
-                    "DATABASE_URL" not in env
-                ), "DATABASE_URL must NOT be hardcoded in environment"
+                assert "DATABASE_URL" not in env, (
+                    "DATABASE_URL must NOT be hardcoded in environment"
+                )
             elif isinstance(env, list):
                 for item in env:
-                    assert not str(item).startswith(
-                        "DATABASE_URL="
-                    ), "DATABASE_URL must NOT be hardcoded"
+                    assert not str(item).startswith("DATABASE_URL="), (
+                        "DATABASE_URL must NOT be hardcoded"
+                    )
 
     def test_prod_compose_no_hardcoded_redis_url(self, prod_data):
         app = prod_data["services"]["app"]
@@ -157,9 +157,9 @@ class TestNoProdDevArtifacts:
         assert "depends_on" not in app, "No depends_on — no local services to depend on in prod"
 
     def test_prod_compose_no_volumes_section(self, prod_data):
-        assert (
-            "volumes" not in prod_data
-        ), "No top-level 'volumes' key — no named volumes needed in prod"
+        assert "volumes" not in prod_data, (
+            "No top-level 'volumes' key — no named volumes needed in prod"
+        )
 
 
 # ── Comparison with dev ──────────────────────────────────────────────────────

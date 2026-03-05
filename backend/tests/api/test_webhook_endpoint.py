@@ -94,9 +94,9 @@ def test_webhook_endpoint_exists():
         methods = getattr(route, "methods", set())
         route_paths.append((path, methods))
 
-    assert any(
-        path == "/whatsapp" and "POST" in methods for path, methods in route_paths
-    ), f"Expected POST /whatsapp route, found: {route_paths}"
+    assert any(path == "/whatsapp" and "POST" in methods for path, methods in route_paths), (
+        f"Expected POST /whatsapp route, found: {route_paths}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -126,9 +126,9 @@ def test_webhook_requires_hmac_dependency():
         if getattr(route, "path", "") == "/whatsapp" and "POST" in getattr(route, "methods", set()):
             deps = getattr(route, "dependencies", [])
             dep_callables = [d.dependency for d in deps]
-            assert (
-                validate_twilio_signature in dep_callables
-            ), f"validate_twilio_signature not in route dependencies: {dep_callables}"
+            assert validate_twilio_signature in dep_callables, (
+                f"validate_twilio_signature not in route dependencies: {dep_callables}"
+            )
             return
     pytest.fail("POST /whatsapp route not found")
 
@@ -297,9 +297,9 @@ async def test_webhook_generates_request_id(mock_send, client):
             r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
             re.IGNORECASE,
         )
-        assert uuid4_pattern.search(
-            log_text
-        ), f"No UUID4 request_id found in log output:\n{log_text}"
+        assert uuid4_pattern.search(log_text), (
+            f"No UUID4 request_id found in log output:\n{log_text}"
+        )
     finally:
         logger.remove(handler_id)
 

@@ -30,16 +30,16 @@ class TestSupportedLanguages:
     def test_supported_languages_values_have_required_keys(self):
         required = {"name", "display_name", "bhashini_code"}
         for code, value in SUPPORTED_LANGUAGES.items():
-            assert required.issubset(
-                value.keys()
-            ), f"Language '{code}' missing keys: {required - set(value.keys())}"
+            assert required.issubset(value.keys()), (
+                f"Language '{code}' missing keys: {required - set(value.keys())}"
+            )
 
     def test_supported_languages_no_empty_values(self):
         for code, value in SUPPORTED_LANGUAGES.items():
             for field in ("name", "display_name", "bhashini_code"):
-                assert isinstance(
-                    value[field], str
-                ), f"Language '{code}' field '{field}' is not a string"
+                assert isinstance(value[field], str), (
+                    f"Language '{code}' field '{field}' is not a string"
+                )
                 assert len(value[field]) > 0, f"Language '{code}' field '{field}' is empty"
 
     def test_supported_languages_contains_hindi(self):
@@ -57,18 +57,18 @@ class TestSupportedLanguages:
 
     def test_bhashini_codes_match_keys(self):
         for code, value in SUPPORTED_LANGUAGES.items():
-            assert (
-                value["bhashini_code"] == code
-            ), f"Language '{code}': bhashini_code '{value['bhashini_code']}' != key '{code}'"
+            assert value["bhashini_code"] == code, (
+                f"Language '{code}': bhashini_code '{value['bhashini_code']}' != key '{code}'"
+            )
 
     def test_display_names_are_non_ascii(self):
         # All display names should contain non-ASCII characters (native script)
         for code, value in SUPPORTED_LANGUAGES.items():
             display = value["display_name"]
             has_non_ascii = any(ord(c) > 127 for c in display)
-            assert (
-                has_non_ascii
-            ), f"Language '{code}' display_name '{display}' has no non-ASCII characters"
+            assert has_non_ascii, (
+                f"Language '{code}' display_name '{display}' has no non-ASCII characters"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -84,9 +84,9 @@ class TestTopLanguages:
 
     def test_top_languages_all_in_supported(self):
         for code in TOP_LANGUAGES:
-            assert (
-                code in SUPPORTED_LANGUAGES
-            ), f"TOP_LANGUAGES code '{code}' not in SUPPORTED_LANGUAGES"
+            assert code in SUPPORTED_LANGUAGES, (
+                f"TOP_LANGUAGES code '{code}' not in SUPPORTED_LANGUAGES"
+            )
 
     def test_top_languages_order(self):
         assert TOP_LANGUAGES[0] == "hi", "First language should be Hindi ('hi')"

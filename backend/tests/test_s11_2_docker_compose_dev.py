@@ -199,9 +199,9 @@ class TestAppService:
         vol_strs = [
             str(v) if isinstance(v, str) else f"{v['source']}:{v['target']}" for v in volumes
         ]
-        assert any(
-            "./backend" in v and "/app/backend" in v for v in vol_strs
-        ), f"Expected bind mount ./backend:/app/backend, got {vol_strs}"
+        assert any("./backend" in v and "/app/backend" in v for v in vol_strs), (
+            f"Expected bind mount ./backend:/app/backend, got {vol_strs}"
+        )
 
     def test_app_service_bind_mount_data(self, compose):
         app = compose["services"]["app"]
@@ -209,9 +209,9 @@ class TestAppService:
         vol_strs = [
             str(v) if isinstance(v, str) else f"{v['source']}:{v['target']}" for v in volumes
         ]
-        assert any(
-            "./data" in v and "/app/data" in v for v in vol_strs
-        ), f"Expected bind mount ./data:/app/data, got {vol_strs}"
+        assert any("./data" in v and "/app/data" in v for v in vol_strs), (
+            f"Expected bind mount ./data:/app/data, got {vol_strs}"
+        )
 
 
 # ── FR-5: Named volumes ──────────────────────────────────────────────────────

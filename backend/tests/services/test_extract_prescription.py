@@ -379,9 +379,9 @@ class TestExtractPrescriptionLogging:
             method = getattr(mock_logger, method_name)
             for call in method.call_args_list:
                 call_str = str(call)
-                assert (
-                    IMAGE_URL not in call_str
-                ), f"Image URL found in logger.{method_name} call: {call_str}"
+                assert IMAGE_URL not in call_str, (
+                    f"Image URL found in logger.{method_name} call: {call_str}"
+                )
 
 
 # ===================================================================

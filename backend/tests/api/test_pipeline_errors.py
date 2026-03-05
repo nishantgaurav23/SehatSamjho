@@ -476,6 +476,6 @@ class TestErrorCodeFromClassname:
                 await _run_pipeline(payload, session, f"req-{expected_name}", mock_redis)
 
             call_kwargs = mock_log.call_args.kwargs
-            assert (
-                call_kwargs.get("error_code") == expected_name
-            ), f"Expected error_code={expected_name}, got {call_kwargs.get('error_code')}"
+            assert call_kwargs.get("error_code") == expected_name, (
+                f"Expected error_code={expected_name}, got {call_kwargs.get('error_code')}"
+            )
