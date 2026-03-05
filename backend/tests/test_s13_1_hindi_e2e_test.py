@@ -566,8 +566,7 @@ class TestHindiPipelineOutput:
         assert isinstance(audio_text, str)
         assert len(audio_text) > 0
         emoji_re = re.compile(
-            "[\U0001f600-\U0001f64f\U0001f300-\U0001f5ff"
-            "\U0001f680-\U0001f6ff\U0001f1e0-\U0001f1ff]"
+            "[\U0001f600-\U0001f64f\U0001f300-\U0001f5ff\U0001f680-\U0001f6ff\U0001f1e0-\U0001f1ff]"
         )
         assert not emoji_re.search(audio_text)
         assert "**" not in audio_text

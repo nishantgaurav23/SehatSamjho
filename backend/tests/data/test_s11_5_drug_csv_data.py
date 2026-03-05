@@ -125,9 +125,9 @@ class TestBrandNameUniqueness:
         seen: dict[str, int] = {}
         for i, row in enumerate(rows, start=2):
             key = row["brand_name"].strip().lower()
-            assert (
-                key not in seen
-            ), f"Duplicate brand_name '{row['brand_name']}' at rows {seen[key]} and {i}"
+            assert key not in seen, (
+                f"Duplicate brand_name '{row['brand_name']}' at rows {seen[key]} and {i}"
+            )
             seen[key] = i
 
 
@@ -158,9 +158,9 @@ class TestPurposeMaxLength:
         rows = _load_rows()
         for i, row in enumerate(rows, start=2):
             length = len(row["purpose_en"])
-            assert (
-                length <= PURPOSE_MAX_LEN
-            ), f"Row {i}: purpose_en is {length} chars, max {PURPOSE_MAX_LEN}"
+            assert length <= PURPOSE_MAX_LEN, (
+                f"Row {i}: purpose_en is {length} chars, max {PURPOSE_MAX_LEN}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -174,9 +174,9 @@ class TestOriginalEntriesPreserved:
         rows = _load_rows()
         brand_names = {row["brand_name"].strip() for row in rows}
         for expected in ORIGINAL_S81_BRANDS:
-            assert (
-                expected in brand_names
-            ), f"Original S8.1 entry '{expected}' not found in expanded CSV"
+            assert expected in brand_names, (
+                f"Original S8.1 entry '{expected}' not found in expanded CSV"
+            )
 
 
 # ---------------------------------------------------------------------------

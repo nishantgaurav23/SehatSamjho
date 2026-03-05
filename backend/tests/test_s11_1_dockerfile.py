@@ -85,9 +85,9 @@ class TestBaseStage:
     def test_base_python_311_slim(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
         base = stages["base"]
-        assert re.search(
-            r"FROM\s+python:3\.11-slim", base, re.IGNORECASE
-        ), "Base stage must use python:3.11-slim"
+        assert re.search(r"FROM\s+python:3\.11-slim", base, re.IGNORECASE), (
+            "Base stage must use python:3.11-slim"
+        )
 
     def test_base_installs_uv(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
@@ -104,23 +104,23 @@ class TestBaseStage:
     def test_base_uv_pip_install_system(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
         base = stages["base"]
-        assert re.search(
-            r"uv\s+pip\s+install\s+--system", base
-        ), "Base stage must run 'uv pip install --system'"
+        assert re.search(r"uv\s+pip\s+install\s+--system", base), (
+            "Base stage must run 'uv pip install --system'"
+        )
 
     def test_base_pythonunbuffered(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
         base = stages["base"]
-        assert re.search(
-            r"PYTHONUNBUFFERED\s*=\s*1", base
-        ), "Base stage must set PYTHONUNBUFFERED=1"
+        assert re.search(r"PYTHONUNBUFFERED\s*=\s*1", base), (
+            "Base stage must set PYTHONUNBUFFERED=1"
+        )
 
     def test_base_pythondontwritebytecode(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
         base = stages["base"]
-        assert re.search(
-            r"PYTHONDONTWRITEBYTECODE\s*=\s*1", base
-        ), "Base stage must set PYTHONDONTWRITEBYTECODE=1"
+        assert re.search(r"PYTHONDONTWRITEBYTECODE\s*=\s*1", base), (
+            "Base stage must set PYTHONDONTWRITEBYTECODE=1"
+        )
 
     def test_base_workdir(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
@@ -131,17 +131,17 @@ class TestBaseStage:
 # ===== Test 11: Dev stage extends base =====
 class TestDevStage:
     def test_dev_extends_base(self, dockerfile_content: str):
-        assert re.search(
-            r"FROM\s+base\s+AS\s+dev", dockerfile_content, re.IGNORECASE
-        ), "Dev stage must extend base"
+        assert re.search(r"FROM\s+base\s+AS\s+dev", dockerfile_content, re.IGNORECASE), (
+            "Dev stage must extend base"
+        )
 
     def test_dev_installs_dev_extras(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
         dev = stages["dev"]
         # Should install dev extras via --extra dev or similar
-        assert (
-            re.search(r"--extra\s+dev", dev) or "dev" in dev.lower()
-        ), "Dev stage must install dev extras"
+        assert re.search(r"--extra\s+dev", dev) or "dev" in dev.lower(), (
+            "Dev stage must install dev extras"
+        )
 
     def test_dev_copies_backend(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)
@@ -157,9 +157,9 @@ class TestDevStage:
 # ===== Test 15: Prod stage extends base =====
 class TestProdStage:
     def test_prod_extends_base(self, dockerfile_content: str):
-        assert re.search(
-            r"FROM\s+base\s+AS\s+prod", dockerfile_content, re.IGNORECASE
-        ), "Prod stage must extend base"
+        assert re.search(r"FROM\s+base\s+AS\s+prod", dockerfile_content, re.IGNORECASE), (
+            "Prod stage must extend base"
+        )
 
     def test_prod_copies_backend(self, dockerfile_content: str):
         stages = _split_stages(dockerfile_content)

@@ -66,9 +66,9 @@ def test_makefile_exists():
 def test_makefile_has_all_targets(makefile_text: str):
     for target in EXPECTED_TARGETS:
         pattern = rf"^{re.escape(target)}\s*:"
-        assert re.search(
-            pattern, makefile_text, re.MULTILINE
-        ), f"Target '{target}' not found in Makefile"
+        assert re.search(pattern, makefile_text, re.MULTILINE), (
+            f"Target '{target}' not found in Makefile"
+        )
 
 
 # ── Test 3: .PHONY declarations ─────────────────────────────────────────────
@@ -86,9 +86,9 @@ def test_makefile_phony_declarations(makefile_text: str):
 def test_makefile_venv_target_uses_python311(makefile_text: str):
     block = _get_target_block(makefile_text, "venv")
     assert block, "venv target block not found"
-    assert (
-        "python3.11" in block or "python3" in block
-    ), "venv target should reference python3.11 (or python3)"
+    assert "python3.11" in block or "python3" in block, (
+        "venv target should reference python3.11 (or python3)"
+    )
     assert "venv" in block.lower(), "venv target should create a virtual environment"
 
 
@@ -143,9 +143,9 @@ def test_makefile_local_migrate_uses_alembic(makefile_text: str):
 def test_makefile_dev_target_uses_docker_compose(makefile_text: str):
     block = _get_target_block(makefile_text, "dev")
     assert block, "dev target block not found"
-    assert (
-        "docker compose up --build" in block or "docker-compose up --build" in block
-    ), "dev target should run 'docker compose up --build'"
+    assert "docker compose up --build" in block or "docker-compose up --build" in block, (
+        "dev target should run 'docker compose up --build'"
+    )
 
 
 # ── Test 12: test target uses docker ─────────────────────────────────────────

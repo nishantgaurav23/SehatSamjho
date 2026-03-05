@@ -48,9 +48,9 @@ class TestPythonEnvironment:
 
     def test_excludes_pycache(self, dockerignore_lines: list[str]):
         """T5: __pycache__ directories are excluded."""
-        assert any(
-            "__pycache__" in line for line in dockerignore_lines
-        ), "__pycache__ must be in .dockerignore"
+        assert any("__pycache__" in line for line in dockerignore_lines), (
+            "__pycache__ must be in .dockerignore"
+        )
 
     def test_excludes_pyc(self, dockerignore_lines: list[str]):
         """T6: *.pyc files are excluded."""
@@ -75,18 +75,18 @@ class TestSecrets:
 class TestVCS:
     def test_excludes_git(self, dockerignore_lines: list[str]):
         """T7: .git directory is excluded."""
-        assert any(
-            line == ".git" or line == ".git/" for line in dockerignore_lines
-        ), ".git must be in .dockerignore"
+        assert any(line == ".git" or line == ".git/" for line in dockerignore_lines), (
+            ".git must be in .dockerignore"
+        )
 
 
 # ---------- Test 8-10: Documentation directories (FR-5) ----------
 class TestDocumentation:
     def test_excludes_notebooks(self, dockerignore_lines: list[str]):
         """T8: notebooks/ directory is excluded."""
-        assert any(
-            "notebooks" in line for line in dockerignore_lines
-        ), "notebooks/ must be in .dockerignore"
+        assert any("notebooks" in line for line in dockerignore_lines), (
+            "notebooks/ must be in .dockerignore"
+        )
 
     def test_excludes_docs(self, dockerignore_lines: list[str]):
         """T9: docs/ directory is excluded."""
@@ -96,9 +96,9 @@ class TestDocumentation:
 
     def test_excludes_specs(self, dockerignore_lines: list[str]):
         """T10: specs/ directory is excluded."""
-        assert any(
-            "specs" in line for line in dockerignore_lines
-        ), "specs/ must be in .dockerignore"
+        assert any("specs" in line for line in dockerignore_lines), (
+            "specs/ must be in .dockerignore"
+        )
 
 
 # ---------- Test 11-12: Data files (FR-6) ----------
@@ -120,45 +120,45 @@ class TestDataFiles:
         # Either glossary is explicitly included with ! override, or not mentioned at all
         has_negation = any("!data/glossary" in line for line in lines)
         has_exclusion = any(line == "data/glossary" or line == "data/glossary/" for line in lines)
-        assert (
-            has_negation or not has_exclusion
-        ), "data/glossary/ must NOT be excluded (or must have ! override)"
+        assert has_negation or not has_exclusion, (
+            "data/glossary/ must NOT be excluded (or must have ! override)"
+        )
 
 
 # ---------- Test 13-15: Test/dev artifacts (FR-7) ----------
 class TestDevArtifacts:
     def test_excludes_tests(self, dockerignore_lines: list[str]):
         """T13: backend/tests/ directory is excluded."""
-        assert any(
-            "tests" in line for line in dockerignore_lines
-        ), "Test directory must be in .dockerignore"
+        assert any("tests" in line for line in dockerignore_lines), (
+            "Test directory must be in .dockerignore"
+        )
 
     def test_excludes_pytest_cache(self, dockerignore_lines: list[str]):
         """T14: .pytest_cache is excluded."""
-        assert any(
-            ".pytest_cache" in line for line in dockerignore_lines
-        ), ".pytest_cache must be in .dockerignore"
+        assert any(".pytest_cache" in line for line in dockerignore_lines), (
+            ".pytest_cache must be in .dockerignore"
+        )
 
     def test_excludes_ruff_cache(self, dockerignore_lines: list[str]):
         """T15: .ruff_cache is excluded."""
-        assert any(
-            ".ruff_cache" in line for line in dockerignore_lines
-        ), ".ruff_cache must be in .dockerignore"
+        assert any(".ruff_cache" in line for line in dockerignore_lines), (
+            ".ruff_cache must be in .dockerignore"
+        )
 
 
 # ---------- Test 16-17: Docker config files (FR-8) ----------
 class TestDockerConfig:
     def test_excludes_dockerfile(self, dockerignore_lines: list[str]):
         """T16: Dockerfile is excluded."""
-        assert any(
-            line == "Dockerfile" or line == "Dockerfile*" for line in dockerignore_lines
-        ), "Dockerfile must be in .dockerignore"
+        assert any(line == "Dockerfile" or line == "Dockerfile*" for line in dockerignore_lines), (
+            "Dockerfile must be in .dockerignore"
+        )
 
     def test_excludes_docker_compose(self, dockerignore_lines: list[str]):
         """T17: docker-compose*.yml is excluded."""
-        assert any(
-            "docker-compose" in line for line in dockerignore_lines
-        ), "docker-compose*.yml must be in .dockerignore"
+        assert any("docker-compose" in line for line in dockerignore_lines), (
+            "docker-compose*.yml must be in .dockerignore"
+        )
 
 
 # ---------- Test 18-20: Syntax and quality ----------

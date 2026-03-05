@@ -256,14 +256,13 @@ class TestSeedLogging:
             # and format string with {:.2f}s
             summary_calls = [c for c in mock_logger.info.call_args_list if "2f}s" in str(c)]
             assert len(summary_calls) >= 1, (
-                f"Expected summary log with elapsed time format: "
-                f"{mock_logger.info.call_args_list}"
+                f"Expected summary log with elapsed time format: {mock_logger.info.call_args_list}"
             )
             # The last positional arg should be a float (elapsed time)
             last_arg = summary_calls[0][0][-1]
-            assert isinstance(
-                last_arg, float
-            ), f"Elapsed time should be float, got {type(last_arg)}"
+            assert isinstance(last_arg, float), (
+                f"Elapsed time should be float, got {type(last_arg)}"
+            )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -509,9 +508,9 @@ class TestSeedMakefileTargets:
     def test_makefile_local_seed_target(self):
         """Test 19: Makefile has a local-seed target."""
         content = MAKEFILE.read_text()
-        assert re.search(
-            r"^local-seed:", content, re.MULTILINE
-        ), "Makefile must have a 'local-seed:' target"
+        assert re.search(r"^local-seed:", content, re.MULTILINE), (
+            "Makefile must have a 'local-seed:' target"
+        )
 
     def test_makefile_seed_target_compatible(self):
         """Test 20: Existing seed target uses python -m scripts.seed."""

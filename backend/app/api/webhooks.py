@@ -58,8 +58,7 @@ TWIML_MEDIA_TYPE = "text/xml"
 
 # Patient-friendly error message (never expose internals)
 ERROR_MESSAGE = (
-    "We're sorry, something went wrong while processing your message. "
-    "Please try again in a moment."
+    "We're sorry, something went wrong while processing your message. Please try again in a moment."
 )
 
 # ---------------------------------------------------------------------------
@@ -76,11 +75,11 @@ IMAGE_NOT_READABLE_MESSAGE = (
 )
 
 TRANSLATION_ERROR_MESSAGE = (
-    "We had trouble translating your prescription. " "Please try sending the image again."
+    "We had trouble translating your prescription. Please try sending the image again."
 )
 
 EXTRACTION_ERROR_MESSAGE = (
-    "We had trouble reading your prescription. " "Please try sending a clearer photo."
+    "We had trouble reading your prescription. Please try sending a clearer photo."
 )
 
 GENERIC_PIPELINE_ERROR_MESSAGE = (
@@ -103,8 +102,7 @@ WELCOME_MESSAGE = (
 # S4.4 Language state constants
 # ---------------------------------------------------------------------------
 IMAGE_PROMPT_MESSAGE = (
-    "Great choice! Now please send a photo of your prescription "
-    "and we will translate it for you."
+    "Great choice! Now please send a photo of your prescription and we will translate it for you."
 )
 
 LANGUAGE_NOT_RECOGNISED_MESSAGE = (

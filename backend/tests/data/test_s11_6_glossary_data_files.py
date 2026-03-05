@@ -127,9 +127,9 @@ class TestAtLeast100Entries:
     def test_at_least_100_entries(self, lang: str):
         """FR-1: Each file has >= 100 entries."""
         data = _load_glossary(lang)
-        assert (
-            len(data) >= MIN_ENTRIES
-        ), f"{lang}.json has {len(data)} entries, need >= {MIN_ENTRIES}"
+        assert len(data) >= MIN_ENTRIES, (
+            f"{lang}.json has {len(data)} entries, need >= {MIN_ENTRIES}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -178,9 +178,9 @@ class TestNoDuplicateTerms:
         seen: dict[str, int] = {}
         for i, entry in enumerate(data):
             key = entry["term"].lower()
-            assert (
-                key not in seen
-            ), f"Duplicate term '{entry['term']}' in {lang}.json at entries {seen[key]} and {i}"
+            assert key not in seen, (
+                f"Duplicate term '{entry['term']}' in {lang}.json at entries {seen[key]} and {i}"
+            )
             seen[key] = i
 
 
@@ -215,9 +215,9 @@ class TestTermsAllLowercase:
         """FR-6: All terms equal their lowercase form."""
         data = _load_glossary(lang)
         for i, entry in enumerate(data):
-            assert (
-                entry["term"] == entry["term"].lower()
-            ), f"{lang}.json entry #{i} term not lowercase: '{entry['term']}'"
+            assert entry["term"] == entry["term"].lower(), (
+                f"{lang}.json entry #{i} term not lowercase: '{entry['term']}'"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -232,9 +232,9 @@ class TestVernacularNonAscii:
         data = _load_glossary(lang)
         for i, entry in enumerate(data):
             v = entry["vernacular"]
-            assert any(
-                ord(c) > 127 for c in v
-            ), f"{lang}.json entry #{i} vernacular is pure ASCII: '{v}'"
+            assert any(ord(c) > 127 for c in v), (
+                f"{lang}.json entry #{i} vernacular is pure ASCII: '{v}'"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -256,9 +256,9 @@ class TestVernacularDiffersPerLanguage:
             vernaculars[lang] = match[0]["vernacular"]
 
         unique_vernaculars = set(vernaculars.values())
-        assert len(unique_vernaculars) == len(
-            EXPECTED_LANG_CODES
-        ), f"Vernacular should differ per language: {vernaculars}"
+        assert len(unique_vernaculars) == len(EXPECTED_LANG_CODES), (
+            f"Vernacular should differ per language: {vernaculars}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -331,9 +331,9 @@ class TestMedicalCategoryCoverage:
             if any(t in terms for t in representative_terms):
                 covered_categories += 1
 
-        assert (
-            covered_categories >= 10
-        ), f"Only {covered_categories} medical categories covered, need >= 10"
+        assert covered_categories >= 10, (
+            f"Only {covered_categories} medical categories covered, need >= 10"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -349,13 +349,13 @@ class TestExplanationNotCircular:
             term = entry["term"].lower()
             explanation = entry["explanation"].lower()
             # Explanation should not start with the exact term
-            assert not explanation.startswith(
-                f"{term} is {term}"
-            ), f"Circular explanation for '{term}': '{entry['explanation']}'"
+            assert not explanation.startswith(f"{term} is {term}"), (
+                f"Circular explanation for '{term}': '{entry['explanation']}'"
+            )
             # Explanation should be longer than the term itself
-            assert (
-                len(entry["explanation"]) > len(entry["term"]) + 5
-            ), f"Explanation too short for '{term}': '{entry['explanation']}'"
+            assert len(entry["explanation"]) > len(entry["term"]) + 5, (
+                f"Explanation too short for '{term}': '{entry['explanation']}'"
+            )
 
 
 # ---------------------------------------------------------------------------

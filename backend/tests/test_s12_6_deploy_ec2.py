@@ -102,9 +102,9 @@ class TestDeployScriptCommands:
 
     def test_deploy_script_echoes_completion(self):
         content = _read_deploy_script()
-        assert (
-            "echo" in content.lower() or "printf" in content.lower()
-        ), "deploy.sh must print a completion/status message"
+        assert "echo" in content.lower() or "printf" in content.lower(), (
+            "deploy.sh must print a completion/status message"
+        )
 
 
 # ── 4. Security: no hardcoded secrets ────────────────────────────────────────
@@ -119,9 +119,9 @@ class TestDeployScriptSecurity:
             r"AKIA[A-Z0-9]{16}",  # AWS access key
         ]
         for pattern in secret_patterns:
-            assert not re.search(
-                pattern, content
-            ), f"deploy.sh must not contain hardcoded secrets matching {pattern}"
+            assert not re.search(pattern, content), (
+                f"deploy.sh must not contain hardcoded secrets matching {pattern}"
+            )
 
     def test_deploy_script_no_hardcoded_ips(self):
         content = _read_deploy_script()
@@ -139,9 +139,9 @@ class TestDeployScriptSecurity:
     def test_deploy_script_no_passwords(self):
         content = _read_deploy_script()
         # Should not contain password= or token= with actual values
-        assert not re.search(
-            r"(?i)(password|token|secret)=['\"]?[a-zA-Z0-9]{8,}", content
-        ), "deploy.sh must not contain hardcoded passwords or tokens"
+        assert not re.search(r"(?i)(password|token|secret)=['\"]?[a-zA-Z0-9]{8,}", content), (
+            "deploy.sh must not contain hardcoded passwords or tokens"
+        )
 
 
 # ── 5. .env.example has all prod vars ────────────────────────────────────────
@@ -206,6 +206,6 @@ class TestDockerComposeProd:
 
     def test_docker_compose_prod_uses_env_file(self):
         content = PROD_COMPOSE.read_text()
-        assert (
-            "env_file" in content or ".env" in content
-        ), "docker-compose.prod.yml must reference .env"
+        assert "env_file" in content or ".env" in content, (
+            "docker-compose.prod.yml must reference .env"
+        )

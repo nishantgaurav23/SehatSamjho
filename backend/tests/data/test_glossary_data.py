@@ -102,9 +102,9 @@ class TestMinimumEntries:
 
     def test_minimum_entries(self, lang: str):
         data = _load_glossary(lang)
-        assert (
-            len(data) >= MIN_ENTRIES
-        ), f"{lang}.json has {len(data)} entries, need >= {MIN_ENTRIES}"
+        assert len(data) >= MIN_ENTRIES, (
+            f"{lang}.json has {len(data)} entries, need >= {MIN_ENTRIES}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -157,9 +157,9 @@ class TestCrossLanguage:
             vernaculars[lang] = match[0]["vernacular"]
 
         unique_vernaculars = set(vernaculars.values())
-        assert len(unique_vernaculars) == len(
-            EXPECTED_LANG_CODES
-        ), f"Vernacular should differ per language: {vernaculars}"
+        assert len(unique_vernaculars) == len(EXPECTED_LANG_CODES), (
+            f"Vernacular should differ per language: {vernaculars}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -175,9 +175,9 @@ class TestVernacularNonAscii:
         data = _load_glossary(lang)
         for i, entry in enumerate(data):
             v = entry["vernacular"]
-            assert any(
-                ord(c) > 127 for c in v
-            ), f"{lang}.json entry #{i} vernacular is pure ASCII: '{v}'"
+            assert any(ord(c) > 127 for c in v), (
+                f"{lang}.json entry #{i} vernacular is pure ASCII: '{v}'"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -192,9 +192,9 @@ class TestTermLowercase:
     def test_term_lowercase(self, lang: str):
         data = _load_glossary(lang)
         for i, entry in enumerate(data):
-            assert (
-                entry["term"] == entry["term"].lower()
-            ), f"{lang}.json entry #{i} term not lowercase: '{entry['term']}'"
+            assert entry["term"] == entry["term"].lower(), (
+                f"{lang}.json entry #{i} term not lowercase: '{entry['term']}'"
+            )
 
 
 # ---------------------------------------------------------------------------
