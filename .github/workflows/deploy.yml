@@ -48,6 +48,13 @@ jobs:
           script: |
             set -euo pipefail
 
+            # First deploy: create dir and clone repo
+            if [ ! -d /app/SehatSamjho ]; then
+              sudo mkdir -p /app
+              sudo chown ubuntu:ubuntu /app
+              git clone https://github.com/nishantgaurav23/SehatSamjho.git /app/SehatSamjho
+            fi
+
             cd /app/SehatSamjho
 
             # Pull latest code
