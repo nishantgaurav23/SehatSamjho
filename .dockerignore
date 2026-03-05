@@ -17,9 +17,8 @@ notebooks/
 docs/
 specs/
 
-# Large data files (glossary JSON is needed for seeding)
-data/drugs/
-!data/glossary/
+# Sample prescription images (not needed in production)
+data/prescriptions/
 
 # Test and development artifacts
 backend/tests/

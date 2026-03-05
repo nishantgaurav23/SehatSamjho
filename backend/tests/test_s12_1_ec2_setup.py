@@ -154,7 +154,7 @@ class TestDeployWorkflow:
         assert "alembic" in self.CONTENT and "upgrade head" in self.CONTENT
 
     def test_runs_seed_script(self):
-        assert "seed.py" in self.CONTENT
+        assert "scripts.seed" in self.CONTENT or "seed.py" in self.CONTENT
 
     def test_runs_health_check(self):
         assert "health" in self.CONTENT
