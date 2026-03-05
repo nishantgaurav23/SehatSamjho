@@ -100,13 +100,13 @@ jobs:
             # Build and restart containers
             sudo docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
 
-            # Run database migrations (must cd to backend/ where alembic.ini lives)
-            sudo docker compose -f docker-compose.prod.yml exec -T app \
-              bash -c "cd backend && python -m alembic upgrade head"
+            # Run database migrations (alembic.ini is in backend/, so set workdir)
+            sudo docker compose -f docker-compose.prod.yml exec -T -w /app/backend app \
+              python -m alembic upgrade head
 
             # Seed data (idempotent — safe to run every deploy)
-            sudo docker compose -f docker-compose.prod.yml exec -T app \
-              bash -c "cd backend && python -m scripts.seed"
+            sudo docker compose -f docker-compose.prod.yml exec -T -w /app/backend app \
+              python -m scripts.seed
 
             # Health check
             sleep 5
