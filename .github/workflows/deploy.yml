@@ -52,7 +52,7 @@ jobs:
             if [ ! -d /app/SehatSamjho ]; then
               sudo mkdir -p /app
               sudo chown ubuntu:ubuntu /app
-              git clone https://github.com/nishantgaurav23/SehatSamjho.git /app/SehatSamjho
+              git clone -b main https://github.com/nishantgaurav23/SehatSamjho.git /app/SehatSamjho
             fi
 
             cd /app/SehatSamjho
