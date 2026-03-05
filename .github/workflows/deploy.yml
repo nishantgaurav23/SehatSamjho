@@ -1,0 +1,103 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  APP_DIR: /app/SehatSamjho
+  COMPOSE_FILE: docker-compose.prod.yml
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv pip install --system -r pyproject.toml --extra dev
+
+      - name: Lint
+        run: ruff check backend/ && ruff format --check backend/
+
+      - name: Test
+        run: cd backend && python -m pytest tests/ -v --tb=short
+
+  deploy:
+    name: Deploy to EC2
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          envs: OPENAI_API_KEY,ANTHROPIC_API_KEY,TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN,TWILIO_WHATSAPP_FROM,BHASHINI_API_KEY,BHASHINI_USER_ID,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,S3_BUCKET,DATABASE_URL,REDIS_URL
+          script: |
+            set -euo pipefail
+
+            cd /app/SehatSamjho
+
+            # Pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Write .env from GitHub Secrets
+            cat > .env <<ENVEOF
+            OPENAI_API_KEY=${OPENAI_API_KEY}
+            ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+            TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+            TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+            TWILIO_WHATSAPP_FROM=${TWILIO_WHATSAPP_FROM}
+            BHASHINI_API_KEY=${BHASHINI_API_KEY}
+            BHASHINI_USER_ID=${BHASHINI_USER_ID}
+            AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            S3_BUCKET=${S3_BUCKET}
+            DATABASE_URL=${DATABASE_URL}
+            REDIS_URL=${REDIS_URL}
+            ENVEOF
+            chmod 600 .env
+
+            # Build and restart containers
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+
+            # Run database migrations
+            docker compose -f docker-compose.prod.yml exec -T app \
+              python -m alembic -c backend/alembic.ini upgrade head
+
+            # Seed data (idempotent — safe to run every deploy)
+            docker compose -f docker-compose.prod.yml exec -T app \
+              python backend/scripts/seed.py
+
+            # Health check
+            sleep 5
+            curl -sf http://localhost:8000/health || (echo "Health check failed!" && exit 1)
+
+            echo "Deploy successful!"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          BHASHINI_API_KEY: ${{ secrets.BHASHINI_API_KEY }}
+          BHASHINI_USER_ID: ${{ secrets.BHASHINI_USER_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}

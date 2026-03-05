@@ -249,13 +249,13 @@ Provision free-tier AWS infrastructure, deploy the Docker container, connect to 
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S12.1 | `specs/spec-S12.1-ec2-setup/` | S11.1, S11.3 | AWS Console / docs | EC2 t3.micro setup | Region: ap-south-1 (Mumbai). AMI: Ubuntu 22.04 LTS. Install Docker + docker compose plugin. Security groups: inbound 80 (HTTP), 443 (HTTPS), 22 (SSH from your IP only). Assign Elastic IP | pending |
-| S12.2 | `specs/spec-S12.2-rds-setup/` | S12.1 | AWS Console / docs | RDS db.t3.micro PostgreSQL | Same VPC as EC2. Security group: allow port 5432 from EC2 security group only. DB: sehatsamjho. User: ssadmin. Enable automated backups (7 days). 20GB gp2 storage | pending |
-| S12.3 | `specs/spec-S12.3-s3-bucket/` | S12.1 | AWS Console / docs | S3 bucket setup | Bucket: sehatsamjho-audio-{account_id}. Region: ap-south-1. Block all public access. Lifecycle rule: delete objects with prefix `audio/` after 24 hours. CORS not needed (presigned URLs only) | pending |
-| S12.4 | `specs/spec-S12.4-iam-role/` | S12.1, S12.3 | AWS Console / IAM | IAM role for EC2 | EC2 instance profile role. Policy: S3 PutObject + GetObject + DeleteObject on `sehatsamjho-audio-*` bucket only. No other permissions. Attach role to EC2 instance (no access keys needed on server) | pending |
-| S12.5 | `specs/spec-S12.5-upstash-redis/` | — | Upstash Console / docs | Upstash Redis setup | Create free Upstash Redis database in ap-south-1. Copy REST URL + token to `.env.prod` as REDIS_URL. 256MB / 10K req/day — sufficient for prototype | pending |
-| S12.6 | `specs/spec-S12.6-deploy-ec2/` | S12.1, S12.2, S12.3, S12.4, S12.5, S11.3 | EC2: `/app/.env` | Deploy to EC2 | SSH to EC2. Clone repo. Create `.env` with all prod secrets. `docker compose -f docker-compose.prod.yml up -d`. Run: `docker compose exec app alembic upgrade head` then `docker compose exec app python backend/scripts/seed.py` | pending |
-| S12.7 | `specs/spec-S12.7-twilio-webhook/` | S12.6, S1.5 | Twilio Console | Twilio webhook URL update | Set WhatsApp Sandbox (or production) webhook URL to `http://{EC2_IP}/webhook/whatsapp`. Method: POST. Verify HMAC signature validation works by sending a test WhatsApp message | pending |
+| S12.1 | `specs/spec-S12.1-ec2-setup/` | S11.1, S11.3 | AWS Console / docs | EC2 t3.micro setup | Region: ap-south-1 (Mumbai). AMI: Ubuntu 22.04 LTS. Install Docker + docker compose plugin. Security groups: inbound 80 (HTTP), 443 (HTTPS), 22 (SSH from your IP only). Assign Elastic IP | done |
+| S12.2 | `specs/spec-S12.2-rds-setup/` | S12.1 | AWS Console / docs | RDS db.t3.micro PostgreSQL | Same VPC as EC2. Security group: allow port 5432 from EC2 security group only. DB: sehatsamjho. User: ssadmin. Enable automated backups (7 days). 20GB gp2 storage | done |
+| S12.3 | `specs/spec-S12.3-s3-bucket/` | S12.1 | AWS Console / docs | S3 bucket setup | Bucket: sehatsamjho-audio-{account_id}. Region: ap-south-1. Block all public access. Lifecycle rule: delete objects with prefix `audio/` after 24 hours. CORS not needed (presigned URLs only) | done |
+| S12.4 | `specs/spec-S12.4-iam-role/` | S12.1, S12.3 | AWS Console / IAM | IAM role for EC2 | EC2 instance profile role. Policy: S3 PutObject + GetObject + DeleteObject on `sehatsamjho-audio-*` bucket only. No other permissions. Attach role to EC2 instance (no access keys needed on server) | done |
+| S12.5 | `specs/spec-S12.5-upstash-redis/` | — | Upstash Console / docs | Upstash Redis setup | Create free Upstash Redis database in ap-south-1. Copy REST URL + token to `.env.prod` as REDIS_URL. 256MB / 10K req/day — sufficient for prototype | done |
+| S12.6 | `specs/spec-S12.6-deploy-ec2/` | S12.1, S12.2, S12.3, S12.4, S12.5, S11.3 | EC2: `/app/.env` | Deploy to EC2 | SSH to EC2. Clone repo. Create `.env` with all prod secrets. `docker compose -f docker-compose.prod.yml up -d`. Run: `docker compose exec app alembic upgrade head` then `docker compose exec app python backend/scripts/seed.py` | done |
+| S12.7 | `specs/spec-S12.7-twilio-webhook/` | S12.6, S1.5 | Twilio Console | Twilio webhook URL update | Set WhatsApp Sandbox (or production) webhook URL to `http://{EC2_IP}/webhook/whatsapp`. Method: POST. Verify HMAC signature validation works by sending a test WhatsApp message | done |
 
 ---
 
@@ -265,7 +265,7 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 
 | Spec | Spec Location | Depends On | Location | Feature | Notes | Status |
 |------|--------------|-----------|----------|---------|-------|--------|
-| S13.1 | `specs/spec-S13.1-hindi-e2e-test/` | S12.7 | Manual test | Hindi end-to-end smoke test | Send a real printed prescription image via WhatsApp. Verify: language selection works, extraction is accurate, translation is plain-language Hindi, audio plays correctly in WhatsApp, disclaimer present | pending |
+| S13.1 | `specs/spec-S13.1-hindi-e2e-test/` | S12.7 | Manual test | Hindi end-to-end smoke test | Send a real printed prescription image via WhatsApp. Verify: language selection works, extraction is accurate, translation is plain-language Hindi, audio plays correctly in WhatsApp, disclaimer present | done |
 | S13.2 | `specs/spec-S13.2-tamil-e2e-test/` | S12.7 | Manual test | Tamil end-to-end test | Repeat with Tamil. Validate: Bhashini TTS sounds natural, drug lookup finds medicines, low-confidence items flagged correctly | pending |
 | S13.3 | `specs/spec-S13.3-edge-cases/` | S12.7 | Manual test | Edge case validation | Test: blurry/unreadable image, non-medical image (selfie), lab report (not prescription), handwritten prescription. Verify graceful error messages in each case | pending |
 | S13.4 | `specs/spec-S13.4-latency-profiling/` | S12.7 | Timing + Loguru logs | Latency profiling | Target: full pipeline < 30 seconds (image received → audio reply sent). Measure each step: GPT-4O extraction, drug lookup, Claude translation, Bhashini TTS, S3 upload, Twilio send. Log timing per step | pending |
@@ -334,14 +334,14 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S11.5 | Infra & Seeding | `data/drugs/medicines.csv` | Drug database CSV (data file) | `specs/spec-S11.5-drug-csv-data/` | done |
 | S11.6 | Infra & Seeding | `data/glossary/*.json` | Glossary JSON files | `specs/spec-S11.6-glossary-data-files/` | done |
 | S11.7 | Infra & Seeding | `backend/scripts/seed.py` | make seed command | `specs/spec-S11.7-seed-script/` | done |
-| S12.1 | AWS Deployment | AWS Console | EC2 t3.micro setup | `specs/spec-S12.1-ec2-setup/` | pending |
-| S12.2 | AWS Deployment | AWS Console | RDS db.t3.micro PostgreSQL | `specs/spec-S12.2-rds-setup/` | pending |
-| S12.3 | AWS Deployment | AWS Console | S3 bucket setup | `specs/spec-S12.3-s3-bucket/` | pending |
-| S12.4 | AWS Deployment | AWS IAM | IAM role for EC2 | `specs/spec-S12.4-iam-role/` | pending |
-| S12.5 | AWS Deployment | Upstash Console | Upstash Redis free tier | `specs/spec-S12.5-upstash-redis/` | pending |
-| S12.6 | AWS Deployment | EC2 shell | Deploy to EC2 | `specs/spec-S12.6-deploy-ec2/` | pending |
-| S12.7 | AWS Deployment | Twilio Console | Twilio webhook URL update | `specs/spec-S12.7-twilio-webhook/` | pending |
-| S13.1 | QA & Handover | Manual test | Hindi end-to-end smoke test | `specs/spec-S13.1-hindi-e2e-test/` | pending |
+| S12.1 | AWS Deployment | AWS Console | EC2 t3.micro setup | `specs/spec-S12.1-ec2-setup/` | done |
+| S12.2 | AWS Deployment | AWS Console | RDS db.t3.micro PostgreSQL | `specs/spec-S12.2-rds-setup/` | done |
+| S12.3 | AWS Deployment | AWS Console | S3 bucket setup | `specs/spec-S12.3-s3-bucket/` | done |
+| S12.4 | AWS Deployment | AWS IAM | IAM role for EC2 | `specs/spec-S12.4-iam-role/` | done |
+| S12.5 | AWS Deployment | Upstash Console | Upstash Redis free tier | `specs/spec-S12.5-upstash-redis/` | done |
+| S12.6 | AWS Deployment | EC2 shell | Deploy to EC2 | `specs/spec-S12.6-deploy-ec2/` | done |
+| S12.7 | AWS Deployment | Twilio Console | Twilio webhook URL update | `specs/spec-S12.7-twilio-webhook/` | done |
+| S13.1 | QA & Handover | Manual test | Hindi end-to-end smoke test | `specs/spec-S13.1-hindi-e2e-test/` | done |
 | S13.2 | QA & Handover | Manual test | Tamil end-to-end test | `specs/spec-S13.2-tamil-e2e-test/` | pending |
 | S13.3 | QA & Handover | Manual test | Edge case validation | `specs/spec-S13.3-edge-cases/` | pending |
 | S13.4 | QA & Handover | Logs | Latency profiling | `specs/spec-S13.4-latency-profiling/` | pending |
