@@ -48,7 +48,7 @@ jobs:
           script: |
             set -euo pipefail
 
-            # First deploy: install Docker if missing
+            # Install Docker if missing
             if ! command -v docker &> /dev/null; then
               sudo apt-get update -y
               sudo apt-get install -y ca-certificates curl gnupg
@@ -59,6 +59,12 @@ jobs:
               sudo apt-get update -y
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
               sudo usermod -aG docker ubuntu
+            fi
+
+            # Install Docker Compose plugin if missing
+            if ! docker compose version &> /dev/null; then
+              sudo apt-get update -y
+              sudo apt-get install -y docker-compose-plugin
             fi
 
             # First deploy: create dir and clone repo
