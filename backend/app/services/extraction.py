@@ -243,6 +243,7 @@ async def _call_gpt4o_vision(image_url: str, content_type: str = "image/jpeg") -
 # Public API — extract_prescription (S5.4)
 # ---------------------------------------------------------------------------
 
+
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
