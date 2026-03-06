@@ -129,7 +129,11 @@ class TestDeployWorkflow:
         assert "EC2_SSH_KEY" in self.CONTENT
 
     def test_references_all_env_secrets(self):
-        """All 12 env vars from .env.example should be in workflow secrets."""
+        """All required env vars from .env.example should be in workflow secrets.
+
+        AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are excluded — EC2 uses
+        IAM role for S3 access instead of hardcoded credentials.
+        """
         required = [
             "OPENAI_API_KEY",
             "ANTHROPIC_API_KEY",
@@ -138,8 +142,6 @@ class TestDeployWorkflow:
             "TWILIO_WHATSAPP_FROM",
             "BHASHINI_API_KEY",
             "BHASHINI_USER_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
             "S3_BUCKET",
             "DATABASE_URL",
             "REDIS_URL",
