@@ -171,6 +171,8 @@ def _build_user_prompt(
         parts.append("")
         parts.append("## Drug Information")
         for drug in drug_info_list:
+            if drug is None:
+                continue
             parts.append(f"### {drug.brand_name}")
             parts.append(f"- Generic Name: {drug.generic_name or 'Unknown'}")
             parts.append(f"- Therapeutic Class: {drug.therapeutic_class or 'Unknown'}")
