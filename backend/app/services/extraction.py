@@ -9,6 +9,7 @@ the extraction prompt constants, the prompt builder, and the public
 from __future__ import annotations
 
 import base64
+import io
 import json
 import re
 from typing import TYPE_CHECKING
@@ -316,6 +317,18 @@ async def extract_prescription_from_bytes(
 
     if not image_bytes:
         raise ValueError("image_bytes must be non-empty")
+
+    # Convert unsupported image formats (BMP, TIFF, etc.) to PNG for OpenAI
+    _SUPPORTED_FORMATS = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+    if content_type not in _SUPPORTED_FORMATS:
+        log.info("Converting {} to PNG for OpenAI compatibility", content_type)
+        from PIL import Image
+
+        img = Image.open(io.BytesIO(image_bytes))
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        image_bytes = buf.getvalue()
+        content_type = "image/png"
 
     log.info("Starting prescription extraction from bytes")
 
