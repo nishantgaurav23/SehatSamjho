@@ -249,11 +249,11 @@ def _get_s3_client():
     if _s3_client is None:
         from backend.app.core.config import settings
 
-        _s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
+        kwargs = {"service_name": "s3"}
+        if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+            kwargs["aws_access_key_id"] = settings.AWS_ACCESS_KEY_ID
+            kwargs["aws_secret_access_key"] = settings.AWS_SECRET_ACCESS_KEY
+        _s3_client = boto3.client(**kwargs)
     return _s3_client
 
 
