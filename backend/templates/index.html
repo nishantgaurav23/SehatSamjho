@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SehatSamjho - AI Prescription Translator</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <!-- ── Header ──────────────────────────────────────────── -->
+    <header class="header">
+        <h1>SehatSamjho</h1>
+        <p class="tagline">
+            Upload a prescription photo and get a plain-language explanation
+            with audio in your preferred Indian language.
+        </p>
+    </header>
+
+    <!-- ── How It Works ────────────────────────────────────── -->
+    <section class="steps">
+        <div class="step">
+            <span class="step-number">1</span>
+            <h3>Upload Photo</h3>
+            <p>Take a photo of your prescription and upload it here</p>
+        </div>
+        <div class="step">
+            <span class="step-number">2</span>
+            <h3>Select Language</h3>
+            <p>Choose from 22 Indian languages for your translation</p>
+        </div>
+        <div class="step">
+            <span class="step-number">3</span>
+            <h3>Get Results</h3>
+            <p>Receive a clear explanation with text and audio</p>
+        </div>
+    </section>
+
+    <!-- ── Upload Form ─────────────────────────────────────── -->
+    <div class="container">
+        <div class="card">
+            <h2>Translate Your Prescription</h2>
+
+            <div id="error-msg" class="error-msg"></div>
+
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="language-select">Select Language</label>
+                    <select id="language-select" name="language_code" required>
+                        {% for code, lang in languages.items() %}
+                        <option value="{{ code }}" {% if code == 'hi' %}selected{% endif %}>
+                            {{ lang.name }} - {{ lang.display_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Prescription Image</label>
+                    <div id="upload-zone" class="upload-zone">
+                        <input type="file" id="image-input" name="image"
+                               accept="image/*" required>
+                        <span class="upload-icon">&#128247;</span>
+                        <p>Drag & drop your prescription photo here,<br>or click to browse</p>
+                        <p class="file-name" id="file-name" style="display:none"></p>
+                        <img class="image-preview" id="image-preview" alt="Preview">
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-primary">
+                    Translate Prescription
+                </button>
+            </form>
+
+            <!-- Loading -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Translating your prescription...<br>This usually takes 20-30 seconds.</p>
+            </div>
+        </div>
+
+        <!-- ── Results ─────────────────────────────────────── -->
+        <div id="results" class="results">
+            <div class="card" style="margin-top: 1.5rem">
+                <h2>Prescription Summary</h2>
+
+                <div id="medicines-list"></div>
+
+                <div class="translation-block">
+                    <strong>Translation:</strong>
+                    <p id="translation-text"></p>
+                </div>
+
+                <div id="audio-section" class="audio-section" style="display:none">
+                    <strong>Listen to your prescription:</strong>
+                    <audio id="audio-player" controls preload="none"></audio>
+                    <p>Audio generated using text-to-speech</p>
+                </div>
+
+                <div class="disclaimer">
+                    <strong>Disclaimer:</strong>
+                    <span id="disclaimer-text"></span>
+                </div>
+
+                <p class="latency" id="latency-value"></p>
+
+                <button id="reset-btn" class="btn btn-outline">
+                    Translate Another Prescription
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Footer ──────────────────────────────────────────── -->
+    <footer class="footer">
+        <p>
+            SehatSamjho &mdash; AI Medical Document Translator<br>
+            Your privacy matters: we do not store any personal health data.
+        </p>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
