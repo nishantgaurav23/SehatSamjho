@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11-blue?logo=python&logoColor=white" alt="Python 3.11"/>
   <img src="https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/tests-1264_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"/>
+  <img src="https://img.shields.io/badge/tests-1446_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"/>
   <img src="https://img.shields.io/badge/languages-22_Indian-orange" alt="Languages"/>
   <img src="https://img.shields.io/badge/PHI-zero_stored-critical" alt="Zero PHI"/>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License"/>
@@ -25,13 +25,35 @@ SehatSamjho turns any WhatsApp-connected phone into a personal prescription tran
 
 ```
 Patient photographs prescription
-    → AI extracts every medicine, dosage, and instruction
-    → Drug database adds purpose, side effects, interactions
-    → Medical glossary grounds terminology in patient's language
-    → AI simplifies into plain language the patient understands
-    → Text-to-speech generates an audio explanation
-    → Patient receives text + audio on WhatsApp
+    -> AI extracts every medicine, dosage, and instruction
+    -> Drug database adds purpose, side effects, interactions
+    -> Medical glossary grounds terminology in patient's language
+    -> AI simplifies into plain language the patient understands
+    -> Text-to-speech generates an audio explanation
+    -> Patient receives text + audio on WhatsApp
 ```
+
+---
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Supported Languages](#supported-languages)
+- [Project Structure](#project-structure)
+- [How It Works — Step by Step](#how-it-works--step-by-step)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Option A: Local Setup (without Docker)](#option-a-local-setup-without-docker)
+  - [Option B: Docker Setup (recommended)](#option-b-docker-setup-recommended)
+- [Environment Variables](#environment-variables)
+- [Running Tests](#running-tests)
+- [Linting](#linting)
+- [Deployment to AWS](#deployment-to-aws)
+- [Privacy and Security](#privacy-and-security)
+- [Development Progress](#development-progress)
+- [Cost Estimate](#cost-estimate-prototype)
+- [License](#license)
 
 ---
 
@@ -65,7 +87,7 @@ graph TB
         subgraph PIPELINE["Processing Pipeline"]
             direction LR
             EXT["Extraction<br/>GPT-4O Vision"]
-            DRUG["Drug Enrichment<br/>Redis → CSV → API"]
+            DRUG["Drug Enrichment<br/>Redis -> CSV -> API"]
             GLOSS["Glossary RAG<br/>Redis Lookup"]
             TRANS["Translation<br/>Claude Sonnet 4.6"]
             TTS["Text-to-Speech<br/>Bhashini TTS"]
@@ -138,7 +160,7 @@ graph TB
 flowchart LR
     A["Prescription<br/>Photo"]:::input
     B["GPT-4O Vision<br/><i>Extract structured data</i>"]:::openai
-    C["Drug Lookup<br/><i>Redis → CSV → API</i>"]:::data
+    C["Drug Lookup<br/><i>Redis -> CSV -> API</i>"]:::data
     D["Glossary RAG<br/><i>Medical term grounding</i>"]:::data
     E["Claude Sonnet 4.6<br/><i>Simplify + Translate</i>"]:::anthropic
     F["Bhashini TTS<br/><i>Generate audio</i>"]:::tts
@@ -164,10 +186,10 @@ stateDiagram-v2
     Welcome --> WaitingForLanguage: Show language menu
 
     WaitingForLanguage --> WaitingForImage: Valid language selected
-    WaitingForLanguage --> WaitingForLanguage: Invalid input → re-show menu
+    WaitingForLanguage --> WaitingForLanguage: Invalid input -> re-show menu
 
     WaitingForImage --> Processing: Image received
-    WaitingForImage --> WaitingForImage: No image → prompt again
+    WaitingForImage --> WaitingForImage: No image -> prompt again
 
     Processing --> [*]: Send text + audio reply
 
@@ -193,7 +215,7 @@ stateDiagram-v2
 | **Translation AI** | Anthropic Claude Sonnet 4.6 (`claude-sonnet-4-6`) | Simplify medical jargon + translate to patient's language |
 | **Text-to-Speech** | Bhashini (Gov. of India) | 22 Indian language voices, free API |
 | **Drug Database** | Local CSV (1000+ medicines) + Redis cache + API fallback | Sub-100ms drug lookups with enrichment |
-| **Medical Glossary** | Per-language JSON (100 terms × 6 languages) + Redis | RAG context injection for accurate medical terminology |
+| **Medical Glossary** | Per-language JSON (100 terms x 6 languages) + Redis | RAG context injection for accurate medical terminology |
 | **Database** | PostgreSQL (async SQLAlchemy + asyncpg) | Metadata logging only — zero PHI |
 | **Cache** | Redis | Session state, drug cache, glossary cache |
 | **Audio Storage** | AWS S3 | Presigned URLs, auto-delete after 24 hours |
@@ -237,26 +259,201 @@ SehatSamjho/
 │   │   ├── models/
 │   │   │   └── schemas.py             # 8 Pydantic models (request/response)
 │   │   └── services/
-│   │       ├── extraction.py          # GPT-4O Vision → PrescriptionData
-│   │       ├── translation.py         # Claude Sonnet 4.6 → TranslationResult
-│   │       ├── tts.py                 # Bhashini TTS → S3 audio → presigned URL
-│   │       ├── drug_lookup.py         # Redis/CSV/API → DrugInfo enrichment
+│   │       ├── extraction.py          # GPT-4O Vision -> PrescriptionData
+│   │       ├── translation.py         # Claude Sonnet 4.6 -> TranslationResult
+│   │       ├── tts.py                 # Bhashini TTS -> S3 audio -> presigned URL
+│   │       ├── drug_lookup.py         # Redis/CSV/API -> DrugInfo enrichment
 │   │       ├── glossary.py            # Medical glossary loader + Redis RAG
 │   │       └── whatsapp.py            # Language data + Twilio messaging helpers
 │   ├── scripts/
 │   │   └── seed.py                    # Load drugs + glossary into Redis
 │   ├── alembic/                       # Database migrations
-│   ├── tests/                         # 1264 tests, 100% mocked externals
+│   ├── tests/                         # 1446+ tests, 100% mocked externals
 │   └── Dockerfile                     # Multi-stage (base/dev/prod)
 ├── data/
 │   ├── drugs/medicines.csv            # 1001 Indian medicines
-│   └── glossary/{hi,ta,te,kn,bn,mr}.json  # 100 terms × 6 languages
+│   └── glossary/{hi,ta,te,kn,bn,mr}.json  # 100 terms x 6 languages
+├── scripts/
+│   ├── deploy.sh                      # EC2 deployment script
+│   ├── ec2-setup.sh                   # EC2 instance provisioning
+│   ├── rds-setup.sh                   # RDS PostgreSQL provisioning
+│   ├── setup-s3.sh                    # S3 bucket setup
+│   ├── setup-iam.sh                   # IAM role for EC2
+│   └── verify_webhook.sh             # Twilio webhook verification
+├── specs/                             # Spec-driven development (69 specs)
 ├── docker-compose.yml                 # Local dev (app + postgres + redis)
 ├── docker-compose.prod.yml            # Production overrides
 ├── pyproject.toml                     # Single source of truth for deps
 ├── Makefile                           # 11 developer commands
+├── roadmap.md                         # Full project roadmap + spec index
 └── .env.example                       # All 12 required env vars
 ```
+
+---
+
+## How It Works — Step by Step
+
+This section walks through the complete flow from a patient sending a WhatsApp message to receiving their translated prescription.
+
+### 1. Patient Sends a Message (WhatsApp -> Twilio -> Webhook)
+
+A patient messages the SehatSamjho WhatsApp number. Twilio receives the message and sends an HTTP POST to our webhook endpoint.
+
+**Entry point:** `backend/app/api/webhooks.py` -> `webhook_whatsapp()`
+
+```
+Twilio POST /webhook/whatsapp
+  -> HMAC signature validation (core/security.py)
+  -> Parse form body into WebhookPayload (Pydantic model)
+  -> Generate unique request_id (UUID4) for log correlation
+  -> Dispatch to handler based on session state
+```
+
+### 2. Session State Machine (Redis)
+
+The conversation follows a state machine stored in Redis (key: `session:{phone_number}`, TTL: 30 minutes).
+
+**File:** `backend/app/api/webhooks.py` -> `_dispatch()`
+
+| State | What Happens | Next State |
+|-------|-------------|------------|
+| **No session** | Send welcome message + language menu | `WAITING_FOR_LANGUAGE` |
+| `WAITING_FOR_LANGUAGE` | Parse language selection (number, code, or name) | `WAITING_FOR_IMAGE` |
+| `WAITING_FOR_IMAGE` | Validate image attachment, send "processing" ack | `PROCESSING` |
+| `PROCESSING` | Run the full pipeline (steps 3-8 below) | Session deleted |
+
+### 3. Prescription Extraction (GPT-4O Vision)
+
+When a valid image is received, the pipeline starts.
+
+**File:** `backend/app/services/extraction.py` -> `extract_prescription()`
+
+```
+Download image from Twilio URL (httpx async)
+  -> Base64 encode
+  -> Send to OpenAI GPT-4O Vision with structured extraction prompt
+  -> Parse JSON response into PrescriptionData (Pydantic model)
+  -> Each medicine has: name, dosage, frequency, duration, confidence score
+```
+
+Custom exceptions for semantic errors:
+- `NotMedicalDocumentError` — image is not a prescription/medical document
+- `ImageNotReadableError` — image is too blurry or illegible
+- Transient OpenAI API errors are retried (3 attempts, exponential backoff via Tenacity)
+
+### 4. Drug Enrichment (Redis -> CSV -> API)
+
+Each extracted medicine is looked up for additional context.
+
+**File:** `backend/app/services/drug_lookup.py` -> `enrich_prescription()`
+
+```
+For each medicine in PrescriptionData (concurrent via asyncio.gather):
+  -> Check Redis cache (hash key: drugs:{normalized_name})
+  -> Cache miss -> search local CSV (1001 Indian medicines)
+  -> CSV miss -> call IndianMedicineDB API (with retry)
+  -> Returns DrugInfo: purpose, side effects, timing, interactions
+```
+
+The drug database (`data/drugs/medicines.csv`) contains 1001 commonly prescribed Indian medicines across 49 therapeutic classes.
+
+### 5. Medical Glossary Lookup (Redis RAG)
+
+Medical terms from the prescription are matched against a per-language glossary.
+
+**File:** `backend/app/services/glossary.py` -> `lookup_terms()` + `format_glossary_context()`
+
+```
+Extract medicine names from PrescriptionData
+  -> Redis HMGET on glossary:{language_code} hash
+  -> Match terms to plain-language explanations in patient's language
+  -> Format as structured context block for Claude translation prompt
+```
+
+Glossary data covers 6 languages (Hindi, Tamil, Telugu, Kannada, Bengali, Marathi) with 100 medical terms each.
+
+### 6. Translation (Claude Sonnet 4.6)
+
+The extracted data + drug info + glossary context are sent to Claude for simplification and translation.
+
+**File:** `backend/app/services/translation.py` -> `simplify_and_translate()`
+
+```
+Build system prompt:
+  -> Persona: caring health educator
+  -> Rules: explain (not just translate), preserve drug names in English,
+     never add clinical advice, flag low-confidence items, max 300 words
+  -> Inject glossary context block
+
+Build user prompt:
+  -> Serialize PrescriptionData + DrugInfo list
+  -> Specify target language
+  -> Label low-confidence fields
+
+Call Anthropic Claude Sonnet 4.6 Messages API
+  -> Parse response into TranslationResult:
+     - translated_text (full explanation)
+     - per_medicine_summaries (one per medicine)
+     - disclaimer
+```
+
+### 7. Text-to-Speech (Bhashini -> S3)
+
+The translated text is converted to spoken audio.
+
+**File:** `backend/app/services/tts.py` -> `generate_and_deliver_audio()`
+
+```
+Format audio-friendly text:
+  -> Strip emoji, markdown, bullets (webhooks.py -> _format_audio_text())
+  -> Convert to flowing spoken sentences
+  -> Cap at 2000 characters
+
+Call Bhashini TTS API:
+  -> POST to Bhashini pipeline inference
+  -> Receive base64-encoded audio bytes
+  -> Decode to .ogg audio
+
+Upload to S3:
+  -> Key: audio/{uuid4}.ogg
+  -> Generate presigned URL (1 hour expiry)
+  -> S3 lifecycle rule auto-deletes after 24 hours
+```
+
+**Graceful degradation:** If Bhashini or S3 fails, the pipeline continues with text-only delivery. Audio failure never blocks the text response.
+
+### 8. Deliver Response (WhatsApp via Twilio)
+
+**File:** `backend/app/api/webhooks.py` -> `_run_pipeline()` (steps 7-8)
+
+```
+Format text reply:
+  -> Greeting + per-medicine cards (name, dosage, frequency, duration)
+  -> Low-confidence warnings (marked with warning symbol)
+  -> Disclaimer
+  -> Enforce 1600 char WhatsApp limit (multi-level truncation)
+
+Send via Twilio:
+  -> Text message with formatted prescription summary
+  -> Audio message (if TTS succeeded) with presigned S3 URL
+  -> Fallback: text-only with "audio not available" note
+
+Log interaction:
+  -> Hash phone number (SHA-256, never store raw)
+  -> Write metadata to PostgreSQL: timestamp, language, latency, status
+  -> Clean up Redis session
+```
+
+### Error Handling
+
+Pipeline errors are mapped to patient-friendly WhatsApp messages — no stack traces or technical details are ever exposed:
+
+| Error | Patient Message |
+|-------|----------------|
+| Not a medical document | "This doesn't appear to be a medical document..." |
+| Image not readable | "We couldn't read your image clearly..." |
+| Translation failure | "We had trouble translating your prescription..." |
+| Generic error | "Something went wrong, please try again..." |
 
 ---
 
@@ -264,97 +461,148 @@ SehatSamjho/
 
 ### Prerequisites
 
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) package manager
-- API keys: OpenAI, Anthropic, Twilio, Bhashini, AWS
+- **Python 3.11+** installed
+- **[uv](https://docs.astral.sh/uv/)** package manager (install: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **Docker + Docker Compose** (for Docker setup)
+- **API keys** (for running the actual pipeline — not needed for tests):
+  - OpenAI (GPT-4O Vision)
+  - Anthropic (Claude Sonnet 4.6)
+  - Twilio (WhatsApp Business API)
+  - Bhashini (TTS — free, register at bhashini.gov.in)
+  - AWS (S3 for audio storage)
 
-### Local Setup
+### Option A: Local Setup (without Docker)
+
+This runs the FastAPI server directly on your machine. You'll need PostgreSQL and Redis running separately (or use Docker for just those).
 
 ```bash
-# 1. Clone and enter
+# 1. Clone the repository
 git clone https://github.com/nishantgaurav23/SehatSamjho.git
 cd SehatSamjho
 
-# 2. Create virtual environment
+# 2. Create a Python 3.11 virtual environment
 make venv
 source .venv/bin/activate
 
-# 3. Install dependencies (includes dev tools: pytest, ruff)
+# 3. Install all dependencies (runtime + dev tools: pytest, ruff)
 make install-dev
 
-# 4. Configure environment
+# 4. Configure environment variables
 cp .env.example .env
-# Edit .env with your API keys
+# Open .env and fill in your API keys and database URLs
+# For local dev with Docker postgres/redis, the defaults in .env.example work
 
-# 5. Start the dev server
+# 5. Run database migrations (requires PostgreSQL running)
+make local-migrate
+
+# 6. Seed drug database + medical glossary into Redis (requires Redis running)
+make local-seed
+
+# 7. Start the dev server with hot reload
 make local-dev
-# → http://localhost:8000
+# Server starts at http://localhost:8000
+
+# 8. Verify it's running
+curl http://localhost:8000/health
+# {"status": "ok"}
+```
+
+### Option B: Docker Setup (recommended)
+
+This starts the full stack — FastAPI app + PostgreSQL + Redis — with one command.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/nishantgaurav23/SehatSamjho.git
+cd SehatSamjho
+
+# 2. Configure environment variables
+cp .env.example .env
+# Open .env and fill in your API keys
+# DATABASE_URL and REDIS_URL are auto-configured by docker-compose
+
+# 3. Start the full local stack (builds Docker image, starts postgres + redis + app)
+make dev
+# App starts at http://localhost:8000
+# PostgreSQL at localhost:5432
+# Redis at localhost:6379
+
+# 4. Run database migrations (in a separate terminal)
+make migrate
+
+# 5. Seed drug database + glossary into Redis
+make seed
 
 # 6. Verify
 curl http://localhost:8000/health
 # {"status": "ok"}
 ```
 
-### Docker Setup
+### Connecting Twilio (for WhatsApp messaging)
 
-```bash
-# Full local stack (app + PostgreSQL + Redis)
-make dev
+After the server is running and accessible (locally via ngrok, or on EC2):
 
-# Run database migrations
-make migrate
-
-# Seed drug database + glossary into Redis
-make seed
-
-# Run tests inside container
-make test
-```
+1. Go to the [Twilio Console](https://console.twilio.com/) -> Messaging -> Try it out -> Send a WhatsApp message
+2. Set the webhook URL to: `http://<your-server>/webhook/whatsapp`
+3. Method: POST
+4. Send a test message from your phone to the Twilio WhatsApp sandbox number
+5. You should receive the welcome message + language selection menu
 
 ---
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `OPENAI_API_KEY` | OpenAI API key (GPT-4O Vision extraction) |
-| `ANTHROPIC_API_KEY` | Anthropic API key (Claude translation) |
-| `TWILIO_ACCOUNT_SID` | Twilio account SID |
-| `TWILIO_AUTH_TOKEN` | Twilio auth token |
-| `TWILIO_WHATSAPP_FROM` | Twilio WhatsApp sender (`whatsapp:+14155238886`) |
-| `BHASHINI_API_KEY` | Bhashini TTS API key |
-| `BHASHINI_USER_ID` | Bhashini user ID |
-| `AWS_ACCESS_KEY_ID` | AWS access key for S3 |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 |
-| `S3_BUCKET` | S3 bucket name for audio files |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Redis connection string |
+Create a `.env` file at the project root (copy from `.env.example`):
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT-4O Vision extraction | `sk-...` |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude translation | `sk-ant-...` |
+| `TWILIO_ACCOUNT_SID` | Twilio account SID | `ACxxxx...` |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token | `your-token` |
+| `TWILIO_WHATSAPP_FROM` | Twilio WhatsApp sender number | `whatsapp:+14155238886` |
+| `BHASHINI_API_KEY` | Bhashini TTS API key (free) | `your-key` |
+| `BHASHINI_USER_ID` | Bhashini user ID | `your-id` |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 | `AKIA...` |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 | `your-secret` |
+| `S3_BUCKET` | S3 bucket name for audio files | `sehatsamjho-audio` |
+| `DATABASE_URL` | PostgreSQL async connection string | `postgresql+asyncpg://postgres:postgres@localhost:5432/sehatsamjho` |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
+
+**Note:** For production with Upstash Redis, use `rediss://` (with double-s for TLS).
 
 ---
 
-## Testing
+## Running Tests
+
+All external services (OpenAI, Anthropic, Bhashini, Twilio, Redis, PostgreSQL, S3) are fully mocked — **no API keys or running services needed to run tests**.
 
 ```bash
-# Run all 1264 tests
+# Run all 1446+ tests
 make local-test
 
 # Run a specific test file
+source .venv/bin/activate
 cd backend && python -m pytest tests/services/test_extraction_errors.py -v --tb=short
 
 # Run tests by keyword
 cd backend && python -m pytest tests/ -k "glossary" -v --tb=short
+
+# Run tests inside Docker
+make test
 ```
 
-All external services are fully mocked — no API keys needed to run tests.
+### Test Coverage by Area
 
 | Test Area | Files | Tests |
 |-----------|-------|-------|
-| API / Webhooks / Pipeline | 12 | 240 |
+| API / Webhooks / Pipeline | 13 | 260 |
 | Services (extraction, translation, TTS, drugs, glossary, WhatsApp) | 27 | 644 |
 | Data Layer (DB, Redis, models, schemas) | 5 | 95 |
 | Data Files (CSV, JSON validation) | 4 | 173 |
 | Infrastructure (Dockerfile, Compose, migrations) | 7 | 112 |
-| **Total** | **55** | **1264** |
+| E2E smoke tests | 1 | 20 |
+| **Total** | **57+** | **1446+** |
 
 ---
 
@@ -364,7 +612,97 @@ All external services are fully mocked — no API keys needed to run tests.
 make local-lint
 ```
 
-Ruff with 100-character line length. Checks formatting and lint rules in one pass.
+Uses [Ruff](https://docs.astral.sh/ruff/) with 100-character line length. Checks formatting and lint rules in one pass.
+
+---
+
+## Deployment to AWS
+
+The project is designed for AWS free-tier deployment. Infrastructure provisioning scripts are in `scripts/`.
+
+### AWS Resources Needed
+
+| Resource | Script | Tier |
+|----------|--------|------|
+| EC2 t3.micro (Ubuntu 22.04, ap-south-1) | `scripts/ec2-setup.sh` | Free tier |
+| RDS db.t3.micro PostgreSQL | `scripts/rds-setup.sh` | Free tier |
+| S3 bucket (audio storage, 24hr lifecycle) | `scripts/setup-s3.sh` | Free tier |
+| IAM role (EC2 -> S3 access) | `scripts/setup-iam.sh` | Free |
+| Upstash Redis (256MB, 10K req/day) | Manual (upstash.com) | Free tier |
+| Elastic IP | Attached to EC2 | Free when attached |
+
+### Deployment Steps
+
+```bash
+# 1. Provision AWS resources (run scripts or use AWS Console)
+#    - Create EC2 instance with Docker installed
+#    - Create RDS PostgreSQL database
+#    - Create S3 bucket with 24hr lifecycle rule
+#    - Create IAM role and attach to EC2
+#    - Create Upstash Redis database
+
+# 2. SSH into EC2
+ssh -i your-key.pem ubuntu@<EC2_IP>
+
+# 3. Clone the repository
+git clone https://github.com/nishantgaurav23/SehatSamjho.git
+cd SehatSamjho
+
+# 4. Create production .env with all secrets
+cp .env.example .env
+# Edit .env with production values:
+#   DATABASE_URL=postgresql+asyncpg://ssadmin:<password>@<RDS_ENDPOINT>:5432/sehatsamjho
+#   REDIS_URL=rediss://default:<password>@<UPSTASH_ENDPOINT>:<PORT>
+#   S3_BUCKET=sehatsamjho-audio-<account_id>
+#   + all API keys
+
+# 5. Deploy (builds prod Docker image, runs migrations + seed)
+bash scripts/deploy.sh
+
+# 6. Verify
+curl http://localhost:8000/health
+# {"status": "ok"}
+
+# 7. Configure Twilio webhook URL in Twilio Console
+#    URL: http://<EC2_ELASTIC_IP>:8000/webhook/whatsapp
+#    Method: POST
+```
+
+### Redeployment
+
+After pushing code changes:
+
+```bash
+ssh -i your-key.pem ubuntu@<EC2_IP>
+cd SehatSamjho
+bash scripts/deploy.sh
+```
+
+The deploy script pulls latest code, rebuilds the Docker image, runs migrations, and re-seeds data.
+
+---
+
+## Developer Commands
+
+All commands are defined in the `Makefile`:
+
+```bash
+# ── Local Development ──
+make venv           # Create .venv (Python 3.11)
+make install        # Install runtime dependencies via uv
+make install-dev    # Install runtime + dev dependencies (pytest, ruff)
+make local-dev      # Start uvicorn with hot reload (port 8000)
+make local-test     # Run pytest
+make local-lint     # Run ruff check + format
+make local-migrate  # Run alembic upgrade head
+make local-seed     # Seed drugs + glossary into Redis
+
+# ── Docker ──
+make dev            # docker compose up --build (app + postgres + redis)
+make test           # Run pytest in Docker container
+make migrate        # Run alembic in Docker container
+make seed           # Seed data in Docker container
+```
 
 ---
 
@@ -377,32 +715,32 @@ Ruff with 100-character line length. Checks formatting and lint rules in one pas
 | **Metadata-only logs** | Only: timestamp, language, doc_type, latency, status, error_code |
 | **HMAC verification** | Every webhook validated via Twilio HMAC signature |
 | **Ephemeral audio** | S3 audio files auto-deleted after 24 hours |
-| **No hardcoded secrets** | All API keys via `.env` → pydantic-settings |
+| **No hardcoded secrets** | All API keys via `.env` -> pydantic-settings |
 | **Transient sessions** | Redis sessions expire after 30 minutes |
 
 ---
 
 ## Development Progress
 
-Built using spec-driven development (TDD). Each spec has a dedicated folder under `specs/` with a detailed specification and implementation checklist.
+Built using **spec-driven development** (TDD). Each spec has a dedicated folder under `specs/` with a detailed specification (`spec.md`) and implementation checklist (`checklist.md`). The full spec index is in `roadmap.md`.
 
 | Phase | Name | Specs | Status |
 |-------|------|-------|--------|
-| 1 | Project Setup | S1.1 – S1.5 | Done |
-| 2 | Data Layer | S2.1 – S2.5 | Done |
-| 3 | WhatsApp Channel | S3.1 – S3.5 | Done |
-| 4 | Webhook State Machine | S4.1 – S4.6 | Done |
-| 5 | GPT-4O Vision Extraction | S5.1 – S5.5 | Done |
-| 6 | Medical Glossary | S6.1 – S6.4 | Done |
-| 7 | Translation | S7.1 – S7.5 | Done |
-| 8 | Drug Lookup | S8.1 – S8.5 | Done |
-| 9 | TTS & Audio Delivery | S9.1 – S9.5 | Done |
-| 10 | Pipeline Integration | S10.1 – S10.5 | Done |
-| 11 | Infra & Seeding | S11.1 – S11.7 | Done |
-| 12 | AWS Deployment | S12.1 – S12.7 | Pending |
-| 13 | QA & Handover | S13.1 – S13.5 | Pending |
+| 1 | Project Setup | S1.1 -- S1.5 | Done |
+| 2 | Data Layer | S2.1 -- S2.5 | Done |
+| 3 | WhatsApp Channel | S3.1 -- S3.5 | Done |
+| 4 | Webhook State Machine | S4.1 -- S4.6 | Done |
+| 5 | GPT-4O Vision Extraction | S5.1 -- S5.5 | Done |
+| 6 | Medical Glossary | S6.1 -- S6.4 | Done |
+| 7 | Translation | S7.1 -- S7.5 | Done |
+| 8 | Drug Lookup | S8.1 -- S8.5 | Done |
+| 9 | TTS & Audio Delivery | S9.1 -- S9.5 | Done |
+| 10 | Pipeline Integration | S10.1 -- S10.5 | Done |
+| 11 | Infra & Seeding | S11.1 -- S11.7 | Done |
+| 12 | AWS Deployment | S12.1 -- S12.7 | Done |
+| 13 | QA & Handover | S13.1 -- S13.5 | In Progress |
 
-**57 / 69 specs complete** — core application fully built, deployment phase next.
+**64 / 69 specs complete** — core application and deployment complete.
 
 ---
 
@@ -416,8 +754,8 @@ Built using spec-driven development (TDD). Each spec has a dedicated folder unde
 | Upstash Redis | $0 (free tier) |
 | OpenAI GPT-4O Vision | ~$5 / 1000 documents |
 | Claude Sonnet 4.6 | ~$2 / 1000 documents |
-| Twilio WhatsApp | ~$1–5 during testing |
-| **Total** | **~$8–15/month** |
+| Twilio WhatsApp | ~$1-5 during testing |
+| **Total** | **~$8-15/month** |
 
 ---
 
