@@ -249,7 +249,13 @@ def _get_s3_client():
     if _s3_client is None:
         from backend.app.core.config import settings
 
-        kwargs = {"service_name": "s3"}
+        from botocore.config import Config
+
+        kwargs = {
+            "service_name": "s3",
+            "region_name": "ap-south-1",
+            "config": Config(signature_version="s3v4"),
+        }
         if settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
             kwargs["aws_access_key_id"] = settings.AWS_ACCESS_KEY_ID
             kwargs["aws_secret_access_key"] = settings.AWS_SECRET_ACCESS_KEY
