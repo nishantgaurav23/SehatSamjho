@@ -4,7 +4,6 @@ Provides create_app() factory and module-level `app` for uvicorn.
 Lifespan manages startup/shutdown hooks for DB (S2.1) and Redis (S2.2).
 """
 
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 

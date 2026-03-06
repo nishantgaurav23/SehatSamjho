@@ -6,10 +6,8 @@ All edge-tts calls are mocked — no network required.
 
 from __future__ import annotations
 
-import importlib
 import os
-from io import BytesIO
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -119,6 +117,7 @@ class TestEdgeTextToSpeech:
         fake_audio = b"\xff\xfb\x90\x00" * 100  # fake MP3 bytes
 
         mock_communicate = MagicMock()
+
         # edge-tts Communicate.save() writes to a file
         # We mock the stream method instead
         async def fake_stream():
@@ -126,7 +125,9 @@ class TestEdgeTextToSpeech:
 
         mock_communicate.stream = fake_stream
 
-        with patch("backend.app.services.tts_edge.edge_tts.Communicate", return_value=mock_communicate):
+        with patch(
+            "backend.app.services.tts_edge.edge_tts.Communicate", return_value=mock_communicate
+        ):
             result = await edge_text_to_speech("Hello world", "hi", request_id="test-123")
 
         assert isinstance(result, bytes)
@@ -161,11 +162,13 @@ class TestEdgeTextToSpeech:
 
         async def fake_stream():
             raise Exception("Network error")
-            yield  # noqa: unreachable - makes this an async generator
+            yield  # noqa: F841 - unreachable yield makes this an async generator
 
         mock_communicate.stream = fake_stream
 
-        with patch("backend.app.services.tts_edge.edge_tts.Communicate", return_value=mock_communicate):
+        with patch(
+            "backend.app.services.tts_edge.edge_tts.Communicate", return_value=mock_communicate
+        ):
             with pytest.raises(EdgeTTSError):
                 await edge_text_to_speech("Hello", "hi", request_id="test-err")
 
@@ -181,7 +184,9 @@ class TestEdgeTextToSpeech:
 
         mock_communicate.stream = fake_stream
 
-        with patch("backend.app.services.tts_edge.edge_tts.Communicate", return_value=mock_communicate):
+        with patch(
+            "backend.app.services.tts_edge.edge_tts.Communicate", return_value=mock_communicate
+        ):
             with pytest.raises(EdgeTTSError, match="empty audio"):
                 await edge_text_to_speech("Hello", "hi")
 
