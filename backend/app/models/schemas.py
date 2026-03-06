@@ -122,3 +122,34 @@ class SessionState(BaseModel):
     language_name: str | None = None
     request_id: str | None = None
     created_at: str
+
+
+# ---------------------------------------------------------------------------
+# Web API models
+# ---------------------------------------------------------------------------
+
+
+class WebMedicineDetail(BaseModel):
+    """A single medicine with extraction + drug lookup data for the web response."""
+
+    name: str
+    dosage: str | None = None
+    frequency: str | None = None
+    duration: str | None = None
+    confidence: float | None = None
+    purpose: str | None = None
+    side_effects: str | None = None
+
+
+class WebTranslationResponse(BaseModel):
+    """Response from POST /api/translate — full pipeline results for the web UI."""
+
+    request_id: str
+    language_code: str
+    language_name: str
+    medicines: list[WebMedicineDetail] = []
+    translated_text: str
+    per_medicine_summaries: list[str] = []
+    disclaimer: str
+    audio_url: str | None = None
+    latency_ms: int

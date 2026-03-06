@@ -268,7 +268,12 @@ def _reset_s3_client() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def _upload_to_s3(audio_bytes: bytes, request_id: str = "") -> str:
+async def _upload_to_s3(
+    audio_bytes: bytes,
+    request_id: str = "",
+    extension: str = ".ogg",
+    content_type: str = "audio/ogg",
+) -> str:
     """Upload audio bytes to S3 and return a presigned URL.
 
     Raises ValueError on empty audio_bytes.
@@ -280,7 +285,7 @@ async def _upload_to_s3(audio_bytes: bytes, request_id: str = "") -> str:
     s3 = _get_s3_client()
     from backend.app.core.config import settings
 
-    key = f"audio/{uuid4()}.ogg"
+    key = f"audio/{uuid4()}{extension}"
 
     logger.info(
         "S3 upload start | request_id={} | key={} | size={}",
@@ -295,7 +300,7 @@ async def _upload_to_s3(audio_bytes: bytes, request_id: str = "") -> str:
                 Bucket=settings.S3_BUCKET,
                 Key=key,
                 Body=audio_bytes,
-                ContentType="audio/ogg",
+                ContentType=content_type,
             )
         )
     except (ClientError, Exception) as exc:
@@ -339,6 +344,61 @@ async def _upload_to_s3(audio_bytes: bytes, request_id: str = "") -> str:
 # ---------------------------------------------------------------------------
 
 
+async def _get_audio_bytes(
+    text: str,
+    language_code: str,
+    request_id: str = "",
+) -> tuple[bytes, str] | tuple[None, None]:
+    """Try Bhashini first (if API key set), then Edge TTS fallback.
+
+    Returns (audio_bytes, content_type) or (None, None) if both fail.
+    """
+    from backend.app.core.config import settings
+
+    # Try Bhashini first if API key is configured
+    bhashini_key = getattr(settings, "BHASHINI_API_KEY", "")
+    if bhashini_key and bhashini_key.strip():
+        try:
+            audio_bytes = await text_to_speech(text, language_code, request_id=request_id)
+            logger.info(
+                "Bhashini TTS used | request_id={} | audio_bytes={}",
+                request_id,
+                len(audio_bytes),
+            )
+            return audio_bytes, "audio/ogg"
+        except BhashiniTTSError as exc:
+            logger.warning(
+                "Bhashini TTS failed, trying Edge TTS | request_id={} | error={}",
+                request_id,
+                exc,
+            )
+    else:
+        logger.info(
+            "Bhashini API key not set, using Edge TTS | request_id={}",
+            request_id,
+        )
+
+    # Fallback to Edge TTS
+    try:
+        from backend.app.services.tts_edge import edge_text_to_speech
+
+        audio_bytes = await edge_text_to_speech(text, language_code, request_id=request_id)
+        logger.info(
+            "Edge TTS used | request_id={} | audio_bytes={}",
+            request_id,
+            len(audio_bytes),
+        )
+        return audio_bytes, "audio/mp3"
+    except Exception as exc:
+        logger.warning(
+            "Edge TTS also failed | request_id={} | error_type={} | error={}",
+            request_id,
+            type(exc).__name__,
+            exc,
+        )
+        return None, None
+
+
 async def generate_and_deliver_audio(
     text: str,
     language_code: str,
@@ -346,11 +406,11 @@ async def generate_and_deliver_audio(
 ) -> str | None:
     """Orchestrate TTS + S3 upload and return a presigned URL.
 
-    Calls text_to_speech() to convert text to audio bytes via Bhashini,
-    then _upload_to_s3() to upload and get a presigned URL.
+    Tries Bhashini first (if API key set), then Edge TTS fallback.
+    Uploads audio to S3 and returns a presigned URL.
 
     Raises ValueError on empty text/language_code (before any downstream call).
-    Returns None on BhashiniTTSError or S3UploadError (graceful degradation).
+    Returns None on total TTS failure or S3UploadError (graceful degradation).
     """
     if not text or not text.strip():
         raise ValueError("text must be a non-empty string")
@@ -366,25 +426,20 @@ async def generate_and_deliver_audio(
 
     start = time.monotonic()
 
-    try:
-        audio_bytes = await text_to_speech(text, language_code, request_id=request_id)
-    except BhashiniTTSError as exc:
+    audio_bytes, content_type = await _get_audio_bytes(text, language_code, request_id)
+    if audio_bytes is None:
         logger.warning(
-            "generate_and_deliver_audio degraded (TTS) | request_id={} | error_type={} | error={}",
+            "generate_and_deliver_audio degraded (all TTS failed) | request_id={}",
             request_id,
-            type(exc).__name__,
-            exc,
         )
         return None
 
-    logger.info(
-        "generate_and_deliver_audio TTS success | request_id={} | audio_bytes={}",
-        request_id,
-        len(audio_bytes),
-    )
+    ext = ".mp3" if content_type == "audio/mp3" else ".ogg"
 
     try:
-        presigned_url = await _upload_to_s3(audio_bytes, request_id=request_id)
+        presigned_url = await _upload_to_s3(
+            audio_bytes, request_id=request_id, extension=ext, content_type=content_type
+        )
     except S3UploadError as exc:
         logger.warning(
             "generate_and_deliver_audio degraded (S3) | request_id={} | error_type={} | error={}",

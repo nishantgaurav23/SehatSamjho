@@ -243,7 +243,123 @@ async def _call_gpt4o_vision(image_url: str, content_type: str = "image/jpeg") -
 # Public API — extract_prescription (S5.4)
 # ---------------------------------------------------------------------------
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type(
+        (
+            openai.APITimeoutError,
+            openai.APIConnectionError,
+            openai.RateLimitError,
+            openai.InternalServerError,
+        )
+    ),
+    reraise=True,
+    before_sleep=_log_retry,
+)
+async def _call_gpt4o_vision_from_bytes(
+    image_bytes: bytes, content_type: str = "image/jpeg"
+) -> str:
+    """Call GPT-4O Vision with raw image bytes (no download needed).
+
+    Used by the web upload endpoint where the image is already in memory.
+    """
+    data_uri = _encode_image_base64(image_bytes, content_type)
+
+    system_messages = _build_extraction_prompt()
+    user_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "image_url",
+                "image_url": {"url": data_uri, "detail": GPT4O_IMAGE_DETAIL},
+            },
+            {
+                "type": "text",
+                "text": "Extract all medical information from this prescription image.",
+            },
+        ],
+    }
+
+    client = _get_client()
+    logger.debug("Calling GPT-4O Vision (from bytes) model={}", GPT4O_MODEL)
+    response = await client.chat.completions.create(
+        model=GPT4O_MODEL,
+        messages=system_messages + [user_message],
+        max_tokens=GPT4O_MAX_TOKENS,
+        temperature=GPT4O_TEMPERATURE,
+    )
+
+    if not response.choices:
+        raise ValueError("GPT-4O returned no choices")
+
+    return response.choices[0].message.content or ""
+
+
 _CODE_FENCE_RE = re.compile(r"^```(?:\w*)\n(.*)\n```$", re.DOTALL)
+
+
+async def extract_prescription_from_bytes(
+    image_bytes: bytes,
+    content_type: str = "image/jpeg",
+    request_id: str | None = None,
+) -> "PrescriptionData":
+    """Extract structured prescription data from raw image bytes.
+
+    Same pipeline as extract_prescription() but skips the URL download step.
+    Used by the web upload endpoint.
+    """
+    from backend.app.models.schemas import PrescriptionData
+
+    log = logger.bind(request_id=request_id) if request_id else logger
+
+    if not image_bytes:
+        raise ValueError("image_bytes must be non-empty")
+
+    log.info("Starting prescription extraction from bytes")
+
+    raw_json = await _call_gpt4o_vision_from_bytes(image_bytes, content_type)
+
+    stripped = raw_json.strip()
+    fence_match = _CODE_FENCE_RE.match(stripped)
+    if fence_match:
+        stripped = fence_match.group(1)
+
+    if not stripped:
+        log.error("GPT-4O returned empty response")
+        raise ValueError("GPT-4O returned an empty response")
+
+    try:
+        data = json.loads(stripped)
+    except json.JSONDecodeError as exc:
+        log.error("Failed to parse GPT-4O response as JSON: {}", str(exc))
+        raise ValueError(f"Invalid JSON from GPT-4O: {exc}") from exc
+
+    try:
+        result = PrescriptionData.model_validate(data)
+    except Exception as exc:
+        log.error("PrescriptionData validation failed: {}", str(exc))
+        raise ValueError(f"Prescription validation error: {exc}") from exc
+
+    if result.doc_type == "other":
+        log.warning("Document is not a medical document: doc_type={}", result.doc_type)
+        raise NotMedicalDocumentError(
+            f"Document is not a medical document (doc_type={result.doc_type})"
+        )
+
+    if result.overall_confidence < 0.3:
+        log.warning("Image too unclear: overall_confidence={}", result.overall_confidence)
+        raise ImageNotReadableError(
+            f"Image too unclear to extract reliably "
+            f"(overall_confidence={result.overall_confidence})"
+        )
+
+    log.info(
+        "Extraction from bytes complete: doc_type={}, medicines={}",
+        result.doc_type,
+        len(result.medicines),
+    )
+    return result
 
 
 async def extract_prescription(

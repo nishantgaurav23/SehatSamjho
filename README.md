@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11-blue?logo=python&logoColor=white" alt="Python 3.11"/>
   <img src="https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/tests-1446_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"/>
+  <img src="https://img.shields.io/badge/tests-1468_passing-brightgreen?logo=pytest&logoColor=white" alt="Tests"/>
   <img src="https://img.shields.io/badge/languages-22_Indian-orange" alt="Languages"/>
   <img src="https://img.shields.io/badge/PHI-zero_stored-critical" alt="Zero PHI"/>
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License"/>
@@ -9,9 +9,9 @@
 
 # SehatSamjho
 
-**AI-powered medical document translator for WhatsApp.**
+**AI-powered medical document translator for WhatsApp and Web.**
 
-Patients photograph their prescriptions on WhatsApp and receive a plain-language explanation with audio — in any of 22 Indian languages.
+Patients photograph their prescriptions on WhatsApp or upload them on the web — and receive a plain-language explanation with audio in any of 22 Indian languages.
 
 ---
 
@@ -21,7 +21,7 @@ Patients photograph their prescriptions on WhatsApp and receive a plain-language
 
 ## The Solution
 
-SehatSamjho turns any WhatsApp-connected phone into a personal prescription translator. No app downloads, no signup, no literacy required — just send a photo and listen.
+SehatSamjho turns any WhatsApp-connected phone into a personal prescription translator. No app downloads, no signup, no literacy required — just send a photo and listen. A web interface is also available for direct browser-based uploads.
 
 ```
 Patient photographs prescription
@@ -42,6 +42,8 @@ Patient photographs prescription
 - [Supported Languages](#supported-languages)
 - [Project Structure](#project-structure)
 - [How It Works — Step by Step](#how-it-works--step-by-step)
+  - [WhatsApp Flow](#1-patient-sends-a-message-whatsapp---twilio---webhook)
+  - [Web Upload Flow](#web-upload-flow)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Option A: Local Setup (without Docker)](#option-a-local-setup-without-docker)
@@ -63,8 +65,9 @@ Patient photographs prescription
 
 ```mermaid
 graph TB
-    subgraph CLIENT["Patient's Phone"]
+    subgraph CLIENT["Patient"]
         WA["WhatsApp"]
+        WEB["Web Browser"]
     end
 
     subgraph GATEWAY["Messaging Gateway"]
@@ -77,6 +80,8 @@ graph TB
         subgraph INGRESS["Ingress Layer"]
             WH["POST /webhook/whatsapp"]
             HMAC["HMAC Signature<br/>Verification"]
+            WEBAPI["POST /api/translate"]
+            LANDING["GET / Landing Page"]
         end
 
         subgraph SESSION["Session Layer"]
@@ -90,7 +95,7 @@ graph TB
             DRUG["Drug Enrichment<br/>Redis -> CSV -> API"]
             GLOSS["Glossary RAG<br/>Redis Lookup"]
             TRANS["Translation<br/>Claude Sonnet 4.6"]
-            TTS["Text-to-Speech<br/>Bhashini TTS"]
+            TTS["Text-to-Speech<br/>Bhashini / Edge TTS"]
         end
 
         subgraph EGRESS["Egress Layer"]
@@ -109,11 +114,15 @@ graph TB
         OPENAI["OpenAI GPT-4O<br/>Vision"]
         ANTHROPIC["Anthropic Claude<br/>Sonnet 4.6"]
         BHASHINI["Bhashini TTS<br/>Gov. of India"]
+        EDGE["Edge TTS<br/>Microsoft Neural"]
     end
 
     WA <-->|"Messages + Media"| TW
     TW -->|"POST webhook"| WH
     WH --> HMAC --> DISPATCH
+    WEB -->|"Upload image"| WEBAPI
+    WEB -->|"Browse"| LANDING
+    WEBAPI --> EXT
     DISPATCH <-->|"Session State"| SM
     SM <-->|"Read/Write"| REDIS
 
@@ -128,7 +137,8 @@ graph TB
     EXT <-.->|"Vision API"| OPENAI
     TRANS <-.->|"Messages API"| ANTHROPIC
     TTS <-.->|"TTS Pipeline"| BHASHINI
-    TTS -.->|"Upload .ogg"| S3
+    TTS <-.->|"Fallback TTS"| EDGE
+    TTS -.->|"Upload audio"| S3
     DISPATCH -.->|"Log metadata"| PG
     DRUG <-.->|"Drug cache"| REDIS
     GLOSS <-.->|"Term cache"| REDIS
@@ -163,7 +173,7 @@ flowchart LR
     C["Drug Lookup<br/><i>Redis -> CSV -> API</i>"]:::data
     D["Glossary RAG<br/><i>Medical term grounding</i>"]:::data
     E["Claude Sonnet 4.6<br/><i>Simplify + Translate</i>"]:::anthropic
-    F["Bhashini TTS<br/><i>Generate audio</i>"]:::tts
+    F["Bhashini / Edge TTS<br/><i>Generate audio</i>"]:::tts
     G["S3 Upload<br/><i>Presigned URL</i>"]:::storage
     H["WhatsApp Reply<br/><i>Text + Audio</i>"]:::output
 
@@ -211,9 +221,10 @@ stateDiagram-v2
 |-------|-----------|------|
 | **Messaging** | Twilio WhatsApp Business API | Send/receive WhatsApp messages and media |
 | **Backend** | Python 3.11 / FastAPI / uvicorn | Fully async request handling |
+| **Web Frontend** | Jinja2 templates + vanilla JS | Browser-based prescription upload and translation |
 | **Vision AI** | OpenAI GPT-4O (`gpt-4o`) | Extract medicines, dosages, instructions from images |
 | **Translation AI** | Anthropic Claude Sonnet 4.6 (`claude-sonnet-4-6`) | Simplify medical jargon + translate to patient's language |
-| **Text-to-Speech** | Bhashini (Gov. of India) | 22 Indian language voices, free API |
+| **Text-to-Speech** | Bhashini (Gov. of India) + Edge TTS (Microsoft) | Bhashini: 22 languages (needs API key). Edge TTS: 10 languages, free, no key needed (automatic fallback) |
 | **Drug Database** | Local CSV (1000+ medicines) + Redis cache + API fallback | Sub-100ms drug lookups with enrichment |
 | **Medical Glossary** | Per-language JSON (100 terms x 6 languages) + Redis | RAG context injection for accurate medical terminology |
 | **Database** | PostgreSQL (async SQLAlchemy + asyncpg) | Metadata logging only — zero PHI |
@@ -245,9 +256,10 @@ All 22 scheduled languages of India:
 SehatSamjho/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py                    # App factory, lifespan, /health
+│   │   ├── main.py                    # App factory, lifespan, /health, GET / landing page
 │   │   ├── api/
 │   │   │   ├── webhooks.py            # WhatsApp webhook + state machine + pipeline
+│   │   │   ├── web.py                 # POST /api/translate — web upload endpoint
 │   │   │   └── dashboard.py           # Analytics endpoints (stub)
 │   │   ├── core/
 │   │   │   ├── config.py              # pydantic-settings (12 env vars)
@@ -257,18 +269,21 @@ SehatSamjho/
 │   │   │   ├── redis.py               # Async Redis client + connection pool
 │   │   │   └── models.py              # InteractionLog table (metadata, zero PHI)
 │   │   ├── models/
-│   │   │   └── schemas.py             # 8 Pydantic models (request/response)
+│   │   │   └── schemas.py             # 10 Pydantic models (request/response)
 │   │   └── services/
 │   │       ├── extraction.py          # GPT-4O Vision -> PrescriptionData
 │   │       ├── translation.py         # Claude Sonnet 4.6 -> TranslationResult
-│   │       ├── tts.py                 # Bhashini TTS -> S3 audio -> presigned URL
+│   │       ├── tts.py                 # Bhashini/Edge TTS -> S3 audio -> presigned URL
+│   │       ├── tts_edge.py            # Edge TTS fallback (free, no API key)
 │   │       ├── drug_lookup.py         # Redis/CSV/API -> DrugInfo enrichment
 │   │       ├── glossary.py            # Medical glossary loader + Redis RAG
 │   │       └── whatsapp.py            # Language data + Twilio messaging helpers
+│   ├── static/                        # CSS + JS for web frontend
+│   ├── templates/                     # Jinja2 HTML templates
 │   ├── scripts/
 │   │   └── seed.py                    # Load drugs + glossary into Redis
 │   ├── alembic/                       # Database migrations
-│   ├── tests/                         # 1446+ tests, 100% mocked externals
+│   ├── tests/                         # 1468+ tests, 100% mocked externals
 │   └── Dockerfile                     # Multi-stage (base/dev/prod)
 ├── data/
 │   ├── drugs/medicines.csv            # 1001 Indian medicines
@@ -397,7 +412,7 @@ Call Anthropic Claude Sonnet 4.6 Messages API
      - disclaimer
 ```
 
-### 7. Text-to-Speech (Bhashini -> S3)
+### 7. Text-to-Speech (Bhashini / Edge TTS -> S3)
 
 The translated text is converted to spoken audio.
 
@@ -409,18 +424,20 @@ Format audio-friendly text:
   -> Convert to flowing spoken sentences
   -> Cap at 2000 characters
 
-Call Bhashini TTS API:
-  -> POST to Bhashini pipeline inference
-  -> Receive base64-encoded audio bytes
-  -> Decode to .ogg audio
+TTS Provider Selection (automatic):
+  -> If BHASHINI_API_KEY is set and non-empty: try Bhashini first
+  -> If Bhashini fails or key is empty: fallback to Edge TTS (free, no API key)
+  -> If both fail: return None (text-only delivery)
 
 Upload to S3:
-  -> Key: audio/{uuid4}.ogg
+  -> Key: audio/{uuid4}.ogg (Bhashini) or audio/{uuid4}.mp3 (Edge TTS)
   -> Generate presigned URL (1 hour expiry)
   -> S3 lifecycle rule auto-deletes after 24 hours
 ```
 
-**Graceful degradation:** If Bhashini or S3 fails, the pipeline continues with text-only delivery. Audio failure never blocks the text response.
+**Edge TTS** (`backend/app/services/tts_edge.py`) supports 10 Indian languages with Microsoft Neural voices: Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, and Urdu. No API key required — just needs outbound internet access.
+
+**Graceful degradation:** If both TTS providers and S3 fail, the pipeline continues with text-only delivery. Audio failure never blocks the text response.
 
 ### 8. Deliver Response (WhatsApp via Twilio)
 
@@ -455,6 +472,44 @@ Pipeline errors are mapped to patient-friendly WhatsApp messages — no stack tr
 | Translation failure | "We had trouble translating your prescription..." |
 | Generic error | "Something went wrong, please try again..." |
 
+### Web Upload Flow
+
+In addition to WhatsApp, users can upload prescriptions directly via the web interface.
+
+**Landing page:** `GET /` — served from `backend/templates/index.html`
+
+**API endpoint:** `POST /api/translate` — `backend/app/api/web.py`
+
+```
+User opens http://<server>:8000/ in browser
+  -> Selects language from dropdown (22 languages)
+  -> Uploads prescription image (drag-and-drop or file picker)
+  -> Frontend sends multipart POST to /api/translate
+
+Server runs the same pipeline as WhatsApp:
+  -> Validate image (type, size < 10MB) + language_code
+  -> Extract prescription (GPT-4O Vision — from bytes, no URL download)
+  -> Drug enrichment (Redis -> CSV -> API)
+  -> Glossary lookup (Redis RAG)
+  -> Translate (Claude Sonnet 4.6)
+  -> TTS (Bhashini / Edge TTS -> S3)
+  -> Return JSON response:
+     {
+       request_id, language_code, language_name,
+       medicines: [{name, dosage, frequency, duration, confidence, purpose, side_effects}],
+       translated_text, per_medicine_summaries, disclaimer,
+       audio_url, latency_ms
+     }
+
+Frontend renders:
+  -> Medicine cards with confidence badges
+  -> Translated text block
+  -> Audio player (if TTS succeeded)
+  -> Disclaimer
+```
+
+**No API keys needed for web access** — the web interface uses the same backend pipeline. Edge TTS provides free audio without any additional configuration.
+
 ---
 
 ## Getting Started
@@ -467,8 +522,8 @@ Pipeline errors are mapped to patient-friendly WhatsApp messages — no stack tr
 - **API keys** (for running the actual pipeline — not needed for tests):
   - OpenAI (GPT-4O Vision)
   - Anthropic (Claude Sonnet 4.6)
-  - Twilio (WhatsApp Business API)
-  - Bhashini (TTS — free, register at bhashini.gov.in)
+  - Twilio (WhatsApp Business API) — only needed for WhatsApp, not for web
+  - Bhashini (TTS — optional, Edge TTS works as free fallback with no key)
   - AWS (S3 for audio storage)
 
 ### Option A: Local Setup (without Docker)
@@ -561,8 +616,8 @@ Create a `.env` file at the project root (copy from `.env.example`):
 | `TWILIO_ACCOUNT_SID` | Twilio account SID | `ACxxxx...` |
 | `TWILIO_AUTH_TOKEN` | Twilio auth token | `your-token` |
 | `TWILIO_WHATSAPP_FROM` | Twilio WhatsApp sender number | `whatsapp:+14155238886` |
-| `BHASHINI_API_KEY` | Bhashini TTS API key (free) | `your-key` |
-| `BHASHINI_USER_ID` | Bhashini user ID | `your-id` |
+| `BHASHINI_API_KEY` | Bhashini TTS API key (optional — leave empty to use Edge TTS) | `your-key` or empty |
+| `BHASHINI_USER_ID` | Bhashini user ID (optional — leave empty with API key) | `your-id` or empty |
 | `AWS_ACCESS_KEY_ID` | AWS access key for S3 | `AKIA...` |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 | `your-secret` |
 | `S3_BUCKET` | S3 bucket name for audio files | `sehatsamjho-audio` |
@@ -575,10 +630,10 @@ Create a `.env` file at the project root (copy from `.env.example`):
 
 ## Running Tests
 
-All external services (OpenAI, Anthropic, Bhashini, Twilio, Redis, PostgreSQL, S3) are fully mocked — **no API keys or running services needed to run tests**.
+All external services (OpenAI, Anthropic, Bhashini, Edge TTS, Twilio, Redis, PostgreSQL, S3) are fully mocked — **no API keys or running services needed to run tests**.
 
 ```bash
-# Run all 1446+ tests
+# Run all 1468+ tests
 make local-test
 
 # Run a specific test file
@@ -597,12 +652,12 @@ make test
 | Test Area | Files | Tests |
 |-----------|-------|-------|
 | API / Webhooks / Pipeline | 13 | 260 |
-| Services (extraction, translation, TTS, drugs, glossary, WhatsApp) | 27 | 644 |
+| Services (extraction, translation, TTS, Edge TTS, drugs, glossary, WhatsApp) | 28 | 666 |
 | Data Layer (DB, Redis, models, schemas) | 5 | 95 |
 | Data Files (CSV, JSON validation) | 4 | 173 |
 | Infrastructure (Dockerfile, Compose, migrations) | 7 | 112 |
 | E2E smoke tests | 1 | 20 |
-| **Total** | **57+** | **1446+** |
+| **Total** | **58+** | **1468+** |
 
 ---
 
@@ -663,7 +718,10 @@ bash scripts/deploy.sh
 curl http://localhost:8000/health
 # {"status": "ok"}
 
-# 7. Configure Twilio webhook URL in Twilio Console
+# 7. Access the web interface
+#    Open in browser: http://<EC2_ELASTIC_IP>:8000/
+
+# 8. Configure Twilio webhook URL in Twilio Console (for WhatsApp)
 #    URL: http://<EC2_ELASTIC_IP>:8000/webhook/whatsapp
 #    Method: POST
 ```
@@ -739,8 +797,9 @@ Built using **spec-driven development** (TDD). Each spec has a dedicated folder 
 | 11 | Infra & Seeding | S11.1 -- S11.7 | Done |
 | 12 | AWS Deployment | S12.1 -- S12.7 | Done |
 | 13 | QA & Handover | S13.1 -- S13.5 | In Progress |
+| 14 | Web Interface | S14.1 -- S14.4 | Done (S14.1-S14.3), S14.4 pending |
 
-**64 / 69 specs complete** — core application and deployment complete.
+**67 / 73 specs complete** — core application, deployment, and web interface complete.
 
 ---
 
@@ -752,6 +811,7 @@ Built using **spec-driven development** (TDD). Each spec has a dedicated folder 
 | RDS db.t3.micro PostgreSQL | $0 (free tier) |
 | S3 audio storage | $0 (free tier) |
 | Upstash Redis | $0 (free tier) |
+| Edge TTS (Microsoft Neural) | $0 (free, no API key) |
 | OpenAI GPT-4O Vision | ~$5 / 1000 documents |
 | Claude Sonnet 4.6 | ~$2 / 1000 documents |
 | Twilio WhatsApp | ~$1-5 during testing |

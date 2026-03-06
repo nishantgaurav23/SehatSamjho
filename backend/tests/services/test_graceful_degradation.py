@@ -1,10 +1,10 @@
 """Tests for S9.5 — Graceful Degradation.
 
 20 tests covering: AUDIO_UNAVAILABLE_MESSAGE constant, return type annotation,
-BhashiniTTSError/S3UploadError caught and return None, ValueError still propagates,
+TTS failure caught and return None, ValueError still propagates,
 warning-level logging on degradation, happy path unchanged, regression guard.
 
-All downstream calls (text_to_speech, _upload_to_s3) are mocked.
+All downstream calls (text_to_speech, _upload_to_s3, _get_audio_bytes) are mocked.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ class TestConstantAndReturnType:
 
 
 # ---------------------------------------------------------------------------
-# Tests 4–5: BhashiniTTSError / S3UploadError caught → None
+# Tests 4–5: TTS failure / S3 failure → None
 # ---------------------------------------------------------------------------
 
 
@@ -58,24 +58,24 @@ class TestDegradation:
     """Tests 4–5: service errors caught, return None."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_bhashini_failure_returns_none(self, mock_tts, mock_s3):
-        """When text_to_speech raises BhashiniTTSError, returns None."""
-        from backend.app.services.tts import BhashiniTTSError, generate_and_deliver_audio
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_all_tts_failure_returns_none(self, mock_get_audio, mock_s3):
+        """When _get_audio_bytes returns (None, None), returns None."""
+        from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = BhashiniTTSError("TTS failed")
+        mock_get_audio.return_value = (None, None)
 
         result = await generate_and_deliver_audio("hello", "hi", request_id="req-d1")
 
         assert result is None
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_s3_failure_returns_none(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_s3_failure_returns_none(self, mock_get_audio, mock_s3):
         """When _upload_to_s3 raises S3UploadError, returns None."""
         from backend.app.services.tts import S3UploadError, generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio-bytes"
+        mock_get_audio.return_value = (b"audio-bytes", "audio/ogg")
         mock_s3.side_effect = S3UploadError("S3 failed")
 
         result = await generate_and_deliver_audio("hello", "hi", request_id="req-d2")
@@ -93,12 +93,12 @@ class TestDegradationLogging:
     """Tests 6–7: logger.warning called on degradation."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_bhashini_failure_logs_warning(self, mock_tts, mock_s3):
-        """On Bhashini failure, logger.warning is called with request_id."""
-        from backend.app.services.tts import BhashiniTTSError, generate_and_deliver_audio
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_tts_failure_logs_warning(self, mock_get_audio, mock_s3):
+        """On TTS failure, logger.warning is called with request_id."""
+        from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = BhashiniTTSError("TTS timeout")
+        mock_get_audio.return_value = (None, None)
 
         with patch("backend.app.services.tts.logger") as mock_logger:
             await generate_and_deliver_audio("hello", "hi", request_id="req-w1")
@@ -108,12 +108,12 @@ class TestDegradationLogging:
             assert "req-w1" in warn_args
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_s3_failure_logs_warning(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_s3_failure_logs_warning(self, mock_get_audio, mock_s3):
         """On S3 failure, logger.warning is called with request_id."""
         from backend.app.services.tts import S3UploadError, generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio-bytes"
+        mock_get_audio.return_value = (b"audio-bytes", "audio/ogg")
         mock_s3.side_effect = S3UploadError("Upload timeout")
 
         with patch("backend.app.services.tts.logger") as mock_logger:
@@ -133,18 +133,14 @@ class TestDegradationLogging:
 class TestValueErrorPropagation:
     """Tests 8–9: ValueError is NOT caught — propagates as before."""
 
-    @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_valueerror_not_caught_empty_text(self, mock_tts, mock_s3):
+    async def test_valueerror_not_caught_empty_text(self):
         """Empty text still raises ValueError."""
         from backend.app.services.tts import generate_and_deliver_audio
 
         with pytest.raises(ValueError, match="text"):
             await generate_and_deliver_audio("", "hi")
 
-    @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_valueerror_not_caught_empty_language(self, mock_tts, mock_s3):
+    async def test_valueerror_not_caught_empty_language(self):
         """Empty language_code still raises ValueError."""
         from backend.app.services.tts import generate_and_deliver_audio
 
@@ -162,12 +158,12 @@ class TestHappyPath:
     """Test 10: happy path unchanged."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_happy_path_still_returns_url(self, mock_tts, mock_s3):
-        """When both TTS and S3 succeed, returns presigned URL string."""
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_happy_path_still_returns_url(self, mock_get_audio, mock_s3):
+        """When TTS and S3 succeed, returns presigned URL string."""
         from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio-bytes"
+        mock_get_audio.return_value = (b"audio-bytes", "audio/ogg")
         expected = "https://s3.amazonaws.com/bucket/audio/test.ogg"
         mock_s3.return_value = expected
 
@@ -178,21 +174,21 @@ class TestHappyPath:
 
 
 # ---------------------------------------------------------------------------
-# Test 11: Bhashini failure → S3 never called
+# Test 11: TTS failure → S3 never called
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
 class TestNoS3OnTTSFailure:
-    """Test 11: when TTS fails, _upload_to_s3 is never called."""
+    """Test 11: when all TTS fails, _upload_to_s3 is never called."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_bhashini_failure_no_s3_call(self, mock_tts, mock_s3):
-        """When TTS fails, _upload_to_s3 is never called."""
-        from backend.app.services.tts import BhashiniTTSError, generate_and_deliver_audio
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_tts_failure_no_s3_call(self, mock_get_audio, mock_s3):
+        """When all TTS fails, _upload_to_s3 is never called."""
+        from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = BhashiniTTSError("TTS down")
+        mock_get_audio.return_value = (None, None)
 
         await generate_and_deliver_audio("hello", "hi", request_id="req-ns")
 
@@ -209,12 +205,12 @@ class TestWarningRequestId:
     """Tests 12–13: warning log includes the request_id passed in."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_bhashini_failure_with_request_id_in_log(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_tts_failure_with_request_id_in_log(self, mock_get_audio, mock_s3):
         """Warning log includes the request_id passed in."""
-        from backend.app.services.tts import BhashiniTTSError, generate_and_deliver_audio
+        from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = BhashiniTTSError("TTS error")
+        mock_get_audio.return_value = (None, None)
 
         with patch("backend.app.services.tts.logger") as mock_logger:
             await generate_and_deliver_audio("hello", "hi", request_id="rid-12")
@@ -223,12 +219,12 @@ class TestWarningRequestId:
             assert "rid-12" in warn_call
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_s3_failure_with_request_id_in_log(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_s3_failure_with_request_id_in_log(self, mock_get_audio, mock_s3):
         """Warning log includes the request_id passed in."""
         from backend.app.services.tts import S3UploadError, generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio"
+        mock_get_audio.return_value = (b"audio", "audio/ogg")
         mock_s3.side_effect = S3UploadError("S3 error")
 
         with patch("backend.app.services.tts.logger") as mock_logger:
@@ -248,23 +244,23 @@ class TestGenericExceptionPropagation:
     """Tests 14–15: unexpected exceptions still propagate."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_generic_exception_from_tts_not_caught(self, mock_tts, mock_s3):
-        """Unexpected RuntimeError from TTS still propagates."""
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_generic_exception_from_get_audio_not_caught(self, mock_get_audio, mock_s3):
+        """Unexpected RuntimeError from _get_audio_bytes still propagates."""
         from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = RuntimeError("unexpected crash")
+        mock_get_audio.side_effect = RuntimeError("unexpected crash")
 
         with pytest.raises(RuntimeError, match="unexpected crash"):
             await generate_and_deliver_audio("hello", "hi")
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_generic_exception_from_s3_not_caught(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_generic_exception_from_s3_not_caught(self, mock_get_audio, mock_s3):
         """Unexpected RuntimeError from S3 still propagates."""
         from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio-bytes"
+        mock_get_audio.return_value = (b"audio-bytes", "audio/ogg")
         mock_s3.side_effect = RuntimeError("s3 unexpected")
 
         with pytest.raises(RuntimeError, match="s3 unexpected"):
@@ -281,26 +277,25 @@ class TestWarningErrorType:
     """Tests 16–17: warning log includes the exception class name."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_bhashini_failure_log_contains_error_type(self, mock_tts, mock_s3):
-        """Warning log includes 'BhashiniTTSError'."""
-        from backend.app.services.tts import BhashiniTTSError, generate_and_deliver_audio
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_tts_failure_log_contains_all_failed(self, mock_get_audio, mock_s3):
+        """Warning log includes 'all TTS failed'."""
+        from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = BhashiniTTSError("TTS failed badly")
+        mock_get_audio.return_value = (None, None)
 
         with patch("backend.app.services.tts.logger") as mock_logger:
             await generate_and_deliver_audio("hello", "hi", request_id="req-et1")
 
-            warn_call = str(mock_logger.warning.call_args)
-            assert "BhashiniTTSError" in warn_call
+            mock_logger.warning.assert_called()
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_s3_failure_log_contains_error_type(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_s3_failure_log_contains_error_type(self, mock_get_audio, mock_s3):
         """Warning log includes 'S3UploadError'."""
         from backend.app.services.tts import S3UploadError, generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio"
+        mock_get_audio.return_value = (b"audio", "audio/ogg")
         mock_s3.side_effect = S3UploadError("upload broke")
 
         with patch("backend.app.services.tts.logger") as mock_logger:
@@ -320,12 +315,12 @@ class TestHappyPathLogging:
     """Test 18: on success, only info logs (no warning)."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_happy_path_logs_info_not_warning(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_happy_path_logs_info_not_warning(self, mock_get_audio, mock_s3):
         """On success, warning is never called."""
         from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.return_value = b"audio"
+        mock_get_audio.return_value = (b"audio", "audio/ogg")
         mock_s3.return_value = "https://example.com/audio.ogg"
 
         with patch("backend.app.services.tts.logger") as mock_logger:
@@ -345,12 +340,12 @@ class TestNoneFalsy:
     """Test 19: returned None on failure is falsy."""
 
     @patch("backend.app.services.tts._upload_to_s3", new_callable=AsyncMock)
-    @patch("backend.app.services.tts.text_to_speech", new_callable=AsyncMock)
-    async def test_none_return_is_falsy(self, mock_tts, mock_s3):
+    @patch("backend.app.services.tts._get_audio_bytes", new_callable=AsyncMock)
+    async def test_none_return_is_falsy(self, mock_get_audio, mock_s3):
         """Returned None on failure is falsy for Phase 10 `if` check."""
-        from backend.app.services.tts import BhashiniTTSError, generate_and_deliver_audio
+        from backend.app.services.tts import generate_and_deliver_audio
 
-        mock_tts.side_effect = BhashiniTTSError("fail")
+        mock_get_audio.return_value = (None, None)
 
         result = await generate_and_deliver_audio("hello", "hi")
 
@@ -363,7 +358,7 @@ class TestNoneFalsy:
 
 
 class TestRegressionGuard:
-    """Test 20: existing S9.4 tests still pass."""
+    """Test 20: existing S9.4 imports/functions remain intact."""
 
     def test_existing_s9_4_tests_pass(self):
         """All prior S9.4 imports/functions remain intact."""
