@@ -618,8 +618,8 @@ Create a `.env` file at the project root (copy from `.env.example`):
 | `TWILIO_WHATSAPP_FROM` | Twilio WhatsApp sender number | `whatsapp:+14155238886` |
 | `BHASHINI_API_KEY` | Bhashini TTS API key (optional — leave empty to use Edge TTS) | `your-key` or empty |
 | `BHASHINI_USER_ID` | Bhashini user ID (optional — leave empty with API key) | `your-id` or empty |
-| `AWS_ACCESS_KEY_ID` | AWS access key for S3 | `AKIA...` |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 | `your-secret` |
+| `AWS_ACCESS_KEY_ID` | AWS access key for S3 (optional — EC2 uses IAM role) | `AKIA...` or empty |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for S3 (optional — EC2 uses IAM role) | `your-secret` or empty |
 | `S3_BUCKET` | S3 bucket name for audio files | `sehatsamjho-audio` |
 | `DATABASE_URL` | PostgreSQL async connection string | `postgresql+asyncpg://postgres:postgres@localhost:5432/sehatsamjho` |
 | `REDIS_URL` | Redis connection string | `redis://localhost:6379/0` |
