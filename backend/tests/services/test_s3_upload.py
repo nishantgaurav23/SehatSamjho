@@ -110,7 +110,7 @@ class TestS3ClientSingleton:
         with patch("backend.app.core.config.settings", mock_settings):
             _get_s3_client()
         call_kwargs = mock_boto3.client.call_args
-        assert call_kwargs[0][0] == "s3"
+        assert call_kwargs[1]["service_name"] == "s3"
         assert call_kwargs[1]["aws_access_key_id"] == "test-aws-key"
         assert call_kwargs[1]["aws_secret_access_key"] == "test-aws-secret"
 

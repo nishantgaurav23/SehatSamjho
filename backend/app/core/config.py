@@ -24,8 +24,9 @@ class Settings(BaseSettings):
     BHASHINI_USER_ID: str
 
     # ── AWS (S3 audio storage) ──────────────────────────────────────────────
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
+    # Optional — EC2 uses IAM role; only needed for local dev with explicit keys
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
     S3_BUCKET: str = "sehatsamjho-audio"
 
     # ── Database (PostgreSQL async) ─────────────────────────────────────────
