@@ -38,6 +38,17 @@ class MedicineEntry(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
 
 
+class LabTestEntry(BaseModel):
+    """A single lab test extracted from a lab report image."""
+
+    test_name: str = Field(..., min_length=1)
+    value: str | None = None
+    unit: str | None = None
+    reference_range: str | None = None
+    flag: str | None = None  # "normal", "high", "low", or None
+    confidence: float = Field(default=0.8, ge=0.0, le=1.0)
+
+
 class PrescriptionData(BaseModel):
     """Full structured output from GPT-4O Vision extraction."""
 
@@ -46,6 +57,7 @@ class PrescriptionData(BaseModel):
     date: str | None = None
     diagnosis: str | None = None
     medicines: list[MedicineEntry] = []
+    lab_tests: list[LabTestEntry] = []
     overall_confidence: float = Field(..., ge=0.0, le=1.0)
     doc_type: str = "prescription"
 
@@ -141,14 +153,33 @@ class WebMedicineDetail(BaseModel):
     side_effects: str | None = None
 
 
+class WebLabTestDetail(BaseModel):
+    """A single lab test with extraction data for the web response."""
+
+    test_name: str
+    value: str | None = None
+    unit: str | None = None
+    reference_range: str | None = None
+    flag: str | None = None
+    confidence: float | None = None
+
+
 class WebTranslationResponse(BaseModel):
     """Response from POST /api/translate — full pipeline results for the web UI."""
 
     request_id: str
     language_code: str
     language_name: str
+    doc_type: str = "prescription"
+    doctor_name: str | None = None
+    diagnosis: str | None = None
+    date: str | None = None
     medicines: list[WebMedicineDetail] = []
+    lab_tests: list[WebLabTestDetail] = []
     translated_text: str
+    section_medicines: str = ""
+    section_why: str = ""
+    section_next_steps: str = ""
     per_medicine_summaries: list[str] = []
     disclaimer: str
     audio_url: str | None = None

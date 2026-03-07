@@ -8,110 +8,245 @@
 </head>
 <body>
 
-    <!-- ── Header ──────────────────────────────────────────── -->
+    <!-- Header with Logo -->
     <header class="header">
-        <h1>SehatSamjho</h1>
+        <div class="logo">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="48" height="48" rx="14" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                <rect x="22" y="12" width="8" height="28" rx="2" fill="white" opacity="0.95"/>
+                <rect x="12" y="22" width="28" height="8" rx="2" fill="white" opacity="0.95"/>
+                <rect x="10" y="36" width="12" height="2" rx="1" fill="rgba(255,255,255,0.4)"/>
+                <rect x="10" y="40" width="8" height="2" rx="1" fill="rgba(255,255,255,0.25)"/>
+            </svg>
+            <h1>SehatSamjho</h1>
+        </div>
         <p class="tagline">
-            Upload a prescription photo and get a plain-language explanation
-            with audio in your preferred Indian language.
+            Understand your prescriptions and test reports in your language, with audio.
         </p>
     </header>
 
-    <!-- ── How It Works ────────────────────────────────────── -->
-    <section class="steps">
-        <div class="step">
-            <span class="step-number">1</span>
-            <h3>Upload Photo</h3>
-            <p>Take a photo of your prescription and upload it here</p>
+    <!-- Wizard Progress -->
+    <div class="wizard-progress">
+        <div class="progress-step active" data-step="1">
+            <span class="progress-number">1</span>
+            <span class="progress-label">Choose Language</span>
         </div>
-        <div class="step">
-            <span class="step-number">2</span>
-            <h3>Select Language</h3>
-            <p>Choose from 22 Indian languages for your translation</p>
+        <div class="progress-line"></div>
+        <div class="progress-step" data-step="2">
+            <span class="progress-number">2</span>
+            <span class="progress-label">Upload Document</span>
         </div>
-        <div class="step">
-            <span class="step-number">3</span>
-            <h3>Get Results</h3>
-            <p>Receive a clear explanation with text and audio</p>
-        </div>
-    </section>
-
-    <!-- ── Upload Form ─────────────────────────────────────── -->
-    <div class="container">
-        <div class="card">
-            <h2>Translate Your Prescription</h2>
-
-            <div id="error-msg" class="error-msg"></div>
-
-            <form id="upload-form">
-                <div class="form-group">
-                    <label for="language-select">Select Language</label>
-                    <select id="language-select" name="language_code" required>
-                        {% for code, lang in languages.items() %}
-                        <option value="{{ code }}" {% if code == 'hi' %}selected{% endif %}>
-                            {{ lang.name }} - {{ lang.display_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Prescription Image</label>
-                    <div id="upload-zone" class="upload-zone">
-                        <input type="file" id="image-input" name="image"
-                               accept="image/*" required>
-                        <span class="upload-icon">&#128247;</span>
-                        <p>Drag & drop your prescription photo here,<br>or click to browse</p>
-                        <p class="file-name" id="file-name" style="display:none"></p>
-                        <img class="image-preview" id="image-preview" alt="Preview">
-                    </div>
-                </div>
-
-                <button type="submit" id="submit-btn" class="btn btn-primary">
-                    Translate Prescription
-                </button>
-            </form>
-
-            <!-- Loading -->
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p>Translating your prescription...<br>This usually takes 20-30 seconds.</p>
-            </div>
-        </div>
-
-        <!-- ── Results ─────────────────────────────────────── -->
-        <div id="results" class="results">
-            <div class="card" style="margin-top: 1.5rem">
-                <h2>Prescription Summary</h2>
-
-                <div id="medicines-list"></div>
-
-                <div class="translation-block">
-                    <strong>Translation:</strong>
-                    <p id="translation-text"></p>
-                </div>
-
-                <div id="audio-section" class="audio-section" style="display:none">
-                    <strong>Listen to your prescription:</strong>
-                    <audio id="audio-player" controls preload="none"></audio>
-                    <p>Audio generated using text-to-speech</p>
-                </div>
-
-                <div class="disclaimer">
-                    <strong>Disclaimer:</strong>
-                    <span id="disclaimer-text"></span>
-                </div>
-
-                <p class="latency" id="latency-value"></p>
-
-                <button id="reset-btn" class="btn btn-outline">
-                    Translate Another Prescription
-                </button>
-            </div>
+        <div class="progress-line"></div>
+        <div class="progress-step" data-step="3">
+            <span class="progress-number">3</span>
+            <span class="progress-label">View Results</span>
         </div>
     </div>
 
-    <!-- ── Footer ──────────────────────────────────────────── -->
+    <div class="container">
+        <!-- Step 1: Language Selection -->
+        <div class="wizard-step active" id="step-1">
+            <div class="card">
+                <h2>Which language do you prefer?</h2>
+                <p class="step-desc">We'll translate your prescription into this language.</p>
+
+                <div class="language-search">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <input type="text" id="lang-search" placeholder="Search languages..." autocomplete="off">
+                </div>
+
+                <div class="popular-label">All Languages</div>
+                <div class="language-grid">
+                    {% for code, lang in languages.items() %}
+                    <label class="language-option {% if code == 'hi' %}selected{% endif %}">
+                        <input type="radio" name="language_code" value="{{ code }}"
+                               {% if code == 'hi' %}checked{% endif %}>
+                        <span class="lang-name">{{ lang.name }}</span>
+                        <span class="lang-native">{{ lang.display_name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <button type="button" id="next-to-2" class="btn btn-primary">
+                    Continue
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Upload -->
+        <div class="wizard-step" id="step-2">
+            <div class="card">
+                <h2>Upload your medical document</h2>
+                <p class="step-desc">Take a clear photo or upload an image of your prescription, lab report, or test results.</p>
+
+                <div class="selected-lang-badge" id="selected-lang-badge">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M4 7h6M7 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span id="selected-lang-text">Hindi - &#x0939;&#x093F;&#x0928;&#x094D;&#x0926;&#x0940;</span>
+                </div>
+
+                <div id="error-msg" class="error-msg"></div>
+
+                <form id="upload-form">
+                    <div id="upload-zone" class="upload-zone">
+                        <input type="file" id="image-input" name="image"
+                               accept="image/*" required>
+                        <div class="upload-placeholder" id="upload-placeholder">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <rect x="6" y="10" width="36" height="28" rx="4" stroke="#94a3b8" stroke-width="2" fill="none"/>
+                                <circle cx="18" cy="22" r="4" stroke="#94a3b8" stroke-width="2" fill="none"/>
+                                <path d="M6 32l10-8 8 6 8-10 10 12" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            </svg>
+                            <p>Drag & drop your prescription or lab report photo here,<br>or <strong>click to browse</strong></p>
+                        </div>
+                        <div class="upload-preview" id="upload-preview" style="display:none">
+                            <img id="image-preview" alt="Prescription preview">
+                            <p class="file-name" id="file-name"></p>
+                            <button type="button" class="btn-change" id="change-image">Change image</button>
+                        </div>
+                    </div>
+
+                    <div class="step-actions">
+                        <button type="button" id="back-to-1" class="btn btn-ghost">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Back
+                        </button>
+                        <button type="submit" id="submit-btn" class="btn btn-primary" disabled>
+                            Translate Document
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="wizard-step" id="step-loading">
+            <div class="card loading-card">
+                <div class="loading-animation">
+                    <div class="pulse-ring"></div>
+                    <svg class="loading-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="23" stroke="var(--primary)" stroke-width="2" fill="var(--primary-light)"/>
+                        <path d="M24 14v20M14 24h20" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h2>Translating your document...</h2>
+                <p class="loading-hint">Reading your document, looking up details, and translating. This usually takes 30-60 seconds.</p>
+                <div class="loading-steps">
+                    <div class="loading-step active" id="ls-extract">
+                        <span class="ls-dot"></span> Reading document
+                    </div>
+                    <div class="loading-step" id="ls-lookup">
+                        <span class="ls-dot"></span> Looking up details
+                    </div>
+                    <div class="loading-step" id="ls-translate">
+                        <span class="ls-dot"></span> Translating to your language
+                    </div>
+                    <div class="loading-step" id="ls-audio">
+                        <span class="ls-dot"></span> Generating audio
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Results -->
+        <div class="wizard-step" id="step-3">
+
+            <!-- Prescription overview -->
+            <div class="result-header card">
+                <div class="result-badge">Translation Complete</div>
+                <div id="rx-meta" class="rx-meta"></div>
+            </div>
+
+            <!-- Prescription: Section 1 — What You Take -->
+            <div class="result-section card" id="rx-section-medicines">
+                <div class="section-icon section-icon-medicines">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect x="3" y="6" width="22" height="16" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <path d="M14 6v16M3 14h22" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h3>What You're Prescribed</h3>
+                <p class="section-subtitle">Your medicines, dosage, and ailment</p>
+                <div id="section-medicines" class="section-content"></div>
+                <div id="medicines-cards"></div>
+            </div>
+
+            <!-- Lab Report: Test Results Table -->
+            <div class="result-section card" id="lab-section-tests" style="display:none">
+                <div class="section-icon section-icon-lab">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <path d="M10 3v8l-5 9a2 2 0 001.7 3h14.6a2 2 0 001.7-3l-5-9V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10 3h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M8 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+                    </svg>
+                </div>
+                <h3>Your Test Results</h3>
+                <p class="section-subtitle">Each test with your value and the normal range</p>
+                <div id="section-lab-overview" class="section-content"></div>
+                <div id="lab-tests-cards"></div>
+            </div>
+
+            <!-- Section 2: Why / What Results Mean -->
+            <div class="result-section card">
+                <div class="section-icon section-icon-why">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="2" fill="none"/>
+                        <path d="M14 9v6M14 18v1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3 id="section-why-title">Why These Medicines</h3>
+                <p class="section-subtitle" id="section-why-subtitle">What each medicine does and why it was prescribed</p>
+                <div id="section-why" class="section-content"></div>
+            </div>
+
+            <!-- Section 3: Next Steps -->
+            <div class="result-section card">
+                <div class="section-icon section-icon-next">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <path d="M5 14l7 7L23 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                </div>
+                <h3>Next Steps</h3>
+                <p class="section-subtitle" id="section-next-subtitle">When to take, what to avoid, and follow-up</p>
+                <div id="section-next-steps" class="section-content"></div>
+            </div>
+
+            <!-- Audio -->
+            <div id="audio-section" class="result-section card" style="display:none">
+                <div class="section-icon section-icon-medicines">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <path d="M7 11v6h4l5 5V6l-5 5H7z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
+                        <path d="M19 10a5 5 0 010 8M21 7a9 9 0 010 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    </svg>
+                </div>
+                <h3>Listen to your prescription</h3>
+                <audio id="audio-player" controls preload="none"></audio>
+                <p class="audio-note">Audio generated using text-to-speech</p>
+            </div>
+
+            <!-- Full Translation (collapsible) -->
+            <details class="result-section card full-translation">
+                <summary>View full translation text</summary>
+                <div id="translation-text" class="section-content"></div>
+            </details>
+
+            <!-- Disclaimer -->
+            <div class="disclaimer">
+                <strong>Disclaimer:</strong>
+                <span id="disclaimer-text"></span>
+            </div>
+
+            <p class="latency" id="latency-value"></p>
+
+            <button id="reset-btn" class="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 1111.3-2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Translate Another Document
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
     <footer class="footer">
         <p>
             SehatSamjho &mdash; AI Medical Document Translator<br>

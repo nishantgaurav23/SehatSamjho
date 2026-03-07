@@ -689,21 +689,27 @@ async def _run_pipeline_inner(
             )
             logger.info("Extraction complete")
 
-            # Step 2: Enrich with drug lookup
-            logger.info("Pipeline: drug enrichment")
-            drug_info_list = await enrich_prescription(
-                redis_client=redis,
-                prescription=prescription_data,
-                request_id=request_id,
-            )
-            logger.info("Drug enrichment complete")
+            doc_type = prescription_data.doc_type
+            is_lab_report = doc_type == "lab_report"
+            logger.info("Pipeline: doc_type={}", doc_type)
 
-            # Step 3: Glossary lookup
-            logger.info("Pipeline: glossary lookup")
-            medicine_terms = [m.medicine_name for m in prescription_data.medicines]
-            glossary_entries = await lookup_terms(medicine_terms, session.language_code, redis)
-            glossary_context = format_glossary_context(glossary_entries, session.language_name)
-            logger.info("Glossary lookup complete")
+            # Step 2 & 3: Enrich with drug lookup + glossary (prescriptions only)
+            drug_info_list = []
+            glossary_context = ""
+            if not is_lab_report:
+                logger.info("Pipeline: drug enrichment")
+                drug_info_list = await enrich_prescription(
+                    redis_client=redis,
+                    prescription=prescription_data,
+                    request_id=request_id,
+                )
+                logger.info("Drug enrichment complete")
+
+                logger.info("Pipeline: glossary lookup")
+                medicine_terms = [m.medicine_name for m in prescription_data.medicines]
+                glossary_entries = await lookup_terms(medicine_terms, session.language_code, redis)
+                glossary_context = format_glossary_context(glossary_entries, session.language_name)
+                logger.info("Glossary lookup complete")
 
             # Step 4: Translate with Claude Sonnet 4.6
             logger.info("Pipeline: translation")
@@ -714,6 +720,7 @@ async def _run_pipeline_inner(
                 drug_info_list=drug_info_list,
                 glossary_context=glossary_context,
                 request_id=request_id,
+                doc_type=doc_type,
             )
             logger.info("Translation complete")
 
@@ -770,6 +777,7 @@ async def _run_pipeline_inner(
                     status=InteractionStatus.SUCCESS,
                     request_id=request_id,
                     db=db,
+                    doc_type=doc_type,
                     confidence_avg=confidence_avg,
                     latency_ms=latency_ms,
                 )

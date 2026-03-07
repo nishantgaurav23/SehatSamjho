@@ -152,20 +152,20 @@ def test_prompt_contains_no_advice_rule():
 
 
 def test_prompt_contains_confidence_flag_rule():
-    """Rendered prompt mentions confidence and warning emoji."""
+    """Rendered prompt mentions confidence and warning."""
     from backend.app.services.translation import _build_system_prompt
 
     result = _build_system_prompt()
     assert "confidence" in result.lower()
-    assert "\u26a0\ufe0f" in result  # ⚠️
+    assert "warning" in result.lower() or "verify" in result.lower()
 
 
 def test_prompt_contains_word_limit_rule():
-    """Rendered prompt mentions '300 words'."""
+    """Rendered prompt mentions word limit."""
     from backend.app.services.translation import _build_system_prompt
 
     result = _build_system_prompt()
-    assert "300 words" in result
+    assert "400 words" in result
 
 
 def test_prompt_contains_disclaimer_rule():

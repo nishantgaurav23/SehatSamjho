@@ -99,7 +99,7 @@ EXTRACTION_OUTPUT_SCHEMA: str = (
     '  "patient_name": string or null,         // as printed on the document\n'
     '  "date": string or null,                 // any date format found\n'
     '  "diagnosis": string or null,            // primary diagnosis if stated\n'
-    '  "medicines": [                          // one entry per medicine\n'
+    '  "medicines": [                          // one entry per medicine (prescriptions)\n'
     "    {\n"
     '      "medicine_name": string (required),  // brand or generic name\n'
     '      "dosage": string or null,            // e.g. "500mg"\n'
@@ -109,10 +109,26 @@ EXTRACTION_OUTPUT_SCHEMA: str = (
     '      "confidence": float (0.0–1.0)        // how clearly this entry was read\n'
     "    }\n"
     "  ],\n"
+    '  "lab_tests": [                          // one entry per test (lab reports)\n'
+    "    {\n"
+    '      "test_name": string (required),      // e.g. "Hemoglobin", "Blood Glucose Fasting"\n'
+    '      "value": string or null,             // e.g. "12.5", "110"\n'
+    '      "unit": string or null,              // e.g. "g/dL", "mg/dL"\n'
+    '      "reference_range": string or null,   // e.g. "12.0-16.0", "70-100"\n'
+    '      "flag": string or null,              // "normal", "high", "low", or null if unclear\n'
+    '      "confidence": float (0.0–1.0)        // how clearly this entry was read\n'
+    "    }\n"
+    "  ],\n"
     '  "overall_confidence": float (0.0–1.0),  // image quality + legibility\n'
     '  "doc_type": "prescription" | "lab_report" | "other"\n'
     "}\n"
     "```\n"
+    "\n"
+    "## Important\n"
+    "- For prescriptions: populate `medicines`, leave `lab_tests` as empty array.\n"
+    "- For lab reports: populate `lab_tests`, leave `medicines` as empty array.\n"
+    "- For each lab test, determine the `flag` by comparing `value` to `reference_range`:\n"
+    '  set "high" if above range, "low" if below, "normal" if within, null if unclear.\n'
 )
 
 

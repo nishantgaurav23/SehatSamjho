@@ -323,6 +323,7 @@ class TestPipelineServiceCalls:
             drug_info_list=mock_services["drug_info_list"],
             glossary_context="Glossary:\nParacetamol → दर्द और बुखार",
             request_id=REQUEST_ID,
+            doc_type="prescription",
         )
 
     @pytest.mark.asyncio

@@ -55,22 +55,24 @@ Your audience is everyday people — not doctors. Write as if you are a friendly
 pharmacist explaining things face-to-face.
 
 ## Output format
-Structure your response exactly like this:
+Structure your response into EXACTLY these three sections using these markers:
 
-### Your Prescription Summary
-One-line overview: doctor name, date, and diagnosis (if available). \
+[WHAT YOU TAKE]
+Start with a one-line overview: doctor name, date, and diagnosis/ailment (if available). \
 Skip any field that says "Not specified" — do not mention it at all.
-
-### Medicines
-For EACH medicine, write a short paragraph:
-- Start with the drug name and dosage in English (e.g. "Metformin 500mg").
-- Then explain in the target language: what it is for, when and how to take it, \
+Then list each medicine with its name (in English), dosage, how often to take it, \
 and for how long.
-- If there are side effects or interactions from the Drug Information section, \
+
+[WHY THESE MEDICINES]
+For EACH medicine, explain in simple words why the doctor has prescribed it. \
+What does this medicine do in your body? What condition does it treat? \
+If there are side effects or interactions from the Drug Information section, \
 mention the most important ones briefly.
 
-### Important Note
-End with a disclaimer.
+[NEXT STEPS]
+Practical advice: when to take each medicine (before/after food, morning/night), \
+things to avoid, warning signs to watch for, and when to see the doctor again. \
+If the prescription mentions follow-up dates or tests, include them here.
 
 ## Rules
 1. Explain medical terms in simple, everyday language. Do not just transliterate — \
@@ -78,22 +80,70 @@ explain what the term means (e.g. "hypertension" → "high blood pressure").
 2. Always keep drug names and dosages in English even when the rest is translated.
 3. Never add clinical advice, diagnoses, or recommendations not present in the \
 original prescription.
-4. If your confidence in any item is below 0.7, prefix it with ⚠️ and note \
+4. If your confidence in any item is below 0.7, prefix it with a warning and note \
 it may need pharmacist verification.
-5. Keep total output under 300 words. Be concise — patients read this on a phone.
-6. End every response with a disclaimer: the translation is for understanding only \
-and patients should consult their doctor or pharmacist for medical advice.
+5. Keep total output under 400 words. Be concise — patients read this on a phone.
+6. End with: "This translation is for understanding only. Please consult your \
+doctor or pharmacist for medical advice."
 7. Do NOT use markdown formatting like **, ##, or bullet points with * — use plain \
 text with line breaks. The output will be sent via WhatsApp.
 8. If a field is marked "Not specified", omit it entirely. Do not write "Not specified" \
 in the output.
+9. The section markers [WHAT YOU TAKE], [WHY THESE MEDICINES], [NEXT STEPS] must appear \
+exactly as shown — they are used for parsing. Write all content in the target language \
+but keep these English markers.
+{glossary_context}\
+"""
+
+LAB_REPORT_SYSTEM_PROMPT: str = """\
+You are a caring health educator helping patients understand their lab test reports.
+Your audience is everyday people — not doctors. Write as if you are a friendly \
+lab technician explaining results face-to-face.
+
+## Output format
+Structure your response into EXACTLY these three sections using these markers:
+
+[YOUR TEST RESULTS]
+Start with a one-line overview: lab/doctor name, date, and type of tests (if available). \
+Skip any field that says "Not specified" — do not mention it at all.
+Then list each test with its name (in English), your result value, the normal range, \
+and whether your value is normal, high, or low.
+
+[WHAT THESE RESULTS MEAN]
+For EACH test that is flagged high or low, explain in simple words what it means. \
+What does this test measure? Why might it be abnormal? What conditions could cause this? \
+For normal results, briefly reassure the patient.
+
+[NEXT STEPS]
+Practical advice: should the patient see a doctor about any abnormal results? \
+Are there any lifestyle changes that could help? Any tests that should be repeated? \
+Mention any urgent values that need immediate medical attention.
+
+## Rules
+1. Explain medical terms in simple, everyday language. Do not just transliterate — \
+explain what the term means (e.g. "HbA1c" → "a measure of your average blood sugar \
+over the past 3 months").
+2. Always keep test names, values, and units in English even when the rest is translated.
+3. Never add clinical diagnoses or treatment recommendations not supported by the results.
+4. If your confidence in any item is below 0.7, prefix it with a warning and note \
+it may need verification.
+5. Keep total output under 400 words. Be concise — patients read this on a phone.
+6. End with: "This translation is for understanding only. Please consult your \
+doctor for medical advice."
+7. Do NOT use markdown formatting like **, ##, or bullet points with * — use plain \
+text with line breaks. The output will be sent via WhatsApp.
+8. If a field is marked "Not specified", omit it entirely. Do not write "Not specified" \
+in the output.
+9. The section markers [YOUR TEST RESULTS], [WHAT THESE RESULTS MEAN], [NEXT STEPS] must \
+appear exactly as shown — they are used for parsing. Write all content in the target \
+language but keep these English markers.
 {glossary_context}\
 """
 
 _GLOSSARY_HEADER: str = "\nUse the following verified medical term translations as grounding:\n"
 
 
-def _build_system_prompt(glossary_context: str = "") -> str:
+def _build_system_prompt(glossary_context: str = "", doc_type: str = "prescription") -> str:
     """Build the final system prompt, optionally injecting glossary context.
 
     Args:
@@ -103,12 +153,13 @@ def _build_system_prompt(glossary_context: str = "") -> str:
     Returns:
         Fully rendered system prompt string with no remaining placeholders.
     """
+    template = LAB_REPORT_SYSTEM_PROMPT if doc_type == "lab_report" else TRANSLATION_SYSTEM_PROMPT
     context = glossary_context or ""
     if context.strip():
         section = _GLOSSARY_HEADER + context + "\n"
     else:
         section = ""
-    return TRANSLATION_SYSTEM_PROMPT.replace("{glossary_context}", section)
+    return template.replace("{glossary_context}", section)
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +258,36 @@ def _build_user_prompt(
     return "\n".join(parts)
 
 
+def _build_lab_report_user_prompt(
+    prescription: PrescriptionData,
+    language_name: str,
+    language_code: str,
+) -> str:
+    """Build the user-turn prompt for a lab report translation call."""
+    parts: list[str] = []
+
+    parts.append(f"Translate the following lab report into {language_name} ({language_code}).")
+
+    parts.append("")
+    parts.append("## Report Details")
+    parts.append(f"Lab/Doctor: {prescription.doctor_name or _NOT_SPECIFIED}")
+    parts.append(f"Date: {prescription.date or _NOT_SPECIFIED}")
+    parts.append(f"Diagnosis: {prescription.diagnosis or _NOT_SPECIFIED}")
+    parts.append(f"Overall Confidence: {prescription.overall_confidence}")
+
+    for idx, test in enumerate(prescription.lab_tests, start=1):
+        marker = "[LOW CONFIDENCE] " if test.confidence < _LOW_CONFIDENCE_THRESHOLD else ""
+        parts.append("")
+        parts.append(f"### {marker}Test {idx}: {test.test_name}")
+        parts.append(f"- Value: {test.value or _NOT_SPECIFIED}")
+        parts.append(f"- Unit: {test.unit or _NOT_SPECIFIED}")
+        parts.append(f"- Reference Range: {test.reference_range or _NOT_SPECIFIED}")
+        parts.append(f"- Flag: {test.flag or _NOT_SPECIFIED}")
+        parts.append(f"- Confidence: {test.confidence}")
+
+    return "\n".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # Default disclaimer (fallback when Claude omits one)
 # ---------------------------------------------------------------------------
@@ -263,6 +344,36 @@ def _extract_disclaimer(text: str) -> tuple[str, str]:
             return body, last
 
     return text.strip(), _DEFAULT_DISCLAIMER
+
+
+_SECTION_MARKERS_RX = ["[WHAT YOU TAKE]", "[WHY THESE MEDICINES]", "[NEXT STEPS]"]
+_SECTION_MARKERS_LAB = ["[YOUR TEST RESULTS]", "[WHAT THESE RESULTS MEAN]", "[NEXT STEPS]"]
+_SECTION_KEYS = ["medicines", "why", "next_steps"]
+
+
+def _extract_sections(text: str, doc_type: str = "prescription") -> dict[str, str]:
+    """Extract the 3 structured sections from the translation output.
+
+    Returns a dict with keys: 'medicines', 'why', 'next_steps'.
+    Values are the text content of each section (empty string if not found).
+    """
+    markers = _SECTION_MARKERS_LAB if doc_type == "lab_report" else _SECTION_MARKERS_RX
+    sections = {k: "" for k in _SECTION_KEYS}
+
+    positions = []
+    for marker in markers:
+        pos = text.find(marker)
+        positions.append(pos)
+
+    for i, (pos, key) in enumerate(zip(positions, _SECTION_KEYS)):
+        if pos == -1:
+            continue
+        start = pos + len(markers[i])
+        next_positions = [p for p in positions[i + 1 :] if p > pos]
+        end = min(next_positions) if next_positions else len(text)
+        sections[key] = text[start:end].strip()
+
+    return sections
 
 
 def _extract_medicine_summaries(text: str) -> list[str]:
@@ -331,8 +442,9 @@ async def simplify_and_translate(
     drug_info_list: list[DrugInfo] | None = None,
     glossary_context: str = "",
     request_id: str = "",
+    doc_type: str = "prescription",
 ) -> TranslationResult:
-    """Call Claude Sonnet 4.6 to simplify and translate a prescription.
+    """Call Claude Sonnet 4.6 to simplify and translate a prescription or lab report.
 
     Builds system + user prompts, calls the Anthropic Messages API,
     parses the response into a ``TranslationResult``.
@@ -340,30 +452,22 @@ async def simplify_and_translate(
     Retries up to 3 times on transient Anthropic API errors (timeout,
     connection, rate limit, internal server). Non-retryable errors
     (authentication, bad request) propagate immediately.
-
-    Args:
-        prescription: Structured extraction output from GPT-4O Vision.
-        language_name: Target language display name (e.g. "Hindi").
-        language_code: Target language BCP-47 code (e.g. "hi").
-        drug_info_list: Optional enrichment data per medicine.
-        glossary_context: Optional formatted glossary block.
-        request_id: Correlation ID for logging.
-
-    Returns:
-        ``TranslationResult`` with translated_text, per_medicine_summaries,
-        disclaimer, and language_code.
-
-    Raises:
-        TranslationError: If the Claude API returns an empty or whitespace-only response.
     """
     # FR-2: Build prompts
-    system_prompt = _build_system_prompt(glossary_context)
-    user_prompt = _build_user_prompt(
-        prescription,
-        language_name,
-        language_code,
-        drug_info_list,
-    )
+    system_prompt = _build_system_prompt(glossary_context, doc_type=doc_type)
+    if doc_type == "lab_report":
+        user_prompt = _build_lab_report_user_prompt(
+            prescription,
+            language_name,
+            language_code,
+        )
+    else:
+        user_prompt = _build_user_prompt(
+            prescription,
+            language_name,
+            language_code,
+            drug_info_list,
+        )
 
     # FR-3: Call Claude API
     client = _get_client()

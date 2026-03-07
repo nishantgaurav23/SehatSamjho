@@ -210,7 +210,7 @@ class TestSendMoreLanguages:
         body = call_args[1].get("body") or call_args[0][1]
         # Count non-empty lines (excluding any header/footer)
         lang_lines = [line for line in body.strip().split("\n") if line.strip()]
-        assert len(lang_lines) == 14
+        assert len(lang_lines) == 15
 
     @pytest.mark.asyncio
     @patch("backend.app.services.whatsapp.send_text_message", new_callable=AsyncMock)
