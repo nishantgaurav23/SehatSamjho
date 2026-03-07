@@ -293,6 +293,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const badge = document.querySelector(".result-badge");
         badge.textContent = isLabReport ? t("badge_lab") : t("badge_translation");
 
+        // Combined confidence score
+        const confEl = document.getElementById("confidence-score");
+        if (!isLabReport && data.medicines && data.medicines.length > 0) {
+            const scores = data.medicines.filter(m => m.confidence != null).map(m => m.confidence);
+            if (scores.length > 0) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                const pct = Math.round(avg * 100);
+                const cls = avg >= 0.8 ? "high" : avg >= 0.5 ? "medium" : "low";
+                const label = avg >= 0.8 ? t("confidence_high") : avg >= 0.5 ? t("confidence_medium") : t("confidence_low");
+                confEl.className = "confidence-score confidence-" + cls;
+                confEl.textContent = label + " (" + pct + "%)";
+                confEl.style.display = "";
+            } else {
+                confEl.style.display = "none";
+            }
+        } else {
+            confEl.style.display = "none";
+        }
+
         // Meta info
         const metaEl = document.getElementById("rx-meta");
         let metaParts = [];
@@ -367,13 +386,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const card = document.createElement("div");
                 card.className = "med-card";
 
-                let badge = "";
-                if (med.confidence != null) {
-                    const cls = med.confidence >= 0.8 ? "high" : med.confidence >= 0.5 ? "medium" : "low";
-                    const label = med.confidence >= 0.8 ? t("confidence_high") : med.confidence >= 0.5 ? t("confidence_medium") : t("confidence_low");
-                    badge = `<span class="confidence-badge confidence-${cls}">${label}</span>`;
-                }
-
                 let details = [];
                 if (med.dosage) details.push(esc(med.dosage));
                 if (med.frequency) details.push(esc(med.frequency));
@@ -390,7 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 card.innerHTML = `
-                    <h4>${esc(med.name)} ${badge}</h4>
+                    <h4>${esc(med.name)}</h4>
                     ${details.length ? `<div class="med-details">${details.join(" &bull; ")}</div>` : ""}
                     ${purposeHtml}
                     ${sideEffectsHtml}
