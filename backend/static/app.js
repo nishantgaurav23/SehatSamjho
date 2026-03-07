@@ -65,9 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (loadHint) loadHint.textContent = t("loading_hint");
 
         document.querySelectorAll("#step-loading .loading-step").forEach(el => {
-            const id = el.id;
+            const key = el.id.replace(/-/g, "_");
             const cls = el.className;
-            el.innerHTML = '<span class="ls-dot"></span> ' + t(id);
+            el.innerHTML = '<span class="ls-dot"></span> ' + t(key);
             el.className = cls;
         });
 
