@@ -65,18 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.querySelectorAll("#step-loading .loading-step").forEach(el => {
             const id = el.id;
-            const dot = el.querySelector(".ls-dot");
-            if (id === "ls-extract") el.innerHTML = "";
-            else if (id === "ls-lookup") el.innerHTML = "";
-            else if (id === "ls-translate") el.innerHTML = "";
-            else if (id === "ls-audio") el.innerHTML = "";
-            if (dot) el.prepend(dot);
-            else {
-                const newDot = document.createElement("span");
-                newDot.className = "ls-dot";
-                el.prepend(newDot);
-            }
-            el.append(" " + t(id));
+            const cls = el.className;
+            el.innerHTML = '<span class="ls-dot"></span> ' + t(id);
+            el.className = cls;
         });
 
         // Step 3 static labels
