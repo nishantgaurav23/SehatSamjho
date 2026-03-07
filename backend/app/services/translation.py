@@ -83,8 +83,9 @@ original prescription.
 4. If your confidence in any item is below 0.7, prefix it with a warning and note \
 it may need pharmacist verification.
 5. Keep total output under 400 words. Be concise — patients read this on a phone.
-6. End with: "This translation is for understanding only. Please consult your \
-doctor or pharmacist for medical advice."
+6. End with a disclaimer IN THE TARGET LANGUAGE (not English) that says: \
+this translation is for understanding only, please consult your doctor or \
+pharmacist for medical advice.
 7. Do NOT use markdown formatting like **, ##, or bullet points with * — use plain \
 text with line breaks. The output will be sent via WhatsApp.
 8. If a field is marked "Not specified", omit it entirely. Do not write "Not specified" \
@@ -128,8 +129,9 @@ over the past 3 months").
 4. If your confidence in any item is below 0.7, prefix it with a warning and note \
 it may need verification.
 5. Keep total output under 400 words. Be concise — patients read this on a phone.
-6. End with: "This translation is for understanding only. Please consult your \
-doctor for medical advice."
+6. End with a disclaimer IN THE TARGET LANGUAGE (not English) that says: \
+this translation is for understanding only, please consult your doctor \
+for medical advice.
 7. Do NOT use markdown formatting like **, ##, or bullet points with * — use plain \
 text with line breaks. The output will be sent via WhatsApp.
 8. If a field is marked "Not specified", omit it entirely. Do not write "Not specified" \
