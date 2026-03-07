@@ -776,8 +776,6 @@ const UI_STRINGS = {
         err_no_image: "कृपया पहिले एउटा छवि छान्नुहोस्।",
         err_generic: "कागजात प्रोसेस गर्न असफल। कृपया पुनः प्रयास गर्नुहोस्।",
     },
-};
-
     ks: {
         progress_choose: "زبان چُنو",
         progress_upload: "دستاویز اپلوڈ کرو",
@@ -1273,6 +1271,8 @@ const UI_STRINGS = {
         err_no_image: "कृपया प्रथमं चित्रं चिनोतु.",
         err_generic: "प्रलेख-संस्करणे विफलम्. कृपया पुनः प्रयतताम्.",
     },
+};
+
 // For languages without full translations, fall back to English
 function t(key) {
     const lang = window._uiLang || "en";
