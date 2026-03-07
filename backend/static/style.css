@@ -711,7 +711,7 @@ body {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
     margin-bottom: 1rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 /* ── Result Sections ─────────────────────────────────────── */
@@ -720,6 +720,10 @@ body {
     padding: 1.25rem 1.25rem;
     border-top: 3px solid transparent;
     border-left: none;
+    display: flex;
+    flex-direction: column;
+    max-height: 520px;
+    overflow-y: auto;
 }
 
 .result-section h3 {

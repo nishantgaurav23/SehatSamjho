@@ -4,6 +4,7 @@
 const UI_STRINGS = {
     en: {
         // Progress bar
+        progress_choose: "Choose Language",
         progress_upload: "Upload Document",
         progress_results: "View Results",
         // Step 2
@@ -61,6 +62,7 @@ const UI_STRINGS = {
         err_generic: "Failed to process document. Please try again.",
     },
     hi: {
+        progress_choose: "भाषा चुनें",
         progress_upload: "दस्तावेज़ अपलोड करें",
         progress_results: "परिणाम देखें",
         step2_title: "अपना चिकित्सा दस्तावेज़ अपलोड करें",
@@ -115,6 +117,7 @@ const UI_STRINGS = {
         err_generic: "दस्तावेज़ प्रोसेस करने में विफल। कृपया पुनः प्रयास करें।",
     },
     bn: {
+        progress_choose: "ভাষা নির্বাচন করুন",
         progress_upload: "নথি আপলোড করুন",
         progress_results: "ফলাফল দেখুন",
         step2_title: "আপনার চিকিৎসা নথি আপলোড করুন",
@@ -169,6 +172,7 @@ const UI_STRINGS = {
         err_generic: "নথি প্রক্রিয়া করতে ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।",
     },
     ta: {
+        progress_choose: "மொழியைத் தேர்ந்தெடுங்கள்",
         progress_upload: "ஆவணத்தை பதிவேற்றுங்கள்",
         progress_results: "முடிவுகளைக் காணுங்கள்",
         step2_title: "உங்கள் மருத்துவ ஆவணத்தை பதிவேற்றுங்கள்",
@@ -223,6 +227,7 @@ const UI_STRINGS = {
         err_generic: "ஆவணத்தை செயலாக்க இயலவில்லை. மீண்டும் முயற்சிக்கவும்.",
     },
     te: {
+        progress_choose: "భాషను ఎంచుకోండి",
         progress_upload: "పత్రాన్ని అప్‌లోడ్ చేయండి",
         progress_results: "ఫలితాలు చూడండి",
         step2_title: "మీ వైద్య పత్రాన్ని అప్‌లోడ్ చేయండి",
@@ -277,6 +282,7 @@ const UI_STRINGS = {
         err_generic: "పత్రాన్ని ప్రాసెస్ చేయడం విఫలమైంది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
     },
     mr: {
+        progress_choose: "भाषा निवडा",
         progress_upload: "दस्तऐवज अपलोड करा",
         progress_results: "निकाल पहा",
         step2_title: "तुमचा वैद्यकीय दस्तऐवज अपलोड करा",
@@ -331,6 +337,7 @@ const UI_STRINGS = {
         err_generic: "दस्तऐवज प्रक्रिया अयशस्वी. कृपया पुन्हा प्रयत्न करा.",
     },
     gu: {
+        progress_choose: "ભાષા પસંદ કરો",
         progress_upload: "દસ્તાવેજ અપલોડ કરો",
         progress_results: "પરિણામો જુઓ",
         step2_title: "તમારો તબીબી દસ્તાવેજ અપલોડ કરો",
@@ -385,6 +392,7 @@ const UI_STRINGS = {
         err_generic: "દસ્તાવેજ પ્રોસેસ કરવામાં નિષ્ફળ. કૃપા કરીને ફરી પ્રયાસ કરો.",
     },
     kn: {
+        progress_choose: "ಭಾಷೆ ಆಯ್ಕೆ ಮಾಡಿ",
         progress_upload: "ದಾಖಲೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
         progress_results: "ಫಲಿತಾಂಶಗಳನ್ನು ನೋಡಿ",
         step2_title: "ನಿಮ್ಮ ವೈದ್ಯಕೀಯ ದಾಖಲೆಯನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
@@ -439,6 +447,7 @@ const UI_STRINGS = {
         err_generic: "ದಾಖಲೆ ಪ್ರಕ್ರಿಯೆ ವಿಫಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
     },
     ml: {
+        progress_choose: "ഭാഷ തിരഞ്ഞെടുക്കുക",
         progress_upload: "രേഖ അപ്‌ലോഡ് ചെയ്യുക",
         progress_results: "ഫലങ്ങള്‍ കാണുക",
         step2_title: "നിങ്ങളുടെ മെഡിക്കല്‍ രേഖ അപ്‌ലോഡ് ചെയ്യുക",
@@ -493,6 +502,7 @@ const UI_STRINGS = {
         err_generic: "രേഖ പ്രോസസ് ചെയ്യുന്നതില്‍ പരാജയം. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
     },
     pa: {
+        progress_choose: "ਭਾਸ਼ਾ ਚੁਣੋ",
         progress_upload: "ਦਸਤਾਵੇਜ਼ ਅੱਪਲੋਡ ਕਰੋ",
         progress_results: "ਨਤੀਜੇ ਦੇਖੋ",
         step2_title: "ਆਪਣਾ ਮੈਡੀਕਲ ਦਸਤਾਵੇਜ਼ ਅੱਪਲੋਡ ਕਰੋ",
@@ -547,6 +557,7 @@ const UI_STRINGS = {
         err_generic: "ਦਸਤਾਵੇਜ਼ ਪ੍ਰੋਸੈਸ ਕਰਨ ਵਿੱਚ ਅਸਫਲ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     },
     ur: {
+        progress_choose: "زبان منتخب کریں",
         progress_upload: "دستاویز اپلوڈ کریں",
         progress_results: "نتائج دیکھیں",
         step2_title: "اپنی طبی دستاویز اپلوڈ کریں",
@@ -601,6 +612,7 @@ const UI_STRINGS = {
         err_generic: "دستاویز پروسیس کرنے میں ناکام۔ براہ کرم دوبارہ کوشش کریں۔",
     },
     or: {
+        progress_choose: "ଭାଷା ବାଛନ୍ତୁ",
         progress_upload: "ଡକ୍ୟୁମେଣ୍ଟ ଅପଲୋଡ କରନ୍ତୁ",
         progress_results: "ଫଳାଫଳ ଦେଖନ୍ତୁ",
         step2_title: "ଆପଣଙ୍କ ଡାକ୍ତରୀ ଡକ୍ୟୁମେଣ୍ଟ ଅପଲୋଡ କରନ୍ତୁ",
@@ -655,6 +667,7 @@ const UI_STRINGS = {
         err_generic: "ଡକ୍ୟୁମେଣ୍ଟ ପ୍ରକ୍ରିୟା ବିଫଳ। ଦୟାକରି ପୁନଃ ଚେଷ୍ଟା କରନ୍ତୁ।",
     },
     as: {
+        progress_choose: "ভাষা বাছক",
         progress_upload: "নথি আপলোড কৰক",
         progress_results: "ফলাফল চাওক",
         step2_title: "আপোনাৰ চিকিৎসা নথি আপলোড কৰক",
@@ -709,6 +722,7 @@ const UI_STRINGS = {
         err_generic: "নথি প্ৰক্ৰিয়া কৰাত বিফল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।",
     },
     ne: {
+        progress_choose: "भाषा छान्नुहोस्",
         progress_upload: "कागजात अपलोड गर्नुहोस्",
         progress_results: "नतिजा हेर्नुहोस्",
         step2_title: "आफ्नो चिकित्सा कागजात अपलोड गर्नुहोस्",

@@ -33,9 +33,10 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyLocale() {
         window._uiLang = selectedLanguage;
 
-        // Progress bar labels (steps 2 and 3 only)
+        // Progress bar labels (all 3 steps)
         const progLabels = document.querySelectorAll(".progress-label");
         if (progLabels.length >= 3) {
+            progLabels[0].textContent = t("progress_choose");
             progLabels[1].textContent = t("progress_upload");
             progLabels[2].textContent = t("progress_results");
         }
