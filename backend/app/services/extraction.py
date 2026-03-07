@@ -382,17 +382,25 @@ async def extract_prescription_from_bytes(
             f"Image too large ({len(image_bytes)} bytes, max {MAX_IMAGE_BYTES})"
         )
 
-    # Convert unsupported image formats (BMP, TIFF, etc.) to PNG for OpenAI
-    _SUPPORTED_FORMATS = {"image/jpeg", "image/png", "image/gif", "image/webp"}
-    if content_type not in _SUPPORTED_FORMATS:
-        log.info("Converting {} to PNG for OpenAI compatibility", content_type)
+    # Normalize image through PIL to fix encoding issues and unsupported formats
+    try:
         from PIL import Image
 
         img = Image.open(io.BytesIO(image_bytes))
+        # Convert palette/RGBA modes to RGB for JPEG compatibility
+        if img.mode in ("RGBA", "P", "LA"):
+            img = img.convert("RGB")
         buf = io.BytesIO()
-        img.save(buf, format="PNG")
+        if content_type == "image/png":
+            img.save(buf, format="PNG")
+        else:
+            img.save(buf, format="JPEG", quality=95)
+            content_type = "image/jpeg"
         image_bytes = buf.getvalue()
-        content_type = "image/png"
+        log.debug("Image normalized: {} bytes, {}", len(image_bytes), content_type)
+    except Exception as conv_exc:
+        log.warning("Image normalization failed: {}", conv_exc)
+        # Fall through with original bytes — OpenAI may still accept it
 
     log.info("Starting prescription extraction from bytes")
 
