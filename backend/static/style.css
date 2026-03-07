@@ -668,7 +668,6 @@ body {
     border-radius: 20px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-right: 0.75rem;
 }
 
 .result-badge::before {
@@ -798,11 +797,14 @@ body {
     font-size: 0.85rem;
     line-height: 1.75;
     white-space: pre-line;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
     color: var(--text);
     background: var(--bg);
     padding: 0.85rem 1rem;
     border-radius: 8px;
     border: 1px solid var(--border-light);
+    margin-bottom: 0.75rem;
 }
 
 .section-content:empty {
