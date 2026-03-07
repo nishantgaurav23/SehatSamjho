@@ -92,64 +92,6 @@ Structured results with three cards — **Your Medicines** (names, dosages), **W
 
 ---
 
-## How It Works — End-to-End Pipeline
-
-From photo to plain-language explanation in ~30-60 seconds:
-
-| Step | Action | Technology |
-|------|--------|------------|
-| **1. Capture** | Patient photographs prescription using phone camera | Photo Input |
-| **2. Extract** | Structure data with confidence scoring | GPT-4O Vision |
-| **3. Enrich** | 1,001-medicine database adds context and details | Drug DB + Redis Cache |
-| **4. Translate** | Medical RAG + plain-language simplification | Claude Sonnet 4.6 |
-| **5. Deliver** | Text + Audio via WhatsApp or Web interface | Edge TTS |
-
-### Processing Pipeline
-
-```mermaid
-flowchart LR
-    A["Prescription\nPhoto"]:::input
-    B["GPT-4O Vision\nExtract structured data"]:::openai
-    C["Drug Lookup\nRedis -> CSV -> API"]:::data
-    D["Glossary RAG\nMedical term grounding"]:::data
-    E["Claude Sonnet 4.6\nSimplify + Translate"]:::anthropic
-    F["Edge TTS\nGenerate audio"]:::tts
-    G["S3 Upload\nPresigned URL"]:::storage
-    H["WhatsApp / Web Reply\nText + Audio"]:::output
-
-    A --> B --> C --> D --> E --> F --> G --> H
-
-    classDef input fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
-    classDef openai fill:#412991,stroke:#2D1B69,stroke-width:2px,color:#fff
-    classDef anthropic fill:#D97706,stroke:#92400E,stroke-width:2px,color:#fff
-    classDef data fill:#0891B2,stroke:#155E75,stroke-width:2px,color:#fff
-    classDef tts fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
-    classDef storage fill:#607D8B,stroke:#37474F,stroke-width:2px,color:#fff
-    classDef output fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
-```
-
-### WhatsApp User Journey
-
-```
-Patient                          SehatSamjho Bot
-  |                                    |
-  |  [Sends prescription photo]  ----> |
-  |                                    |
-  | <---- "Select language:"           |
-  |        1. Hindi  2. Bengali        |
-  |        3. Tamil  4. More...        |
-  |                                    |
-  |  "1"  ---->                        |
-  |                                    |
-  | <---- "Hindi selected!"            |
-  | <---- [Plain-language explanation]  |
-  | <---- [Voice message - 0:25]       |
-```
-
-> **500M+ WhatsApp users in India** — meet patients where they already are.
-
----
-
 ## System Architecture
 
 ```mermaid
@@ -318,57 +260,14 @@ All 23 Indian languages:
 
 ---
 
-## Prototype Status
-
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Web UI** | Live | Drag-and-drop upload, 23 languages, medicine cards, inline audio player |
-| **AI Pipeline** | Live | GPT-4O Vision extraction, Claude translation, Edge TTS — end-to-end tested |
-| **Drug Database** | Live | 1,001 medicines, 49 therapeutic classes, Redis-cached, <100ms response |
-| **WhatsApp Integration** | In Progress | Twilio webhook handler built, message parsing complete, delivery integration ongoing |
-| **Health Endpoint** | Live | `GET /health` — real-time system monitoring |
-| **Test Suite** | Live | 1,467 tests, 100% passing, 4.86:1 test-to-code ratio |
-
----
-
-## Cost Estimate (Prototype)
-
-| Resource | Monthly Cost |
-|----------|-------------|
-| EC2 t3.micro | $0 (free tier) |
-| RDS PostgreSQL | $0 (free tier) |
-| S3 audio storage | $0 (free tier) |
-| Upstash Redis | $0 (free tier) |
-| Edge TTS (Open-source) | $0 (free, no API key) |
-| OpenAI GPT-4O Vision | ~$5 / 1,000 documents |
-| Claude Sonnet 4.6 | ~$2 / 1,000 documents |
-| Twilio WhatsApp | ~$1-5 during testing |
-| **Total** | **~$8-15/month** |
-
----
-
-## What's Next — Future Development
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| **Twilio WhatsApp Live** | In Progress | Complete WhatsApp Business API integration |
-| **ABDM Integration** | Planned | Connect with Ayushman Bharat Digital Mission for verified digital prescriptions |
-| **Lab Report Translation** | Already Done | Blood test results, X-ray reports, discharge summaries |
-| **B2B Analytics Dashboard** | Planned | React dashboard for hospitals and pharmacies with usage analytics |
-| **Bhashini TTS** | Planned | Government-backed TTS for 22 languages |
-| **PDF Extraction** | Planned | Support for PDF document uploads |
-| **Multi-page Support** | Planned | Handle multiple prescription pages |
-| **Doctor Verification** | Planned | Prescription validation loop |
-| **Mobile App** | Planned | Native iOS and Android apps |
-
----
-
 ## Team
 
-| Role | Name |
-|------|------|
-| **Team Leader** | Nishant Gaurav |
-| **Team Name** | SehatSamjho |
+| Name |
+|------|
+| Nishant Gaurav |
+| Bhanu Mittal |
+
+**Team Name:** SehatSamjho
 
 Built for the **AWS AI for Bharat Hackathon 2025**.
 
