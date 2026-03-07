@@ -28,6 +28,69 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedLanguage = "hi";
     let selectedLanguageLabel = "Hindi - \u0939\u093F\u0928\u094D\u0926\u0940";
 
+    // ── Localization ────────────────────────────────────────
+
+    function applyLocale() {
+        window._uiLang = selectedLanguage;
+
+        // Progress bar labels (steps 2 and 3 only)
+        const progLabels = document.querySelectorAll(".progress-label");
+        if (progLabels.length >= 3) {
+            progLabels[1].textContent = t("progress_upload");
+            progLabels[2].textContent = t("progress_results");
+        }
+
+        // Step 2
+        const s2Title = document.querySelector("#step-2 h2");
+        const s2Desc = document.querySelector("#step-2 .step-desc");
+        if (s2Title) s2Title.textContent = t("step2_title");
+        if (s2Desc) s2Desc.textContent = t("step2_desc");
+
+        const placeholder = document.querySelector("#upload-placeholder p");
+        if (placeholder) placeholder.innerHTML = t("upload_hint").replace("\n", "<br>");
+
+        document.getElementById("back-to-1").childNodes.forEach(n => {
+            if (n.nodeType === 3 && n.textContent.trim()) n.textContent = "\n            " + t("btn_back") + "\n        ";
+        });
+        submitBtn.childNodes.forEach(n => {
+            if (n.nodeType === 3 && n.textContent.trim()) n.textContent = "\n            " + t("btn_translate") + "\n            ";
+        });
+        changeImageBtn.textContent = t("btn_change_image");
+
+        // Loading state
+        const loadTitle = document.querySelector("#step-loading h2");
+        const loadHint = document.querySelector("#step-loading .loading-hint");
+        if (loadTitle) loadTitle.textContent = t("loading_title");
+        if (loadHint) loadHint.textContent = t("loading_hint");
+
+        document.querySelectorAll("#step-loading .loading-step").forEach(el => {
+            const id = el.id;
+            const dot = el.querySelector(".ls-dot");
+            if (id === "ls-extract") el.innerHTML = "";
+            else if (id === "ls-lookup") el.innerHTML = "";
+            else if (id === "ls-translate") el.innerHTML = "";
+            else if (id === "ls-audio") el.innerHTML = "";
+            if (dot) el.prepend(dot);
+            else {
+                const newDot = document.createElement("span");
+                newDot.className = "ls-dot";
+                el.prepend(newDot);
+            }
+            el.append(" " + t(id));
+        });
+
+        // Step 3 static labels
+        document.querySelector("#rx-section-medicines h3").textContent = t("rx_title");
+        document.querySelector("#rx-section-medicines .section-subtitle").textContent = t("rx_subtitle");
+        document.querySelector("#lab-section-tests h3").textContent = t("lab_title");
+        document.querySelector("#lab-section-tests .section-subtitle").textContent = t("lab_subtitle");
+        document.querySelector("#audio-section h4").textContent = t("audio_title");
+        document.querySelector("#audio-section .audio-note").textContent = t("audio_note");
+        document.querySelector(".full-translation summary").textContent = t("full_translation");
+        document.getElementById("section-next-title").textContent = t("next_title");
+        document.querySelector(".disclaimer strong").textContent = t("disclaimer_label");
+    }
+
     // ── Wizard Navigation ──────────────────────────────────
 
     const containerEl = document.querySelector(".container");
@@ -97,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (selectedLangText) {
             selectedLangText.textContent = selectedLanguageLabel;
         }
+        applyLocale();
         goToStep(2);
     });
 
@@ -141,11 +205,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleFileSelect(file) {
         if (!file.type.startsWith("image/")) {
-            showError("Please select an image file (JPEG, PNG).");
+            showError(t("err_not_image"));
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
-            showError("Image too large. Maximum size is 10MB.");
+            showError(t("err_too_large"));
             return;
         }
 
@@ -168,7 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
 
         if (!fileInput.files.length) {
-            showError("Please select an image first.");
+            showError(t("err_no_image"));
             return;
         }
 
@@ -196,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
             goToStep(3);
         } catch (err) {
             goToStep(2);
-            showError(err.message || "Failed to process document. Please try again.");
+            showError(err.message || t("err_generic"));
         }
     });
 
@@ -236,16 +300,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Result badge
         const badge = document.querySelector(".result-badge");
-        badge.textContent = isLabReport ? "Report Analysis Complete" : "Translation Complete";
+        badge.textContent = isLabReport ? t("badge_lab") : t("badge_translation");
 
         // Meta info
         const metaEl = document.getElementById("rx-meta");
         let metaParts = [];
-        if (data.doctor_name) metaParts.push(`<strong>${isLabReport ? "Lab/Doctor:" : "Doctor:"}</strong> ${esc(data.doctor_name)}`);
-        if (data.diagnosis) metaParts.push(`<strong>Diagnosis:</strong> ${esc(data.diagnosis)}`);
-        if (data.date) metaParts.push(`<strong>Date:</strong> ${esc(data.date)}`);
-        metaParts.push(`<strong>Language:</strong> ${esc(data.language_name)}`);
-        if (isLabReport) metaParts.push(`<strong>Type:</strong> Lab Report`);
+        if (data.doctor_name) metaParts.push(`<strong>${isLabReport ? t("meta_lab_doctor") : t("meta_doctor")}</strong> ${esc(data.doctor_name)}`);
+        if (data.diagnosis) metaParts.push(`<strong>${t("meta_diagnosis")}</strong> ${esc(data.diagnosis)}`);
+        if (data.date) metaParts.push(`<strong>${t("meta_date")}</strong> ${esc(data.date)}`);
+        metaParts.push(`<strong>${t("meta_language")}</strong> ${esc(data.language_name)}`);
+        if (isLabReport) metaParts.push(`<strong>${t("meta_type")}</strong> ${t("meta_lab_report")}`);
         metaEl.innerHTML = metaParts.join("&nbsp;&nbsp;|&nbsp;&nbsp;");
 
         // Toggle sections based on doc_type
@@ -264,14 +328,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Section 2: title adapts to doc type
         document.getElementById("section-why-title").textContent =
-            isLabReport ? "What These Results Mean" : "Why These Medicines";
+            isLabReport ? t("why_title_lab") : t("why_title_rx");
         document.getElementById("section-why-subtitle").textContent =
-            isLabReport ? "Simple explanation of each test result" : "What each medicine does and why it was prescribed";
+            isLabReport ? t("why_subtitle_lab") : t("why_subtitle_rx");
         document.getElementById("section-why").textContent = data.section_why || "";
 
         // Section 3: next steps
         document.getElementById("section-next-subtitle").textContent =
-            isLabReport ? "Follow-up tests, lifestyle advice, and when to see a doctor" : "When to take, what to avoid, and follow-up";
+            isLabReport ? t("next_subtitle_lab") : t("next_subtitle_rx");
         document.getElementById("section-next-steps").textContent = data.section_next_steps || "";
 
         // Full translation
@@ -291,7 +355,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Latency
         document.getElementById("latency-value").textContent =
-            `Processed in ${(data.latency_ms / 1000).toFixed(1)} seconds`;
+            t("processed_in").replace("{s}", (data.latency_ms / 1000).toFixed(1));
+
+        // New Document button text
+        resetBtn.childNodes.forEach(n => {
+            if (n.nodeType === 3 && n.textContent.trim()) n.textContent = "\n                    " + t("btn_new_doc") + "\n                ";
+        });
     }
 
     // ── Render Medicines (Prescription) ────────────────────
@@ -310,8 +379,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 let badge = "";
                 if (med.confidence != null) {
                     const cls = med.confidence >= 0.8 ? "high" : med.confidence >= 0.5 ? "medium" : "low";
-                    const label = med.confidence >= 0.8 ? "High" : med.confidence >= 0.5 ? "Medium" : "Low";
-                    badge = `<span class="confidence-badge confidence-${cls}">${label} Confidence</span>`;
+                    const label = med.confidence >= 0.8 ? t("confidence_high") : med.confidence >= 0.5 ? t("confidence_medium") : t("confidence_low");
+                    badge = `<span class="confidence-badge confidence-${cls}">${label}</span>`;
                 }
 
                 let details = [];
@@ -326,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let sideEffectsHtml = "";
                 if (med.side_effects) {
-                    sideEffectsHtml = `<div class="med-side-effects">Side effects: ${esc(med.side_effects)}</div>`;
+                    sideEffectsHtml = `<div class="med-side-effects">${t("side_effects")} ${esc(med.side_effects)}</div>`;
                 }
 
                 card.innerHTML = `
@@ -356,13 +425,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 const flag = (test.flag || "").toLowerCase();
                 let flagClass = "flag-unknown";
                 let flagLabel = "\u2014";
-                if (flag === "normal") { flagClass = "flag-normal"; flagLabel = "Normal"; }
-                else if (flag === "high") { flagClass = "flag-high"; flagLabel = "High"; }
-                else if (flag === "low") { flagClass = "flag-low"; flagLabel = "Low"; }
+                if (flag === "normal") { flagClass = "flag-normal"; flagLabel = t("flag_normal"); }
+                else if (flag === "high") { flagClass = "flag-high"; flagLabel = t("flag_high"); }
+                else if (flag === "low") { flagClass = "flag-low"; flagLabel = t("flag_low"); }
 
                 const valueStr = test.value ? esc(test.value) : "\u2014";
                 const unitStr = test.unit ? esc(test.unit) : "";
-                const rangeStr = test.reference_range ? `Ref: ${esc(test.reference_range)}` : "";
+                const rangeStr = test.reference_range ? `${t("ref_range")} ${esc(test.reference_range)}` : "";
 
                 card.innerHTML = `
                     <div class="lab-test-header">
@@ -397,6 +466,10 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedLanguageLabel = "Hindi - \u0939\u093F\u0928\u094D\u0926\u0940";
         if (langSearch) langSearch.value = "";
         langOptions.forEach(o => o.classList.remove("hidden"));
+
+        // Reset locale to English defaults
+        window._uiLang = "en";
+        applyLocale();
 
         goToStep(1);
     });
