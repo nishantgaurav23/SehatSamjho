@@ -99,7 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
             containerEl.classList.remove("container-wide");
         }
 
-        const stepNum = typeof step === "number" ? step : 0;
+        // "loading" state is between step 2 and 3 — keep step 2 highlighted
+        const stepNum = typeof step === "number" ? step : (step === "loading" ? 2 : 0);
         progressSteps.forEach((el) => {
             const s = parseInt(el.dataset.step);
             el.classList.remove("active", "done");
