@@ -98,8 +98,14 @@ async def web_translate(
             if isinstance(exc, ImageNotReadableError):
                 raise HTTPException(status_code=422, detail=str(exc))
             if isinstance(exc, (ExtractionError, TranslationError)):
-                logger.error("Pipeline error: {}", type(exc).__name__)
+                logger.error("Pipeline error: {}: {}", type(exc).__name__, exc)
                 raise HTTPException(status_code=500, detail="Failed to process prescription.")
+            if isinstance(exc, ValueError):
+                logger.error("Validation error: {}", exc)
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Could not process this document: {exc}",
+                )
 
             logger.exception("Unexpected error in web translate")
             raise HTTPException(status_code=500, detail="Internal server error.")
