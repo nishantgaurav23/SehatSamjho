@@ -42,7 +42,7 @@ _client: anthropic.AsyncAnthropic | None = None
 # ---------------------------------------------------------------------------
 
 CLAUDE_MODEL: str = "claude-sonnet-4-6"
-TRANSLATION_MAX_TOKENS: int = 1024
+TRANSLATION_MAX_TOKENS: int = 2048
 TRANSLATION_TEMPERATURE: float = 0.3
 
 # ---------------------------------------------------------------------------
@@ -51,18 +51,42 @@ TRANSLATION_TEMPERATURE: float = 0.3
 
 TRANSLATION_SYSTEM_PROMPT: str = """\
 You are a caring health educator helping patients understand their prescriptions.
+Your audience is everyday people — not doctors. Write as if you are a friendly \
+pharmacist explaining things face-to-face.
 
-Rules:
-1. Explain medical terms in simple, everyday language. Do not just transliterate.
-2. Always keep drug names and dosages in English (e.g., "Metformin 500mg") even when \
-the rest is translated.
+## Output format
+Structure your response exactly like this:
+
+### Your Prescription Summary
+One-line overview: doctor name, date, and diagnosis (if available). \
+Skip any field that says "Not specified" — do not mention it at all.
+
+### Medicines
+For EACH medicine, write a short paragraph:
+- Start with the drug name and dosage in English (e.g. "Metformin 500mg").
+- Then explain in the target language: what it is for, when and how to take it, \
+and for how long.
+- If there are side effects or interactions from the Drug Information section, \
+mention the most important ones briefly.
+
+### Important Note
+End with a disclaimer.
+
+## Rules
+1. Explain medical terms in simple, everyday language. Do not just transliterate — \
+explain what the term means (e.g. "hypertension" → "high blood pressure").
+2. Always keep drug names and dosages in English even when the rest is translated.
 3. Never add clinical advice, diagnoses, or recommendations not present in the \
 original prescription.
-4. If your confidence in any item is below 0.7, prefix it with \u26a0\ufe0f and note \
+4. If your confidence in any item is below 0.7, prefix it with ⚠️ and note \
 it may need pharmacist verification.
-5. Keep total output under 300 words.
+5. Keep total output under 300 words. Be concise — patients read this on a phone.
 6. End every response with a disclaimer: the translation is for understanding only \
 and patients should consult their doctor or pharmacist for medical advice.
+7. Do NOT use markdown formatting like **, ##, or bullet points with * — use plain \
+text with line breaks. The output will be sent via WhatsApp.
+8. If a field is marked "Not specified", omit it entirely. Do not write "Not specified" \
+in the output.
 {glossary_context}\
 """
 
@@ -126,18 +150,17 @@ def _build_user_prompt(
     language_name: str,
     language_code: str,
     drug_info_list: list[DrugInfo] | None = None,
-    glossary_context: str = "",
 ) -> str:
     """Build the user-turn prompt for the Claude translation call.
 
     Pure function — no I/O, no side effects, no logging.
+    Glossary context is injected via the system prompt only (not duplicated here).
 
     Args:
         prescription: Structured extraction output from GPT-4O Vision.
         language_name: Target language display name (e.g. "Hindi").
         language_code: Target language BCP-47 code (e.g. "hi").
         drug_info_list: Optional enrichment data per medicine from drug lookup.
-        glossary_context: Optional pre-formatted glossary block.
 
     Returns:
         Fully rendered user prompt string.
@@ -181,12 +204,6 @@ def _build_user_prompt(
             parts.append(f"- Timing: {drug.timing_instructions or 'Unknown'}")
             parts.append(f"- Known Interactions: {drug.known_interactions or 'None known'}")
 
-    # FR-6: Glossary context section
-    if glossary_context and glossary_context.strip():
-        parts.append("")
-        parts.append("## Glossary Reference")
-        parts.append(glossary_context)
-
     return "\n".join(parts)
 
 
@@ -220,19 +237,30 @@ _MEDICINE_HEADING_RE: re.Pattern[str] = re.compile(
 def _extract_disclaimer(text: str) -> tuple[str, str]:
     """Split response text into (body, disclaimer).
 
-    Returns the disclaimer paragraph and the body with disclaimer removed.
-    Falls back to ``_DEFAULT_DISCLAIMER`` if none found.
+    First tries the explicit English pattern (Disclaimer:/Note:).
+    If not found, uses the last paragraph as the disclaimer — this handles
+    translated responses where Claude writes the disclaimer in Hindi, Tamil, etc.
+    Falls back to ``_DEFAULT_DISCLAIMER`` only if the text has a single paragraph.
     """
+    # Try explicit English pattern first
     match = _DISCLAIMER_PATTERN.search(text)
     if match:
         disclaimer = match.group(1).strip().lstrip("*").strip()
-        # Remove leading "Disclaimer:" / "Note:" prefix
         for prefix in ("Disclaimer:", "disclaimer:", "Note:", "note:"):
             if disclaimer.startswith(prefix):
                 disclaimer = disclaimer[len(prefix) :].strip()
                 break
         body = text[: match.start()].strip()
         return body, disclaimer
+
+    # Fallback: use last paragraph (split on double newline)
+    paragraphs = [p.strip() for p in text.strip().split("\n\n") if p.strip()]
+    if len(paragraphs) >= 2:
+        # Last paragraph is likely the disclaimer Claude was instructed to add
+        disclaimer = paragraphs[-1].lstrip("*").strip()
+        body = "\n\n".join(paragraphs[:-1])
+        return body, disclaimer
+
     return text.strip(), _DEFAULT_DISCLAIMER
 
 
@@ -334,7 +362,6 @@ async def simplify_and_translate(
         language_name,
         language_code,
         drug_info_list,
-        glossary_context,
     )
 
     # FR-3: Call Claude API

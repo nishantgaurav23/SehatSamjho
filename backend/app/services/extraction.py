@@ -57,41 +57,62 @@ _client: openai.AsyncOpenAI | None = None
 
 EXTRACTION_SYSTEM_PROMPT: str = (
     "You are a medical document reader specializing in Indian prescriptions.\n\n"
-    "Your task is to extract structured data from the provided prescription image "
+    "Your task is to extract structured data from the provided medical document image "
     "and return it as valid JSON.\n\n"
-    "Rules:\n"
-    "1. Return ONLY valid JSON — no markdown fences, no code fences, no commentary.\n"
-    "2. Assign a `confidence` score (0.0–1.0) per medicine entry based on how clearly "
+    "## Document context\n"
+    "Indian prescriptions often mix English and Hindi (or other regional languages). "
+    "Common abbreviations include: BD (twice daily), TDS (three times daily), "
+    "OD (once daily), SOS (as needed), HS (at bedtime), AC (before food), "
+    "PC (after food), BBF (before breakfast), Stat (immediately). "
+    "Documents may be handwritten, printed, or a mix of both. "
+    "The image may be rotated, slightly blurry, or photographed at an angle — "
+    "do your best to read it.\n\n"
+    "## Rules (follow in order)\n"
+    "1. **Classify first.** Set `doc_type` to `\"prescription\"`, `\"lab_report\"`, "
+    "or `\"other\"` based on the document content.\n"
+    '   - `"prescription"`: any document that contains prescribed medicines — '
+    "handwritten prescriptions, printed/typed prescriptions, discharge summaries "
+    "with medications, consultation notes with prescribed drugs, OPD/IPD records "
+    "listing medicines, and pharmacy slips.\n"
+    '   - `"lab_report"`: blood work, imaging, pathology, or diagnostic test results.\n'
+    '   - `"other"`: documents with NO medical content (e.g. receipts, invoices, '
+    "selfies, random photos). Only use `\"other\"` when you are confident the "
+    "document has no medical relevance.\n"
+    "2. **Return ONLY valid JSON** — no markdown fences, no code fences, no commentary.\n"
+    "3. Assign a `confidence` score (0.0–1.0) per medicine entry based on how clearly "
     "the fields are readable.\n"
-    "3. Assign an `overall_confidence` score (0.0–1.0) for the entire document.\n"
-    "4. If a dosage, frequency, or duration is unclear, do not guess — set `confidence` "
+    "4. Assign an `overall_confidence` score (0.0–1.0) for the entire document "
+    "reflecting image quality and text legibility.\n"
+    "5. If a dosage, frequency, or duration is unclear, do not guess — set `confidence` "
     "below 0.5 and leave the field as `null`.\n"
-    '5. Set `doc_type` to `"prescription"`, `"lab_report"`, or `"other"` based on '
-    "the document content.\n"
-    "6. Do not invent patient details. If a field is not present in the image, "
+    "6. Expand common abbreviations into plain English in the output "
+    "(e.g. BD → \"twice daily\", OD → \"once daily\", SOS → \"as needed\").\n"
+    "7. Do not invent patient details. If a field is not present in the image, "
     "set it to `null`.\n"
 )
 
 EXTRACTION_OUTPUT_SCHEMA: str = (
-    "Expected JSON output schema:\n"
+    "## Expected JSON output schema\n"
+    "```\n"
     "{\n"
-    '  "doctor_name": str | null,\n'
-    '  "patient_name": str | null,\n'
-    '  "date": str | null,\n'
-    '  "diagnosis": str | null,\n'
-    '  "medicines": [\n'
+    '  "doctor_name": string or null,         // as printed on the document\n'
+    '  "patient_name": string or null,         // as printed on the document\n'
+    '  "date": string or null,                 // any date format found\n'
+    '  "diagnosis": string or null,            // primary diagnosis if stated\n'
+    '  "medicines": [                          // one entry per medicine\n'
     "    {\n"
-    '      "medicine_name": str (required),\n'
-    '      "dosage": str | null,\n'
-    '      "frequency": str | null,\n'
-    '      "duration": str | null,\n'
-    '      "instructions": str | null,\n'
-    '      "confidence": float (0.0–1.0)\n'
+    '      "medicine_name": string (required),  // brand or generic name\n'
+    '      "dosage": string or null,            // e.g. "500mg"\n'
+    '      "frequency": string or null,         // expanded, e.g. "twice daily"\n'
+    '      "duration": string or null,          // e.g. "7 days"\n'
+    '      "instructions": string or null,      // e.g. "after food"\n'
+    '      "confidence": float (0.0–1.0)        // how clearly this entry was read\n'
     "    }\n"
     "  ],\n"
-    '  "overall_confidence": float (0.0–1.0),\n'
-    '  "doc_type": str ("prescription" | "lab_report" | "other")\n'
+    '  "overall_confidence": float (0.0–1.0),  // image quality + legibility\n'
+    '  "doc_type": "prescription" | "lab_report" | "other"\n'
     "}\n"
+    "```\n"
 )
 
 
@@ -132,9 +153,10 @@ def _reset_client() -> None:
 # ---------------------------------------------------------------------------
 
 GPT4O_MODEL: str = "gpt-4o"
-GPT4O_MAX_TOKENS: int = 1024
+GPT4O_MAX_TOKENS: int = 4096
 GPT4O_TEMPERATURE: float = 0.1
 GPT4O_IMAGE_DETAIL: str = "high"
+MAX_IMAGE_BYTES: int = 10 * 1024 * 1024  # 10 MB
 
 
 # ---------------------------------------------------------------------------
@@ -154,14 +176,24 @@ def _encode_image_base64(image_bytes: bytes, content_type: str = "image/jpeg") -
 async def _download_image(image_url: str) -> bytes:
     """Download an image from a URL using httpx.
 
-    Returns raw image bytes. Raises ``httpx.HTTPStatusError`` on non-2xx
+    Returns raw image bytes. Raises ``ImageNotReadableError`` if the image
+    exceeds MAX_IMAGE_BYTES. Raises ``httpx.HTTPStatusError`` on non-2xx
     and ``httpx.TimeoutException`` on timeout (both propagated to caller).
     """
     logger.debug("Downloading image from URL")
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(image_url)
         response.raise_for_status()
-        logger.debug("Image download complete")
+        content_length = response.headers.get("content-length")
+        if content_length and int(content_length) > MAX_IMAGE_BYTES:
+            raise ImageNotReadableError(
+                f"Image too large ({int(content_length)} bytes, max {MAX_IMAGE_BYTES})"
+            )
+        if len(response.content) > MAX_IMAGE_BYTES:
+            raise ImageNotReadableError(
+                f"Image too large ({len(response.content)} bytes, max {MAX_IMAGE_BYTES})"
+            )
+        logger.debug("Image download complete: size={}", len(response.content))
         return response.content
 
 
@@ -214,7 +246,7 @@ async def _call_gpt4o_vision(image_url: str, content_type: str = "image/jpeg") -
             },
             {
                 "type": "text",
-                "text": "Extract all medical information from this prescription image.",
+                "text": "Extract all medical information from this document image. Classify it first, then extract every field you can read.",
             },
         ],
     }
@@ -226,6 +258,7 @@ async def _call_gpt4o_vision(image_url: str, content_type: str = "image/jpeg") -
         messages=system_messages + [user_message],
         max_tokens=GPT4O_MAX_TOKENS,
         temperature=GPT4O_TEMPERATURE,
+        response_format={"type": "json_object"},
     )
 
     if not response.choices:
@@ -278,7 +311,7 @@ async def _call_gpt4o_vision_from_bytes(
             },
             {
                 "type": "text",
-                "text": "Extract all medical information from this prescription image.",
+                "text": "Extract all medical information from this document image. Classify it first, then extract every field you can read.",
             },
         ],
     }
@@ -290,6 +323,7 @@ async def _call_gpt4o_vision_from_bytes(
         messages=system_messages + [user_message],
         max_tokens=GPT4O_MAX_TOKENS,
         temperature=GPT4O_TEMPERATURE,
+        response_format={"type": "json_object"},
     )
 
     if not response.choices:
@@ -317,6 +351,11 @@ async def extract_prescription_from_bytes(
 
     if not image_bytes:
         raise ValueError("image_bytes must be non-empty")
+
+    if len(image_bytes) > MAX_IMAGE_BYTES:
+        raise ImageNotReadableError(
+            f"Image too large ({len(image_bytes)} bytes, max {MAX_IMAGE_BYTES})"
+        )
 
     # Convert unsupported image formats (BMP, TIFF, etc.) to PNG for OpenAI
     _SUPPORTED_FORMATS = {"image/jpeg", "image/png", "image/gif", "image/webp"}

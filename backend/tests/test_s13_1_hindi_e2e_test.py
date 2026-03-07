@@ -231,8 +231,18 @@ def hindi_pipeline_mocks():
     translation_result = _make_hindi_translation()
 
     patches = {
+        "download_image": patch(
+            "backend.app.api.webhooks._download_image",
+            new_callable=AsyncMock,
+            return_value=b"fake-image-bytes",
+        ),
+        "store_image": patch(
+            "backend.app.api.webhooks.store_prescription_image",
+            new_callable=AsyncMock,
+            return_value="prescriptions/test/img.jpg",
+        ),
         "extract": patch(
-            "backend.app.api.webhooks.extract_prescription",
+            "backend.app.api.webhooks.extract_prescription_from_bytes",
             new_callable=AsyncMock,
             return_value=prescription,
         ),
@@ -584,14 +594,14 @@ class TestHindiServiceArguments:
 
     @pytest.mark.asyncio
     async def test_extraction_receives_image_url(self, hindi_pipeline_client):
-        """T15: extract_prescription called with the prescription image URL."""
+        """T15: extract_prescription_from_bytes called with downloaded image bytes."""
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
 
         mocks["extract"].assert_awaited_once()
         kwargs = mocks["extract"].call_args.kwargs
-        assert kwargs["image_url"] == MEDIA_URL
+        assert kwargs["image_bytes"] == b"fake-image-bytes"
         assert kwargs["content_type"] == "image/jpeg"
         app.dependency_overrides.clear()
 

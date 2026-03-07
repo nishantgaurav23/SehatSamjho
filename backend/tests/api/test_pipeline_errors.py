@@ -220,7 +220,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=NotMedicalDocumentError("not medical"),
             ),
@@ -252,7 +262,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=ImageNotReadableError("blurry"),
             ),
@@ -306,7 +326,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=ExtractionError("fail"),
             ),
@@ -345,7 +375,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=NotMedicalDocumentError("not medical"),
             ),
@@ -456,7 +496,17 @@ class TestErrorCodeFromClassname:
 
             with (
                 patch(
-                    "backend.app.api.webhooks.extract_prescription",
+                    "backend.app.api.webhooks._download_image",
+                    new_callable=AsyncMock,
+                    return_value=b"fake-image-bytes",
+                ),
+                patch(
+                    "backend.app.api.webhooks.store_prescription_image",
+                    new_callable=AsyncMock,
+                    return_value="prescriptions/test/img.jpg",
+                ),
+                patch(
+                    "backend.app.api.webhooks.extract_prescription_from_bytes",
                     new_callable=AsyncMock,
                     side_effect=exc_cls("test"),
                 ),

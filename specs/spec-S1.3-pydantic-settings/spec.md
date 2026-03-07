@@ -19,7 +19,7 @@ the codebase — every secret flows through `config.py`.
 ### FR-1: Settings class with all required fields
 - **What**: A `Settings` class (subclassing `pydantic_settings.BaseSettings`) declaring every
   environment variable the application needs.
-- **Fields** (all required, no defaults for secrets):
+- **Fields** (secrets are required with no defaults; AWS keys default to empty string for EC2 IAM role support):
 
   | Field | Type | Default | Source |
   |-------|------|---------|--------|
@@ -30,14 +30,14 @@ the codebase — every secret flows through `config.py`.
   | `TWILIO_WHATSAPP_FROM` | `str` | — | `.env` |
   | `BHASHINI_API_KEY` | `str` | — | `.env` |
   | `BHASHINI_USER_ID` | `str` | — | `.env` |
-  | `AWS_ACCESS_KEY_ID` | `str` | — | `.env` |
-  | `AWS_SECRET_ACCESS_KEY` | `str` | — | `.env` |
+  | `AWS_ACCESS_KEY_ID` | `str` | `""` (empty) | `.env` |
+  | `AWS_SECRET_ACCESS_KEY` | `str` | `""` (empty) | `.env` |
   | `S3_BUCKET` | `str` | `"sehatsamjho-audio"` | `.env` |
   | `DATABASE_URL` | `str` | `"postgresql+asyncpg://postgres:postgres@localhost:5432/sehatsamjho"` | `.env` |
   | `REDIS_URL` | `str` | `"redis://localhost:6379/0"` | `.env` |
 
 - **Outputs**: A validated `Settings` instance.
-- **Edge cases**: Missing required field → `pydantic` `ValidationError` at startup (fail fast).
+- **Edge cases**: Missing required field → `pydantic` `ValidationError` at startup (fail fast). AWS keys are optional — on EC2, the IAM instance profile provides S3 credentials automatically.
 
 ### FR-2: Module-level singleton `settings`
 - **What**: A module-level `settings = Settings()` instance so any module can

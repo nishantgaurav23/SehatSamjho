@@ -242,10 +242,10 @@ def test_claude_model_constant():
 
 
 def test_translation_max_tokens_constant():
-    """TRANSLATION_MAX_TOKENS equals 1024."""
+    """TRANSLATION_MAX_TOKENS equals 2048."""
     from backend.app.services.translation import TRANSLATION_MAX_TOKENS
 
-    assert TRANSLATION_MAX_TOKENS == 1024
+    assert TRANSLATION_MAX_TOKENS == 2048
     assert isinstance(TRANSLATION_MAX_TOKENS, int)
 
 

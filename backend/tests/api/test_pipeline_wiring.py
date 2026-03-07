@@ -79,7 +79,10 @@ def _make_prescription(**overrides) -> PrescriptionData:
 
 def _make_translation_result(**overrides) -> TranslationResult:
     defaults = {
-        "translated_text": "Your prescription contains Paracetamol 500mg...",
+        "translated_text": (
+            "Your prescription contains Paracetamol 500mg for pain relief.\n\n"
+            "This is not medical advice."
+        ),
         "per_medicine_summaries": ["Paracetamol: pain relief"],
         "disclaimer": "This is not medical advice.",
         "language_code": "hi",
@@ -122,8 +125,18 @@ def mock_services():
     translation_result = _make_translation_result()
 
     patches = {
+        "download_image": patch(
+            "backend.app.api.webhooks._download_image",
+            new_callable=AsyncMock,
+            return_value=b"fake-image-bytes",
+        ),
+        "store_image": patch(
+            "backend.app.api.webhooks.store_prescription_image",
+            new_callable=AsyncMock,
+            return_value="prescriptions/test/img.jpg",
+        ),
         "extract": patch(
-            "backend.app.api.webhooks.extract_prescription",
+            "backend.app.api.webhooks.extract_prescription_from_bytes",
             new_callable=AsyncMock,
             return_value=prescription,
         ),
@@ -232,7 +245,7 @@ class TestPipelineServiceCalls:
 
     @pytest.mark.asyncio
     async def test_pipeline_calls_extract_prescription(self, mock_services):
-        """T3: extract_prescription() called with media_url, content_type, request_id."""
+        """T3: extract_prescription_from_bytes() called with image_bytes, content_type, request_id."""
         from backend.app.api.webhooks import _run_pipeline
 
         payload = _make_payload()
@@ -241,8 +254,8 @@ class TestPipelineServiceCalls:
         await _run_pipeline(payload, session, REQUEST_ID, AsyncMock())
 
         mock_services["extract"].assert_awaited_once_with(
-            image_url=payload.media_url,
-            content_type=payload.media_content_type,
+            image_bytes=b"fake-image-bytes",
+            content_type=payload.media_content_type or "image/jpeg",
             request_id=REQUEST_ID,
         )
 
@@ -516,20 +529,35 @@ class TestPipelineErrorHandling:
     """Tests 19–20: Error handling and DB session."""
 
     @pytest.mark.asyncio
-    async def test_pipeline_session_deleted_on_error(self, mock_services):
-        """T19: If extraction raises, session is still deleted (S10.4: error handled gracefully)."""
-        from backend.app.api.webhooks import _run_pipeline
+    async def test_pipeline_session_reset_on_error(self, mock_services):
+        """T19: If extraction raises, session is reset to WAITING_FOR_IMAGE (not deleted)."""
+        from backend.app.api.webhooks import _run_pipeline, _save_session
 
         mock_services["extract"].side_effect = Exception("GPT-4O failed")
+
+        # Add _save_session mock
+        save_session_patch = patch(
+            "backend.app.api.webhooks._save_session",
+            new_callable=AsyncMock,
+        )
+        mock_save = save_session_patch.start()
 
         payload = _make_payload()
         session = _make_session()
         redis_mock = AsyncMock()
 
-        # S10.4: Pipeline now catches exceptions gracefully — no re-raise
-        await _run_pipeline(payload, session, REQUEST_ID, redis_mock)
+        try:
+            await _run_pipeline(payload, session, REQUEST_ID, redis_mock)
 
-        mock_services["delete_session"].assert_awaited_once_with(payload.from_number, redis_mock)
+            # Session should NOT be deleted on error
+            mock_services["delete_session"].assert_not_awaited()
+            # Session should be saved with WAITING_FOR_IMAGE status
+            mock_save.assert_awaited_once()
+            saved_session = mock_save.call_args.args[1]
+            assert saved_session.status == SessionStatus.WAITING_FOR_IMAGE
+            assert saved_session.language_code == session.language_code
+        finally:
+            save_session_patch.stop()
 
     @pytest.mark.asyncio
     async def test_pipeline_db_session_used_for_logging(self, mock_services):

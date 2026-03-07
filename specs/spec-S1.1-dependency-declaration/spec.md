@@ -18,7 +18,7 @@ None — this is the first spec.
 - **What**: A valid `pyproject.toml` at the repo root declaring the project metadata and all runtime dependencies.
 - **Inputs**: N/A (static file)
 - **Outputs**: A PEP 621-compliant `pyproject.toml` that `uv` can install from.
-- **Required runtime deps**: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `aioredis`, `anthropic`, `openai`, `tenacity`, `loguru`, `httpx`, `boto3`, `pydantic-settings`, `twilio`, `python-multipart`
+- **Required runtime deps**: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `redis` (async via `redis.asyncio` — replaces unmaintained `aioredis`), `anthropic`, `openai`, `tenacity`, `loguru`, `httpx`, `boto3`, `pydantic-settings`, `twilio`, `python-multipart`
 - **Edge cases**: Version pins should allow minor version updates (e.g., `>=0.100,<1` or `>=X.Y`). No overly strict pins that prevent pip resolution.
 
 ### FR-2: Dev extras group
@@ -49,7 +49,7 @@ None — this is the first spec.
 
 - [ ] **Outcome 1**: `uv pip install -r pyproject.toml` succeeds with zero errors on Python 3.11+
 - [ ] **Outcome 2**: `uv pip install -r pyproject.toml --extra dev` installs pytest, ruff, pytest-mock, pytest-asyncio
-- [ ] **Outcome 3**: `python -c "import fastapi, uvicorn, sqlalchemy, asyncpg, aioredis, anthropic, openai, tenacity, loguru, httpx, boto3, pydantic_settings, twilio"` succeeds
+- [ ] **Outcome 3**: `python -c "import fastapi, uvicorn, sqlalchemy, asyncpg, redis, anthropic, openai, tenacity, loguru, httpx, boto3, pydantic_settings, twilio"` succeeds
 - [ ] **Outcome 4**: `.env.example` contains all 12 required variables with placeholder values
 - [ ] **Outcome 5**: `ruff check --config pyproject.toml` recognizes the config (line-length = 100)
 - [ ] **Outcome 6**: `pytest --co --config pyproject.toml` picks up `asyncio_mode = "auto"` and `testpaths`

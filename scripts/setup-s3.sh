@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===========================================================================
 # S3 Bucket Setup Script — SehatSamjho
-# Creates and configures an S3 bucket for TTS audio file storage.
+# Creates and configures an S3 bucket for TTS audio and prescription image storage.
 #
 # Prerequisites:
 #   - AWS CLI v2 installed and configured (aws configure)
@@ -23,8 +23,10 @@ set -euo pipefail
 
 REGION="ap-south-1"
 BUCKET_PREFIX="sehatsamjho-audio"
-LIFECYCLE_RULE_ID="delete-audio-24h"
+LIFECYCLE_RULE_ID_AUDIO="delete-audio-24h"
+LIFECYCLE_RULE_ID_PRESCRIPTIONS="delete-prescriptions-30d"
 AUDIO_PREFIX="audio/"
+PRESCRIPTIONS_PREFIX="prescriptions/"
 
 # ---- Colors ----
 GREEN='\033[0;32m'
@@ -76,8 +78,8 @@ aws s3api put-public-access-block \
 
 info "All public access blocked."
 
-# ---- Step 4: Create Lifecycle Rule ----
-info "=== [4/5] Creating lifecycle rule '${LIFECYCLE_RULE_ID}' ==="
+# ---- Step 4: Create Lifecycle Rules ----
+info "=== [4/5] Creating lifecycle rules ==="
 
 LIFECYCLE_CONFIG=$(cat <<'LCEOF'
 {
@@ -91,6 +93,16 @@ LIFECYCLE_CONFIG=$(cat <<'LCEOF'
       "Expiration": {
         "Days": 1
       }
+    },
+    {
+      "ID": "delete-prescriptions-30d",
+      "Filter": {
+        "Prefix": "prescriptions/"
+      },
+      "Status": "Enabled",
+      "Expiration": {
+        "Days": 30
+      }
     }
   ]
 }
@@ -101,7 +113,9 @@ aws s3api put-bucket-lifecycle-configuration \
   --bucket "$BUCKET_NAME" \
   --lifecycle-configuration "$LIFECYCLE_CONFIG"
 
-info "Lifecycle rule created: objects under '${AUDIO_PREFIX}' expire after 1 day."
+info "Lifecycle rules created:"
+info "  - objects under '${AUDIO_PREFIX}' expire after 1 day"
+info "  - objects under '${PRESCRIPTIONS_PREFIX}' expire after 30 days"
 
 # ---- Step 5: Verify Setup ----
 info "=== [5/5] Verifying setup ==="
@@ -123,9 +137,9 @@ info "Public access block: ${PUBLIC_BLOCK}"
 # Verify lifecycle
 LIFECYCLE=$(aws s3api get-bucket-lifecycle-configuration \
   --bucket "$BUCKET_NAME" \
-  --query "Rules[0]" \
+  --query "Rules" \
   --output json)
-info "Lifecycle rule: ${LIFECYCLE}"
+info "Lifecycle rules: ${LIFECYCLE}"
 
 # Verify no CORS
 if aws s3api get-bucket-cors --bucket "$BUCKET_NAME" 2>/dev/null; then
@@ -141,7 +155,7 @@ echo ""
 echo " Bucket:     ${BUCKET_NAME}"
 echo " Region:     ${REGION}"
 echo " Public:     Blocked (all four toggles)"
-echo " Lifecycle:  ${LIFECYCLE_RULE_ID} — audio/ expires in 1 day"
+echo " Lifecycle:  audio/ expires in 1 day, prescriptions/ expires in 30 days"
 echo " CORS:       None (presigned URLs only)"
 echo ""
 echo " S3_BUCKET (add to .env.prod on EC2):"

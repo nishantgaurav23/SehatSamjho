@@ -122,6 +122,19 @@ async def _run_web_pipeline(
     from backend.app.services.tts import generate_and_deliver_audio
     from backend.app.services.translation import simplify_and_translate
 
+    # Step 0: Store prescription image in S3 (best-effort)
+    try:
+        from backend.app.services.image_store import store_prescription_image
+
+        image_s3_key = await store_prescription_image(
+            image_bytes=image_bytes,
+            request_id=request_id,
+            content_type=content_type,
+        )
+        logger.info("Prescription image stored: key={}", image_s3_key)
+    except Exception:
+        logger.warning("Failed to store prescription image — continuing pipeline")
+
     # Step 1: Extract prescription from image bytes
     logger.info("Pipeline: extraction")
     prescription = await extract_prescription_from_bytes(
