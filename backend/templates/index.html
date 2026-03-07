@@ -150,99 +150,97 @@
         </div>
 
         <!-- Step 3: Results -->
-        <div class="wizard-step" id="step-3">
+        <div class="wizard-step results-step" id="step-3">
 
-            <!-- Prescription overview -->
-            <div class="result-header card">
-                <div class="result-badge">Translation Complete</div>
-                <div id="rx-meta" class="rx-meta"></div>
+            <!-- Top bar: badge + reset button -->
+            <div class="result-topbar">
+                <div>
+                    <span class="result-badge">Translation Complete</span>
+                    <span class="rx-meta" id="rx-meta"></span>
+                </div>
+                <button id="reset-btn" class="btn btn-outline-sm">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 1111.3-2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    New Document
+                </button>
             </div>
 
-            <!-- Prescription: Section 1 — What You Take -->
-            <div class="result-section card" id="rx-section-medicines">
-                <div class="section-icon section-icon-medicines">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <rect x="3" y="6" width="22" height="16" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <path d="M14 6v16M3 14h22" stroke="currentColor" stroke-width="2"/>
-                    </svg>
+            <!-- 3-column grid: What / Why / Next Steps -->
+            <div class="results-grid">
+
+                <!-- Column 1: What You Take (Prescription) -->
+                <div class="result-section card" id="rx-section-medicines">
+                    <div class="section-icon section-icon-medicines">
+                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                            <rect x="3" y="6" width="22" height="16" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <path d="M14 6v16M3 14h22" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <h3>What You're Prescribed</h3>
+                    <p class="section-subtitle">Medicines, dosage &amp; ailment</p>
+                    <div id="section-medicines" class="section-content"></div>
+                    <div id="medicines-cards"></div>
                 </div>
-                <h3>What You're Prescribed</h3>
-                <p class="section-subtitle">Your medicines, dosage, and ailment</p>
-                <div id="section-medicines" class="section-content"></div>
-                <div id="medicines-cards"></div>
+
+                <!-- Column 1 alt: Lab Report Test Results -->
+                <div class="result-section card" id="lab-section-tests" style="display:none">
+                    <div class="section-icon section-icon-lab">
+                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                            <path d="M10 3v8l-5 9a2 2 0 001.7 3h14.6a2 2 0 001.7-3l-5-9V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 3h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M8 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+                        </svg>
+                    </div>
+                    <h3>Your Test Results</h3>
+                    <p class="section-subtitle">Values &amp; reference ranges</p>
+                    <div id="section-lab-overview" class="section-content"></div>
+                    <div id="lab-tests-cards"></div>
+                </div>
+
+                <!-- Column 2: Why -->
+                <div class="result-section card">
+                    <div class="section-icon section-icon-why">
+                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                            <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <path d="M14 9v6M14 18v1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h3 id="section-why-title">Why These Medicines</h3>
+                    <p class="section-subtitle" id="section-why-subtitle">Purpose of each medicine</p>
+                    <div id="section-why" class="section-content"></div>
+                </div>
+
+                <!-- Column 3: Next Steps -->
+                <div class="result-section card">
+                    <div class="section-icon section-icon-next">
+                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                            <path d="M5 14l7 7L23 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </svg>
+                    </div>
+                    <h3>Next Steps</h3>
+                    <p class="section-subtitle" id="section-next-subtitle">Timing, precautions &amp; follow-up</p>
+                    <div id="section-next-steps" class="section-content"></div>
+                </div>
+
             </div>
 
-            <!-- Lab Report: Test Results Table -->
-            <div class="result-section card" id="lab-section-tests" style="display:none">
-                <div class="section-icon section-icon-lab">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <path d="M10 3v8l-5 9a2 2 0 001.7 3h14.6a2 2 0 001.7-3l-5-9V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M10 3h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M8 18h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-                    </svg>
-                </div>
-                <h3>Your Test Results</h3>
-                <p class="section-subtitle">Each test with your value and the normal range</p>
-                <div id="section-lab-overview" class="section-content"></div>
-                <div id="lab-tests-cards"></div>
-            </div>
-
-            <!-- Section 2: Why / What Results Mean -->
-            <div class="result-section card">
-                <div class="section-icon section-icon-why">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="2" fill="none"/>
-                        <path d="M14 9v6M14 18v1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <h3 id="section-why-title">Why These Medicines</h3>
-                <p class="section-subtitle" id="section-why-subtitle">What each medicine does and why it was prescribed</p>
-                <div id="section-why" class="section-content"></div>
-            </div>
-
-            <!-- Section 3: Next Steps -->
-            <div class="result-section card">
-                <div class="section-icon section-icon-next">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <path d="M5 14l7 7L23 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    </svg>
-                </div>
-                <h3>Next Steps</h3>
-                <p class="section-subtitle" id="section-next-subtitle">When to take, what to avoid, and follow-up</p>
-                <div id="section-next-steps" class="section-content"></div>
-            </div>
-
-            <!-- Audio -->
-            <div id="audio-section" class="result-section card" style="display:none">
-                <div class="section-icon section-icon-medicines">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <path d="M7 11v6h4l5 5V6l-5 5H7z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
-                        <path d="M19 10a5 5 0 010 8M21 7a9 9 0 010 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
-                    </svg>
-                </div>
-                <h3>Listen to your prescription</h3>
+            <!-- Below the grid: Audio + Full Translation + Disclaimer -->
+            <div id="audio-section" class="audio-card card" style="display:none">
+                <h4>Listen to your prescription</h4>
                 <audio id="audio-player" controls preload="none"></audio>
                 <p class="audio-note">Audio generated using text-to-speech</p>
             </div>
 
-            <!-- Full Translation (collapsible) -->
-            <details class="result-section card full-translation">
+            <details class="card full-translation">
                 <summary>View full translation text</summary>
                 <div id="translation-text" class="section-content"></div>
             </details>
 
-            <!-- Disclaimer -->
             <div class="disclaimer">
                 <strong>Disclaimer:</strong>
                 <span id="disclaimer-text"></span>
             </div>
 
             <p class="latency" id="latency-value"></p>
-
-            <button id="reset-btn" class="btn btn-outline">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 1111.3-2.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Translate Another Document
-            </button>
         </div>
     </div>
 

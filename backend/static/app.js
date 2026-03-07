@@ -30,10 +30,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ── Wizard Navigation ──────────────────────────────────
 
+    const containerEl = document.querySelector(".container");
+
     function goToStep(step) {
         Object.values(steps).forEach(el => el.classList.remove("active"));
         const target = steps[step];
         if (target) target.classList.add("active");
+
+        // Widen container for results view
+        if (step === 3) {
+            containerEl.classList.add("container-wide");
+        } else {
+            containerEl.classList.remove("container-wide");
+        }
 
         const stepNum = typeof step === "number" ? step : 0;
         progressSteps.forEach((el) => {
@@ -301,8 +310,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 let badge = "";
                 if (med.confidence != null) {
                     const cls = med.confidence >= 0.8 ? "high" : med.confidence >= 0.5 ? "medium" : "low";
-                    const label = med.confidence >= 0.8 ? "Clear" : med.confidence >= 0.5 ? "Partial" : "Unclear";
-                    badge = `<span class="confidence-badge confidence-${cls}">${label} (${Math.round(med.confidence * 100)}%)</span>`;
+                    const label = med.confidence >= 0.8 ? "High" : med.confidence >= 0.5 ? "Medium" : "Low";
+                    badge = `<span class="confidence-badge confidence-${cls}">${label} Confidence</span>`;
                 }
 
                 let details = [];
