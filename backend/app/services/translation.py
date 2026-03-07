@@ -256,10 +256,11 @@ def _extract_disclaimer(text: str) -> tuple[str, str]:
     # Fallback: use last paragraph (split on double newline)
     paragraphs = [p.strip() for p in text.strip().split("\n\n") if p.strip()]
     if len(paragraphs) >= 2:
-        # Last paragraph is likely the disclaimer Claude was instructed to add
-        disclaimer = paragraphs[-1].lstrip("*").strip()
-        body = "\n\n".join(paragraphs[:-1])
-        return body, disclaimer
+        last = paragraphs[-1].lstrip("*").strip()
+        # A heading (###) is medicine content, not a disclaimer — skip it
+        if not last.startswith("#"):
+            body = "\n\n".join(paragraphs[:-1])
+            return body, last
 
     return text.strip(), _DEFAULT_DISCLAIMER
 

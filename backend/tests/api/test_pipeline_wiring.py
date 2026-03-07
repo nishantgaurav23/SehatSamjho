@@ -531,7 +531,7 @@ class TestPipelineErrorHandling:
     @pytest.mark.asyncio
     async def test_pipeline_session_reset_on_error(self, mock_services):
         """T19: If extraction raises, session is reset to WAITING_FOR_IMAGE (not deleted)."""
-        from backend.app.api.webhooks import _run_pipeline, _save_session
+        from backend.app.api.webhooks import _run_pipeline
 
         mock_services["extract"].side_effect = Exception("GPT-4O failed")
 

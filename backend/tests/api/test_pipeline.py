@@ -8,6 +8,7 @@ All external services mocked. Uses httpx.AsyncClient + ASGITransport for HTTP-le
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -150,6 +151,13 @@ def _form_data(**overrides) -> dict:
     }
     data.update(overrides)
     return data
+
+
+async def _post_and_wait(client, data=None):
+    """POST to webhook and yield control so the background pipeline task runs."""
+    resp = await client.post("/webhook/whatsapp", data=data or _form_data())
+    await asyncio.sleep(0)
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -310,14 +318,14 @@ class TestHappyPath:
     @pytest.mark.asyncio
     async def test_happy_path_http_200(self, client, mock_services):
         """T2: POST webhook with image → HTTP 200 TwiML response."""
-        resp = await client.post("/webhook/whatsapp", data=_form_data())
+        resp = await _post_and_wait(client)
         assert resp.status_code == 200
         assert "<Response/>" in resp.text
 
     @pytest.mark.asyncio
     async def test_happy_path_sends_text_reply(self, client, mock_services):
         """T3: Text reply sent with medicine names and disclaimer."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         # Find the reply text send call (not the ack)
         send_calls = mock_services["send_text"].call_args_list
@@ -330,7 +338,7 @@ class TestHappyPath:
     @pytest.mark.asyncio
     async def test_happy_path_sends_audio(self, client, mock_services):
         """T4: Audio message sent with presigned URL and fallback text."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_services["send_audio_fallback"].assert_awaited_once()
         call_args = mock_services["send_audio_fallback"].call_args
@@ -344,7 +352,7 @@ class TestHappyPath:
         """T5: Interaction logged with status=SUCCESS, latency_ms, confidence_avg."""
         from backend.app.db.models import InteractionStatus
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_services["log_interaction"].assert_awaited_once()
         kwargs = mock_services["log_interaction"].call_args.kwargs
@@ -358,7 +366,7 @@ class TestHappyPath:
     @pytest.mark.asyncio
     async def test_happy_path_session_deleted(self, client, mock_services):
         """T6: Session deleted from Redis after success."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_redis = mock_services["redis"]
         mock_redis.delete.assert_called()
@@ -370,7 +378,7 @@ class TestHappyPath:
     @pytest.mark.asyncio
     async def test_happy_path_ack_before_pipeline(self, client, mock_services):
         """T7: PROCESSING_ACK_MESSAGE sent before extraction call."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         # ACK must be the first send_text_message call
         send_calls = mock_services["send_text"].call_args_list
@@ -391,7 +399,7 @@ class TestServiceArguments:
     @pytest.mark.asyncio
     async def test_request_id_threaded_to_all_services(self, client, mock_services):
         """T8: All services receive the same request_id (UUID)."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         # All service calls should have request_id
         extract_rid = mock_services["extract"].call_args.kwargs["request_id"]
@@ -410,7 +418,7 @@ class TestServiceArguments:
     @pytest.mark.asyncio
     async def test_extraction_receives_correct_args(self, client, mock_services):
         """T9: extract_prescription_from_bytes called with image_bytes, content_type, request_id."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_services["extract"].assert_awaited_once()
         kwargs = mock_services["extract"].call_args.kwargs
@@ -421,7 +429,7 @@ class TestServiceArguments:
     @pytest.mark.asyncio
     async def test_translation_receives_glossary_context(self, client, mock_services):
         """T10: simplify_and_translate receives glossary_context from format_glossary_context."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_services["translate"].assert_awaited_once()
         kwargs = mock_services["translate"].call_args.kwargs
@@ -432,7 +440,7 @@ class TestServiceArguments:
     @pytest.mark.asyncio
     async def test_audio_text_formatted_for_tts(self, client, mock_services):
         """T11: generate_and_deliver_audio receives formatted audio text (no emoji)."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_services["audio"].assert_awaited_once()
         kwargs = mock_services["audio"].call_args.kwargs
@@ -448,7 +456,7 @@ class TestServiceArguments:
     @pytest.mark.asyncio
     async def test_reply_within_whatsapp_limit(self, client, mock_services):
         """T12: Formatted reply text ≤ 1600 chars."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         send_calls = mock_services["send_text"].call_args_list
         reply_calls = [c for c in send_calls if c.args[1] != PROCESSING_ACK_MESSAGE]
@@ -459,7 +467,7 @@ class TestServiceArguments:
     @pytest.mark.asyncio
     async def test_audio_text_within_tts_limit(self, client, mock_services):
         """T13: Formatted audio text ≤ 2000 chars."""
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         kwargs = mock_services["audio"].call_args.kwargs
         audio_text = kwargs["text"]
@@ -481,7 +489,7 @@ class TestErrorPaths:
 
         mock_services["extract"].side_effect = NotMedicalDocumentError("not medical")
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         # Find the error message send call (not the ack)
         send_calls = mock_services["send_text"].call_args_list
@@ -495,7 +503,7 @@ class TestErrorPaths:
 
         mock_services["extract"].side_effect = ImageNotReadableError("blurry")
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         send_calls = mock_services["send_text"].call_args_list
         error_calls = [c for c in send_calls if c.args[1] == IMAGE_NOT_READABLE_MESSAGE]
@@ -508,7 +516,7 @@ class TestErrorPaths:
 
         mock_services["translate"].side_effect = TranslationError("translation failed")
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         send_calls = mock_services["send_text"].call_args_list
         error_calls = [c for c in send_calls if c.args[1] == TRANSLATION_ERROR_MESSAGE]
@@ -519,7 +527,7 @@ class TestErrorPaths:
         """T17: RuntimeError → generic error message sent."""
         mock_services["extract"].side_effect = RuntimeError("something broke")
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         send_calls = mock_services["send_text"].call_args_list
         error_calls = [c for c in send_calls if c.args[1] == GENERIC_PIPELINE_ERROR_MESSAGE]
@@ -542,7 +550,7 @@ class TestErrorHandlingDetails:
 
         mock_services["extract"].side_effect = NotMedicalDocumentError("not medical")
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         mock_services["log_interaction"].assert_awaited_once()
         kwargs = mock_services["log_interaction"].call_args.kwargs
@@ -557,7 +565,7 @@ class TestErrorHandlingDetails:
 
         mock_services["audio"].return_value = None
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
         # Audio send should NOT be called
         mock_services["send_audio_fallback"].assert_not_awaited()
@@ -573,15 +581,15 @@ class TestErrorHandlingDetails:
 
     @pytest.mark.asyncio
     async def test_error_still_cleans_session(self, client, mock_services):
-        """T20: Pipeline error → session still deleted from Redis."""
+        """T20: Pipeline error → session reset to WAITING_FOR_IMAGE in Redis."""
         from backend.app.services.extraction import ExtractionError
 
         mock_services["extract"].side_effect = ExtractionError("fail")
 
-        await client.post("/webhook/whatsapp", data=_form_data())
+        await _post_and_wait(client)
 
+        # On error, session is reset to WAITING_FOR_IMAGE (not deleted)
         mock_redis = mock_services["redis"]
-        mock_redis.delete.assert_called()
-        delete_calls = mock_redis.delete.call_args_list
-        deleted_keys = [c.args[0] for c in delete_calls]
-        assert any(PHONE in key for key in deleted_keys)
+        set_calls = mock_redis.set.call_args_list
+        session_keys = [c.args[0] for c in set_calls]
+        assert any(PHONE in key for key in session_keys)

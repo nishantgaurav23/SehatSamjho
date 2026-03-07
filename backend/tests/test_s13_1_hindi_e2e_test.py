@@ -11,6 +11,7 @@ All external services mocked. Uses httpx.AsyncClient + ASGITransport for HTTP-le
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -503,6 +504,7 @@ class TestHindiPipelineOutput:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         send_calls = mocks["send_text"].call_args_list
         assert len(send_calls) >= 1
@@ -516,6 +518,7 @@ class TestHindiPipelineOutput:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         send_calls = mocks["send_text"].call_args_list
         reply_calls = [c for c in send_calls if c.args[1] != PROCESSING_ACK_MESSAGE]
@@ -532,6 +535,7 @@ class TestHindiPipelineOutput:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         send_calls = mocks["send_text"].call_args_list
         reply_calls = [c for c in send_calls if c.args[1] != PROCESSING_ACK_MESSAGE]
@@ -545,6 +549,7 @@ class TestHindiPipelineOutput:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         send_calls = mocks["send_text"].call_args_list
         reply_calls = [c for c in send_calls if c.args[1] != PROCESSING_ACK_MESSAGE]
@@ -558,6 +563,7 @@ class TestHindiPipelineOutput:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         mocks["send_audio_fallback"].assert_awaited_once()
         call_args = mocks["send_audio_fallback"].call_args
@@ -571,6 +577,7 @@ class TestHindiPipelineOutput:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         audio_text = mocks["audio"].call_args.kwargs["text"]
         assert isinstance(audio_text, str)
@@ -598,6 +605,7 @@ class TestHindiServiceArguments:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         mocks["extract"].assert_awaited_once()
         kwargs = mocks["extract"].call_args.kwargs
@@ -611,6 +619,7 @@ class TestHindiServiceArguments:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         kwargs = mocks["translate"].call_args.kwargs
         assert kwargs["language_name"] == "Hindi"
@@ -623,6 +632,7 @@ class TestHindiServiceArguments:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         mocks["lookup"].assert_awaited_once()
         assert mocks["lookup"].call_args.args[1] == "hi"
@@ -634,6 +644,7 @@ class TestHindiServiceArguments:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         assert mocks["audio"].call_args.kwargs["language_code"] == "hi"
         app.dependency_overrides.clear()
@@ -655,6 +666,7 @@ class TestHindiLoggingAndCleanup:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         mocks["log_interaction"].assert_awaited_once()
         kwargs = mocks["log_interaction"].call_args.kwargs
@@ -677,6 +689,7 @@ class TestHindiLoggingAndCleanup:
         make_client, mocks, app = hindi_pipeline_client
         async with await make_client() as client:
             await client.post("/webhook/whatsapp", data=IMAGE_FORM_DATA)
+            await asyncio.sleep(0)  # let background pipeline task run
 
         mock_redis = mocks["redis"]
         mock_redis.delete.assert_called()

@@ -68,15 +68,15 @@ EXTRACTION_SYSTEM_PROMPT: str = (
     "The image may be rotated, slightly blurry, or photographed at an angle — "
     "do your best to read it.\n\n"
     "## Rules (follow in order)\n"
-    "1. **Classify first.** Set `doc_type` to `\"prescription\"`, `\"lab_report\"`, "
-    "or `\"other\"` based on the document content.\n"
+    '1. **Classify first.** Set `doc_type` to `"prescription"`, `"lab_report"`, '
+    'or `"other"` based on the document content.\n'
     '   - `"prescription"`: any document that contains prescribed medicines — '
     "handwritten prescriptions, printed/typed prescriptions, discharge summaries "
     "with medications, consultation notes with prescribed drugs, OPD/IPD records "
     "listing medicines, and pharmacy slips.\n"
     '   - `"lab_report"`: blood work, imaging, pathology, or diagnostic test results.\n'
     '   - `"other"`: documents with NO medical content (e.g. receipts, invoices, '
-    "selfies, random photos). Only use `\"other\"` when you are confident the "
+    'selfies, random photos). Only use `"other"` when you are confident the '
     "document has no medical relevance.\n"
     "2. **Return ONLY valid JSON** — no markdown fences, no code fences, no commentary.\n"
     "3. Assign a `confidence` score (0.0–1.0) per medicine entry based on how clearly "
@@ -86,7 +86,7 @@ EXTRACTION_SYSTEM_PROMPT: str = (
     "5. If a dosage, frequency, or duration is unclear, do not guess — set `confidence` "
     "below 0.5 and leave the field as `null`.\n"
     "6. Expand common abbreviations into plain English in the output "
-    "(e.g. BD → \"twice daily\", OD → \"once daily\", SOS → \"as needed\").\n"
+    '(e.g. BD → "twice daily", OD → "once daily", SOS → "as needed").\n'
     "7. Do not invent patient details. If a field is not present in the image, "
     "set it to `null`.\n"
 )
@@ -179,9 +179,18 @@ async def _download_image(image_url: str) -> bytes:
     Returns raw image bytes. Raises ``ImageNotReadableError`` if the image
     exceeds MAX_IMAGE_BYTES. Raises ``httpx.HTTPStatusError`` on non-2xx
     and ``httpx.TimeoutException`` on timeout (both propagated to caller).
+
+    Twilio media URLs require HTTP Basic auth (account SID + auth token).
     """
+    from backend.app.core.config import settings
+
     logger.debug("Downloading image from URL")
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    auth = None
+    # Twilio media URLs (api.twilio.com) require Basic auth
+    if "twilio.com" in image_url:
+        auth = httpx.BasicAuth(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+    async with httpx.AsyncClient(timeout=30.0, auth=auth) as client:
         response = await client.get(image_url)
         response.raise_for_status()
         content_length = response.headers.get("content-length")

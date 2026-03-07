@@ -355,10 +355,11 @@ class TestPipelineErrorIntegration:
         ):
             await _run_pipeline(mock_payload, mock_session, "req-789", mock_redis)
 
-        # Verify session was deleted
-        mock_redis.delete.assert_called_once()
-        call_args = mock_redis.delete.call_args[0][0]
-        assert mock_payload.from_number in call_args
+        # Verify session was reset to WAITING_FOR_IMAGE (not deleted)
+        mock_redis.set.assert_called()
+        last_set_args = mock_redis.set.call_args[0]
+        assert mock_payload.from_number in last_set_args[0]
+        assert "waiting_for_image" in last_set_args[1]
 
     @pytest.mark.asyncio
     async def test_pipeline_error_send_failure_handled(
@@ -406,8 +407,8 @@ class TestPipelineErrorIntegration:
             # Should NOT raise — gracefully handles send failure
             await _run_pipeline(mock_payload, mock_session, "req-err", mock_redis)
 
-        # Session should still be cleaned up
-        mock_redis.delete.assert_called_once()
+        # Session should still be reset (not deleted) after error
+        mock_redis.set.assert_called()
 
 
 # ---------------------------------------------------------------------------

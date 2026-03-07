@@ -46,7 +46,8 @@ class TestNormalizeDrugName:
     def test_normalize_drug_name_whitespace_collapse(self):
         from backend.app.services.drug_lookup import _normalize_drug_name
 
-        assert _normalize_drug_name("  Paracetamol  500mg  ") == "paracetamol 500mg"
+        # Dosage suffixes are stripped for lookup matching
+        assert _normalize_drug_name("  Paracetamol  500mg  ") == "paracetamol"
         assert _normalize_drug_name("A   B   C") == "a b c"
 
     def test_normalize_drug_name_empty(self):

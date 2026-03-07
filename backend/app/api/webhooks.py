@@ -316,8 +316,10 @@ async def _handle_image_state(
         await _save_session(payload.from_number, updated_session, redis)
         logger.info("Session updated to PROCESSING")
 
-        # FR-6: Invoke pipeline placeholder
-        await _run_pipeline(payload, updated_session, request_id, redis)
+        # FR-6: Run pipeline in background so webhook returns TwiML immediately
+        # (Twilio times out after 15 s; our pipeline takes 20-30 s)
+        task = asyncio.create_task(_run_pipeline(payload, updated_session, request_id, redis))
+        task.add_done_callback(_pipeline_done_callback)
 
 
 # ---------------------------------------------------------------------------
@@ -355,13 +357,15 @@ def _format_reply(
     # including medicine explanations and the disclaimer in the target language.
     body = translation.translated_text.strip()
 
+    # Append disclaimer if not already present in the translated text
+    if translation.disclaimer and translation.disclaimer not in body:
+        body = f"{body}\n\n{translation.disclaimer}"
+
     # Append low-confidence warnings (in English — medicine names are English anyway)
     low_conf_warnings = []
     for med in prescription.medicines:
         if med.confidence is not None and med.confidence < LOW_CONFIDENCE_THRESHOLD:
-            low_conf_warnings.append(
-                f"{LOW_CONFIDENCE_WARNING}: {med.medicine_name}"
-            )
+            low_conf_warnings.append(f"{LOW_CONFIDENCE_WARNING}: {med.medicine_name}")
     if low_conf_warnings:
         warning_block = "\n".join(low_conf_warnings)
         body = f"{body}\n\n{warning_block}"
@@ -621,6 +625,16 @@ def _handle_pipeline_error(exc: Exception) -> str:
     if isinstance(exc, ExtractionError):
         return EXTRACTION_ERROR_MESSAGE
     return GENERIC_PIPELINE_ERROR_MESSAGE
+
+
+def _pipeline_done_callback(task: asyncio.Task) -> None:
+    """Log unhandled exceptions from background pipeline tasks."""
+    if task.cancelled():
+        logger.warning("Pipeline task was cancelled")
+        return
+    exc = task.exception()
+    if exc is not None:
+        logger.error("Unhandled pipeline task exception: {}", repr(exc))
 
 
 async def _run_pipeline(
