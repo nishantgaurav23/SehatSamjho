@@ -245,14 +245,26 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.detail || "Something went wrong.");
+                const code = data.detail || "";
+                throw { errorCode: code };
             }
 
             renderResults(data);
             goToStep(3);
         } catch (err) {
             goToStep(2);
-            showError(err.message || t("err_generic"));
+            if (err.errorCode) {
+                const codeMap = {
+                    not_medical_document: "err_not_medical",
+                    image_not_readable: "err_image_unclear",
+                    service_unavailable: "err_service",
+                    pipeline_error: "err_generic",
+                };
+                const key = codeMap[err.errorCode];
+                showError(key ? t(key) : t("err_generic"));
+            } else {
+                showError(err.message || t("err_generic"));
+            }
         }
     });
 

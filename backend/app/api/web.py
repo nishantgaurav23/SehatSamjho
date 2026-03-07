@@ -96,33 +96,36 @@ async def web_translate(
             from backend.app.services.translation import TranslationError
 
             if isinstance(exc, NotMedicalDocumentError):
-                raise HTTPException(status_code=422, detail=str(exc))
+                raise HTTPException(
+                    status_code=422,
+                    detail="not_medical_document",
+                )
             if isinstance(exc, ImageNotReadableError):
-                raise HTTPException(status_code=422, detail=str(exc))
+                raise HTTPException(
+                    status_code=422,
+                    detail="image_not_readable",
+                )
             if isinstance(exc, (ExtractionError, TranslationError)):
                 logger.error("Pipeline error: {}: {}", type(exc).__name__, exc)
-                raise HTTPException(status_code=500, detail="Failed to process prescription.")
+                raise HTTPException(status_code=500, detail="pipeline_error")
             if isinstance(exc, openai.BadRequestError):
                 logger.error("OpenAI rejected the image: {}", exc)
                 raise HTTPException(
                     status_code=422,
-                    detail="Could not read this image. Please try a clearer photo.",
+                    detail="image_not_readable",
                 )
             if isinstance(exc, openai.APIError):
                 logger.error("OpenAI API error: {}: {}", type(exc).__name__, exc)
                 raise HTTPException(
                     status_code=502,
-                    detail="AI service temporarily unavailable. Please try again.",
+                    detail="service_unavailable",
                 )
             if isinstance(exc, ValueError):
                 logger.error("Validation error: {}", exc)
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Could not process this document: {exc}",
-                )
+                raise HTTPException(status_code=422, detail="pipeline_error")
 
             logger.exception("Unexpected error in web translate")
-            raise HTTPException(status_code=500, detail="Internal server error.")
+            raise HTTPException(status_code=500, detail="pipeline_error")
 
 
 async def _run_web_pipeline(
