@@ -86,6 +86,8 @@ async def web_translate(
             raise
         except Exception as exc:
             # Import here to check exception types
+            import openai
+
             from backend.app.services.extraction import (
                 ExtractionError,
                 ImageNotReadableError,
@@ -100,6 +102,18 @@ async def web_translate(
             if isinstance(exc, (ExtractionError, TranslationError)):
                 logger.error("Pipeline error: {}: {}", type(exc).__name__, exc)
                 raise HTTPException(status_code=500, detail="Failed to process prescription.")
+            if isinstance(exc, openai.BadRequestError):
+                logger.error("OpenAI rejected the image: {}", exc)
+                raise HTTPException(
+                    status_code=422,
+                    detail="Could not read this image. Please try a clearer photo.",
+                )
+            if isinstance(exc, openai.APIError):
+                logger.error("OpenAI API error: {}: {}", type(exc).__name__, exc)
+                raise HTTPException(
+                    status_code=502,
+                    detail="AI service temporarily unavailable. Please try again.",
+                )
             if isinstance(exc, ValueError):
                 logger.error("Validation error: {}", exc)
                 raise HTTPException(
