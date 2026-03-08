@@ -102,9 +102,27 @@ DRUG_CACHE_TTL_SECONDS: int = 604800  # 7 days
 
 
 # ── S8.3 FR-1: _normalize_drug_name() ───────────────────────────────────────
+
+# Common Indian prescription prefixes (Tab., Cap., Inj., Syp., etc.)
+_RX_PREFIX_RE = re.compile(
+    r"^(?:tab\.?|cap\.?|inj\.?|syp\.?|susp\.?|oint\.?|cr\.?|gel\.?|drop\.?|sachet\.?)\s+",
+    re.IGNORECASE,
+)
+# Trailing dosage pattern (e.g. "500mg", "250 mg", "10ml")
+_DOSAGE_SUFFIX_RE = re.compile(
+    r"\s+\d+(?:\.\d+)?\s*(?:mg|g|mcg|ml|iu|%)\s*$",
+    re.IGNORECASE,
+)
+
+
 def _normalize_drug_name(name: str) -> str:
-    """Lowercase, strip, and collapse whitespace in a drug name."""
-    return re.sub(r"\s+", " ", name.strip()).lower()
+    """Normalize a drug name for lookup: lowercase, strip Rx prefixes and dosage suffixes."""
+    result = re.sub(r"\s+", " ", name.strip()).lower()
+    # Strip common prescription prefixes like "tab.", "cap.", "inj."
+    result = _RX_PREFIX_RE.sub("", result).strip()
+    # Strip trailing dosage like "500mg", "250 mg"
+    result = _DOSAGE_SUFFIX_RE.sub("", result).strip()
+    return result
 
 
 # ══════════════════════════════════════════════════════════════════════════════

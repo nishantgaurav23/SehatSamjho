@@ -86,6 +86,8 @@ async def web_translate(
             raise
         except Exception as exc:
             # Import here to check exception types
+            import openai
+
             from backend.app.services.extraction import (
                 ExtractionError,
                 ImageNotReadableError,
@@ -94,15 +96,36 @@ async def web_translate(
             from backend.app.services.translation import TranslationError
 
             if isinstance(exc, NotMedicalDocumentError):
-                raise HTTPException(status_code=422, detail=str(exc))
+                raise HTTPException(
+                    status_code=422,
+                    detail="not_medical_document",
+                )
             if isinstance(exc, ImageNotReadableError):
-                raise HTTPException(status_code=422, detail=str(exc))
+                raise HTTPException(
+                    status_code=422,
+                    detail="image_not_readable",
+                )
             if isinstance(exc, (ExtractionError, TranslationError)):
-                logger.error("Pipeline error: {}", type(exc).__name__)
-                raise HTTPException(status_code=500, detail="Failed to process prescription.")
+                logger.error("Pipeline error: {}: {}", type(exc).__name__, exc)
+                raise HTTPException(status_code=500, detail="pipeline_error")
+            if isinstance(exc, openai.BadRequestError):
+                logger.error("OpenAI rejected the image: {}", exc)
+                raise HTTPException(
+                    status_code=422,
+                    detail="image_not_readable",
+                )
+            if isinstance(exc, openai.APIError):
+                logger.error("OpenAI API error: {}: {}", type(exc).__name__, exc)
+                raise HTTPException(
+                    status_code=502,
+                    detail="service_unavailable",
+                )
+            if isinstance(exc, ValueError):
+                logger.error("Validation error: {}", exc)
+                raise HTTPException(status_code=422, detail="pipeline_error")
 
             logger.exception("Unexpected error in web translate")
-            raise HTTPException(status_code=500, detail="Internal server error.")
+            raise HTTPException(status_code=500, detail="pipeline_error")
 
 
 async def _run_web_pipeline(
@@ -115,12 +138,29 @@ async def _run_web_pipeline(
 ):
     """Execute the full pipeline and return a WebTranslationResponse dict."""
     from backend.app.api.webhooks import _format_audio_text
-    from backend.app.models.schemas import WebMedicineDetail, WebTranslationResponse
+    from backend.app.models.schemas import (
+        WebLabTestDetail,
+        WebMedicineDetail,
+        WebTranslationResponse,
+    )
     from backend.app.services.drug_lookup import enrich_prescription
     from backend.app.services.extraction import extract_prescription_from_bytes
     from backend.app.services.glossary import format_glossary_context, lookup_terms
     from backend.app.services.tts import generate_and_deliver_audio
-    from backend.app.services.translation import simplify_and_translate
+    from backend.app.services.translation import _extract_sections, simplify_and_translate
+
+    # Step 0: Store prescription image in S3 (best-effort)
+    try:
+        from backend.app.services.image_store import store_prescription_image
+
+        image_s3_key = await store_prescription_image(
+            image_bytes=image_bytes,
+            request_id=request_id,
+            content_type=content_type,
+        )
+        logger.info("Prescription image stored: key={}", image_s3_key)
+    except Exception:
+        logger.warning("Failed to store prescription image — continuing pipeline")
 
     # Step 1: Extract prescription from image bytes
     logger.info("Pipeline: extraction")
@@ -130,31 +170,34 @@ async def _run_web_pipeline(
         request_id=request_id,
     )
 
-    # Step 2: Drug enrichment (needs Redis)
-    logger.info("Pipeline: drug enrichment")
+    is_lab_report = prescription.doc_type == "lab_report"
+    logger.info("Pipeline: doc_type={}", prescription.doc_type)
+
+    # Step 2 & 3: Drug enrichment + glossary (prescriptions only)
     drug_info_list = []
-    redis_client = None
-    try:
-        from backend.app.db.redis import _redis_client
-
-        redis_client = _redis_client
-    except Exception:
-        pass
-
-    if redis_client:
-        drug_info_list = await enrich_prescription(
-            redis_client=redis_client,
-            prescription=prescription,
-            request_id=request_id,
-        )
-
-    # Step 3: Glossary lookup
-    logger.info("Pipeline: glossary lookup")
     glossary_context = ""
-    if redis_client:
-        medicine_terms = [m.medicine_name for m in prescription.medicines]
-        glossary_entries = await lookup_terms(medicine_terms, language_code, redis_client)
-        glossary_context = format_glossary_context(glossary_entries, language_name)
+    if not is_lab_report:
+        logger.info("Pipeline: drug enrichment")
+        redis_client = None
+        try:
+            from backend.app.db.redis import _redis_client
+
+            redis_client = _redis_client
+        except Exception:
+            pass
+
+        if redis_client:
+            drug_info_list = await enrich_prescription(
+                redis_client=redis_client,
+                prescription=prescription,
+                request_id=request_id,
+            )
+
+        logger.info("Pipeline: glossary lookup")
+        if redis_client:
+            medicine_terms = [m.medicine_name for m in prescription.medicines]
+            glossary_entries = await lookup_terms(medicine_terms, language_code, redis_client)
+            glossary_context = format_glossary_context(glossary_entries, language_name)
 
     # Step 4: Translate with Claude
     logger.info("Pipeline: translation")
@@ -165,6 +208,7 @@ async def _run_web_pipeline(
         drug_info_list=drug_info_list,
         glossary_context=glossary_context,
         request_id=request_id,
+        doc_type=prescription.doc_type,
     )
 
     # Step 5: TTS (Edge TTS fallback if Bhashini not available)
@@ -182,6 +226,10 @@ async def _run_web_pipeline(
 
     latency_ms = int((time.monotonic() - start) * 1000)
 
+    # Extract structured sections from translation
+    doc_type = prescription.doc_type
+    sections = _extract_sections(translation.translated_text, doc_type=doc_type)
+
     # Build response
     medicines = []
     for i, med in enumerate(prescription.medicines):
@@ -198,14 +246,36 @@ async def _run_web_pipeline(
             )
         )
 
+    # Build lab test details
+    lab_tests = []
+    for test in prescription.lab_tests:
+        lab_tests.append(
+            WebLabTestDetail(
+                test_name=test.test_name,
+                value=test.value,
+                unit=test.unit,
+                reference_range=test.reference_range,
+                flag=test.flag,
+                confidence=test.confidence,
+            )
+        )
+
     logger.info("Web translate complete: latency_ms={}", latency_ms)
 
     return WebTranslationResponse(
         request_id=request_id,
         language_code=language_code,
         language_name=language_name,
+        doc_type=doc_type,
+        doctor_name=prescription.doctor_name,
+        diagnosis=prescription.diagnosis,
+        date=prescription.date,
         medicines=medicines,
+        lab_tests=lab_tests,
         translated_text=translation.translated_text,
+        section_medicines=sections["medicines"],
+        section_why=sections["why"],
+        section_next_steps=sections["next_steps"],
         per_medicine_summaries=translation.per_medicine_summaries,
         disclaimer=translation.disclaimer,
         audio_url=audio_url,

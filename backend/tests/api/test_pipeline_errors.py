@@ -220,7 +220,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=NotMedicalDocumentError("not medical"),
             ),
@@ -252,7 +262,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=ImageNotReadableError("blurry"),
             ),
@@ -306,7 +326,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=ExtractionError("fail"),
             ),
@@ -325,10 +355,11 @@ class TestPipelineErrorIntegration:
         ):
             await _run_pipeline(mock_payload, mock_session, "req-789", mock_redis)
 
-        # Verify session was deleted
-        mock_redis.delete.assert_called_once()
-        call_args = mock_redis.delete.call_args[0][0]
-        assert mock_payload.from_number in call_args
+        # Verify session was reset to WAITING_FOR_IMAGE (not deleted)
+        mock_redis.set.assert_called()
+        last_set_args = mock_redis.set.call_args[0]
+        assert mock_payload.from_number in last_set_args[0]
+        assert "waiting_for_image" in last_set_args[1]
 
     @pytest.mark.asyncio
     async def test_pipeline_error_send_failure_handled(
@@ -345,7 +376,17 @@ class TestPipelineErrorIntegration:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 side_effect=NotMedicalDocumentError("not medical"),
             ),
@@ -366,8 +407,8 @@ class TestPipelineErrorIntegration:
             # Should NOT raise — gracefully handles send failure
             await _run_pipeline(mock_payload, mock_session, "req-err", mock_redis)
 
-        # Session should still be cleaned up
-        mock_redis.delete.assert_called_once()
+        # Session should still be reset (not deleted) after error
+        mock_redis.set.assert_called()
 
 
 # ---------------------------------------------------------------------------
@@ -456,7 +497,17 @@ class TestErrorCodeFromClassname:
 
             with (
                 patch(
-                    "backend.app.api.webhooks.extract_prescription",
+                    "backend.app.api.webhooks._download_image",
+                    new_callable=AsyncMock,
+                    return_value=b"fake-image-bytes",
+                ),
+                patch(
+                    "backend.app.api.webhooks.store_prescription_image",
+                    new_callable=AsyncMock,
+                    return_value="prescriptions/test/img.jpg",
+                ),
+                patch(
+                    "backend.app.api.webhooks.extract_prescription_from_bytes",
                     new_callable=AsyncMock,
                     side_effect=exc_cls("test"),
                 ),

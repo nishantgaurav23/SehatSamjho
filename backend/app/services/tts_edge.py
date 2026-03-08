@@ -26,6 +26,7 @@ class EdgeTTSError(Exception):
 # ---------------------------------------------------------------------------
 
 EDGE_TTS_VOICES: dict[str, str] = {
+    "en": "en-IN-NeerjaNeural",
     "hi": "hi-IN-SwaraNeural",
     "bn": "bn-IN-TanishaaNeural",
     "ta": "ta-IN-PallaviNeural",

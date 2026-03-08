@@ -19,8 +19,8 @@ from backend.app.services.whatsapp import (
 class TestSupportedLanguages:
     """Tests for the SUPPORTED_LANGUAGES dictionary."""
 
-    def test_supported_languages_has_22_entries(self):
-        assert len(SUPPORTED_LANGUAGES) == 22
+    def test_supported_languages_has_23_entries(self):
+        assert len(SUPPORTED_LANGUAGES) == 23
 
     def test_supported_languages_keys_are_strings(self):
         for key in SUPPORTED_LANGUAGES:
@@ -63,7 +63,10 @@ class TestSupportedLanguages:
 
     def test_display_names_are_non_ascii(self):
         # All display names should contain non-ASCII characters (native script)
+        # except English which uses ASCII
         for code, value in SUPPORTED_LANGUAGES.items():
+            if code == "en":
+                continue
             display = value["display_name"]
             has_non_ascii = any(ord(c) > 127 for c in display)
             assert has_non_ascii, (

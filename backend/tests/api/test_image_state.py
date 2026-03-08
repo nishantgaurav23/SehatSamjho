@@ -8,6 +8,7 @@ no-media path, non-image media path, error propagation, and PHI-safe logging.
 
 from __future__ import annotations
 
+import asyncio
 import os
 from io import StringIO
 from unittest.mock import AsyncMock, patch
@@ -258,7 +259,7 @@ async def test_valid_image_preserves_created_at():
 
 @pytest.mark.asyncio
 async def test_valid_image_calls_pipeline_placeholder():
-    """Valid image -> _run_pipeline() is called with correct args."""
+    """Valid image -> _run_pipeline() is scheduled as a background task."""
     redis = _mock_redis()
     payload = _make_payload()
     session = _make_session()
@@ -270,6 +271,8 @@ async def test_valid_image_calls_pipeline_placeholder():
         patch("backend.app.api.webhooks._delete_session", new_callable=AsyncMock),
     ):
         await _handle_image_state(payload, session, REQUEST_ID, redis)
+        # Pipeline is launched via asyncio.create_task — let it run
+        await asyncio.sleep(0)
 
         mock_pipeline.assert_awaited_once()
         call_args = mock_pipeline.call_args
@@ -291,6 +294,8 @@ async def test_valid_image_pipeline_cleans_session():
         patch("backend.app.api.webhooks._run_pipeline", new_callable=AsyncMock) as mock_pipeline,
     ):
         await _handle_image_state(payload, session, REQUEST_ID, redis)
+        # Pipeline is launched via asyncio.create_task — let it run
+        await asyncio.sleep(0)
 
         # _run_pipeline was called (session cleanup is tested in S10.1 tests)
         mock_pipeline.assert_awaited_once()

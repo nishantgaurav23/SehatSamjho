@@ -48,7 +48,7 @@ class TestGPT4OConstants:
 
     def test_gpt4o_max_tokens_constant(self):
         """GPT4O_MAX_TOKENS equals 1024."""
-        assert GPT4O_MAX_TOKENS == 1024
+        assert GPT4O_MAX_TOKENS == 4096
 
     def test_gpt4o_temperature_constant(self):
         """GPT4O_TEMPERATURE equals 0.1."""
@@ -308,7 +308,7 @@ class TestCallGPT4OVision:
 
     @pytest.mark.asyncio
     async def test_call_gpt4o_vision_max_tokens_param(self):
-        """OpenAI call uses max_tokens=1024."""
+        """OpenAI call uses max_tokens=4096."""
         mock_response = _make_mock_openai_response()
         mock_client = AsyncMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
@@ -327,7 +327,7 @@ class TestCallGPT4OVision:
             await _call_gpt4o_vision("https://example.com/rx.jpg")
 
         call_kwargs = mock_client.chat.completions.create.call_args
-        assert call_kwargs.kwargs["max_tokens"] == 1024
+        assert call_kwargs.kwargs["max_tokens"] == 4096
 
     @pytest.mark.asyncio
     async def test_call_gpt4o_vision_temperature_param(self):

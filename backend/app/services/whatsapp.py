@@ -26,6 +26,7 @@ from twilio.rest import Client
 # ---------------------------------------------------------------------------
 
 SUPPORTED_LANGUAGES: dict[str, dict[str, str]] = {
+    "en": {"name": "English", "display_name": "English", "bhashini_code": "en"},
     "hi": {"name": "Hindi", "display_name": "हिन्दी", "bhashini_code": "hi"},
     "bn": {"name": "Bengali", "display_name": "বাংলা", "bhashini_code": "bn"},
     "ta": {"name": "Tamil", "display_name": "தமிழ்", "bhashini_code": "ta"},

@@ -61,7 +61,14 @@ def _make_prescription(**overrides) -> PrescriptionData:
 
 def _make_translation(**overrides) -> TranslationResult:
     defaults = {
-        "translated_text": "Your prescription contains medicines for pain and infection.",
+        "translated_text": (
+            "Your prescription summary:\n\n"
+            "Paracetamol 500mg: Take 3 times a day for 5 days. "
+            "This is for fever and pain relief.\n\n"
+            "Amoxicillin 250mg: Take 2 times a day for 7 days. "
+            "This is an antibiotic for infection.\n\n"
+            "This is not medical advice. Please consult your doctor."
+        ),
         "per_medicine_summaries": [
             "Paracetamol: fever and pain relief",
             "Amoxicillin: antibiotic for infection",
@@ -119,7 +126,7 @@ class TestFormatReplyGreeting:
     """Test 4: Greeting section present at the start."""
 
     def test_greeting_present(self):
-        """T4: Output starts with a greeting line."""
+        """T4: Output starts with translated text content."""
         from backend.app.api.webhooks import _format_reply
 
         result = _format_reply(
@@ -131,7 +138,7 @@ class TestFormatReplyGreeting:
         lines = result.strip().split("\n")
         first_line = lines[0].strip()
         assert len(first_line) > 0
-        # Greeting should mention "prescription" or "summary"
+        # Should start with the translated text (which mentions prescription/summary)
         lower = first_line.lower()
         assert "prescription" in lower or "summary" in lower
 
@@ -211,7 +218,10 @@ class TestFormatReplyMedicineCards:
                 ),
             ]
         )
-        translation = _make_translation(per_medicine_summaries=["Pain relief"])
+        translation = _make_translation(
+            translated_text="Paracetamol: Pain relief medicine.\n\nPlease consult your doctor.",
+            per_medicine_summaries=["Pain relief"],
+        )
 
         result = _format_reply(prescription, [None], translation, "Hindi")
 
@@ -219,7 +229,7 @@ class TestFormatReplyMedicineCards:
         assert "None" not in result
 
     def test_per_medicine_summary(self):
-        """T10: Per-medicine summaries from translation appear in cards."""
+        """T10: Medicine details from translation appear in output."""
         from backend.app.api.webhooks import _format_reply
 
         result = _format_reply(
@@ -231,21 +241,17 @@ class TestFormatReplyMedicineCards:
         assert "fever and pain relief" in result
         assert "antibiotic for infection" in result
 
-    def test_per_medicine_summary_shorter(self):
-        """T11: Handles per_medicine_summaries shorter than medicines list."""
+    def test_both_medicines_present(self):
+        """T11: All medicines from translated text appear in output."""
         from backend.app.api.webhooks import _format_reply
-
-        translation = _make_translation(per_medicine_summaries=["Pain relief only"])
 
         result = _format_reply(
             _make_prescription(),
             _make_drug_info_list(),
-            translation,
+            _make_translation(),
             "Hindi",
         )
-        # First medicine has summary
-        assert "Pain relief only" in result
-        # Second medicine still appears (just no summary)
+        assert "Paracetamol" in result
         assert "Amoxicillin" in result
 
 
@@ -326,7 +332,7 @@ class TestFormatReplyDisclaimer:
     """Test 15: Disclaimer appears at end."""
 
     def test_disclaimer_present(self):
-        """T15: Disclaimer appears at end of output."""
+        """T15: Disclaimer appears in the output (already part of translated_text)."""
         from backend.app.api.webhooks import _format_reply
 
         result = _format_reply(
@@ -336,9 +342,6 @@ class TestFormatReplyDisclaimer:
             "Hindi",
         )
         assert "This is not medical advice" in result
-        # Disclaimer should be after the medicine cards (near the end)
-        disclaimer_pos = result.find("This is not medical advice")
-        assert disclaimer_pos > len(result) // 2
 
 
 # ---------------------------------------------------------------------------
@@ -350,23 +353,28 @@ class TestFormatReplyTruncation:
     """Tests 16–17: 1600-char limit and truncation note."""
 
     def test_max_length_1600(self):
-        """T16: Output with many medicines is <= 1600 chars."""
+        """T16: Output with long translated text is <= 1600 chars."""
         from backend.app.api.webhooks import _format_reply
 
-        # Create 15 medicines with long names to trigger truncation
+        # Create a very long translated_text to force truncation
+        long_text = "\n\n".join(
+            f"Medicine {i}: Medication-{i}-LongName-Extra {100 + i}mg. "
+            f"Take 3 times a day after meals for {5 + i} days minimum. "
+            f"Summary for medication {i} in Hindi."
+            for i in range(15)
+        )
+        long_text += "\n\nThis is not medical advice."
+
         medicines = [
             MedicineEntry(
                 medicine_name=f"Medication-{i}-LongName-Extra",
                 dosage=f"{100 + i}mg",
-                frequency="3 times a day after meals",
-                duration=f"{5 + i} days minimum",
                 confidence=0.95,
             )
             for i in range(15)
         ]
         prescription = _make_prescription(medicines=medicines)
-        summaries = [f"Summary for medication {i} in Hindi" for i in range(15)]
-        translation = _make_translation(per_medicine_summaries=summaries)
+        translation = _make_translation(translated_text=long_text)
         drug_info = [None] * 15
 
         result = _format_reply(prescription, drug_info, translation, "Hindi")
@@ -377,23 +385,25 @@ class TestFormatReplyTruncation:
         """T17: When truncated, includes truncation note."""
         from backend.app.api.webhooks import _format_reply
 
-        # Create many medicines to force truncation
+        # Create a very long translated_text to force truncation
+        long_text = "\n\n".join(
+            f"Medicine {i}: VeryLongMedicationName-{i}-WithExtras {100 + i}mg. "
+            f"Take 3 times a day after meals with water for {5 + i} days minimum course. "
+            f"Detailed summary for medication {i} in Hindi language explaining purpose and usage."
+            for i in range(20)
+        )
+        long_text += "\n\nThis is not medical advice. Please consult your doctor."
+
         medicines = [
             MedicineEntry(
                 medicine_name=f"VeryLongMedicationName-{i}-WithExtras",
                 dosage=f"{100 + i}mg tablets",
-                frequency="3 times a day after meals with water",
-                duration=f"{5 + i} days minimum course",
                 confidence=0.95,
             )
             for i in range(20)
         ]
         prescription = _make_prescription(medicines=medicines)
-        summaries = [
-            f"Detailed summary for medication {i} in Hindi language explaining purpose"
-            for i in range(20)
-        ]
-        translation = _make_translation(per_medicine_summaries=summaries)
+        translation = _make_translation(translated_text=long_text)
         drug_info = [None] * 20
 
         result = _format_reply(prescription, drug_info, translation, "Hindi")
@@ -413,7 +423,7 @@ class TestFormatReplyEdgeCases:
     """Tests 18–19: Empty medicines, no PHI."""
 
     def test_empty_medicines(self):
-        """T18: Empty medicines list produces valid output (greeting + translated_text + disclaimer)."""
+        """T18: Empty medicines list produces valid output from translated_text."""
         from backend.app.api.webhooks import _format_reply
 
         prescription = _make_prescription(medicines=[])
@@ -422,10 +432,10 @@ class TestFormatReplyEdgeCases:
         result = _format_reply(prescription, [], translation, "Hindi")
 
         assert len(result) > 0
-        # Should still have greeting and disclaimer
-        assert "This is not medical advice" in result
-        # Should include translated_text as fallback
-        assert "pain and infection" in result
+        # Should include translated_text content
+        assert "prescription" in result.lower()
+        # Should include disclaimer (already in translated_text)
+        assert "consult" in result.lower() or "medical advice" in result.lower()
 
     def test_no_phi_in_output(self):
         """T19: Patient name and doctor name do NOT appear in formatted reply."""
@@ -488,7 +498,17 @@ class TestPipelineUsesFormatReply:
 
         with (
             patch(
-                "backend.app.api.webhooks.extract_prescription",
+                "backend.app.api.webhooks._download_image",
+                new_callable=AsyncMock,
+                return_value=b"fake-image-bytes",
+            ),
+            patch(
+                "backend.app.api.webhooks.store_prescription_image",
+                new_callable=AsyncMock,
+                return_value="prescriptions/test/img.jpg",
+            ),
+            patch(
+                "backend.app.api.webhooks.extract_prescription_from_bytes",
                 new_callable=AsyncMock,
                 return_value=prescription,
             ),

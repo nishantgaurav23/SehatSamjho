@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+myenv/
+.python-version
 
 # Environment
 .env
@@ -20,6 +22,9 @@ __pycache__/
 # Pytest
 .pytest_cache/
 
+# Ruff
+.ruff_cache/
+
 # Jupyter
 .ipynb_checkpoints/
 .virtual_documents/
@@ -30,3 +35,4 @@ data/prescriptions/
 
 # Claude Code
 .claude/
+CLAUDE.md

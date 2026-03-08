@@ -7,11 +7,14 @@ generates request_id, dispatches to handler based on session state, and returns 
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
 import time
 import uuid
 from datetime import datetime, timezone
+
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from loguru import logger
@@ -35,8 +38,10 @@ from backend.app.services.extraction import (
     ExtractionError,
     ImageNotReadableError,
     NotMedicalDocumentError,
-    extract_prescription,
+    extract_prescription_from_bytes,
+    _download_image,
 )
+from backend.app.services.image_store import ImageStoreError, store_prescription_image
 from backend.app.services.glossary import format_glossary_context, lookup_terms
 from backend.app.services.tts import generate_and_deliver_audio
 from backend.app.services.translation import TranslationError, simplify_and_translate
@@ -134,6 +139,9 @@ UNSUPPORTED_MEDIA_MESSAGE = (
 SESSION_KEY_PREFIX = "session:"
 SESSION_TTL_SECONDS = 1800  # 30 minutes
 PROCESSING_MESSAGE = "Your prescription is still being processed. Please wait a moment."
+
+# Limit concurrent pipeline runs to avoid overwhelming external APIs
+_PIPELINE_SEMAPHORE = asyncio.Semaphore(5)
 
 
 # ---------------------------------------------------------------------------
@@ -308,8 +316,10 @@ async def _handle_image_state(
         await _save_session(payload.from_number, updated_session, redis)
         logger.info("Session updated to PROCESSING")
 
-        # FR-6: Invoke pipeline placeholder
-        await _run_pipeline(payload, updated_session, request_id, redis)
+        # FR-6: Run pipeline in background so webhook returns TwiML immediately
+        # (Twilio times out after 15 s; our pipeline takes 20-30 s)
+        task = asyncio.create_task(_run_pipeline(payload, updated_session, request_id, redis))
+        task.add_done_callback(_pipeline_done_callback)
 
 
 # ---------------------------------------------------------------------------
@@ -338,45 +348,41 @@ def _format_reply(
 ) -> str:
     """Build patient-facing WhatsApp text from pipeline results.
 
-    Constructs greeting + per-medicine cards + disclaimer.
+    Uses the translated text (already in the patient's language) as the primary body.
+    Appends low-confidence warnings for medicines that couldn't be read clearly.
     Output guaranteed <= 1600 characters (WhatsApp limit).
     Never includes PHI (patient_name, doctor_name).
     """
-    greeting = GREETING_LINE
-    disclaimer = translation.disclaimer
-    summaries = translation.per_medicine_summaries
+    # The translated_text from Claude already contains the full translation
+    # including medicine explanations and the disclaimer in the target language.
+    body = translation.translated_text.strip()
 
-    # Edge case: empty medicines → greeting + translated_text + disclaimer
-    if not prescription.medicines:
-        body = f"{greeting}\n\n{translation.translated_text}\n\n{disclaimer}"
-        return _enforce_limit(body, greeting, disclaimer)
+    # Append disclaimer if not already present in the translated text
+    if translation.disclaimer and translation.disclaimer not in body:
+        body = f"{body}\n\n{translation.disclaimer}"
 
-    # Build per-medicine cards (full detail)
-    cards = _build_medicine_cards(
-        prescription.medicines, summaries, include_frequency=True, include_duration=True
-    )
-    body = _assemble(greeting, cards, disclaimer)
+    # Append low-confidence warnings (in English — medicine names are English anyway)
+    low_conf_warnings = []
+    for med in prescription.medicines:
+        if med.confidence is not None and med.confidence < LOW_CONFIDENCE_THRESHOLD:
+            low_conf_warnings.append(f"{LOW_CONFIDENCE_WARNING}: {med.medicine_name}")
+    if low_conf_warnings:
+        warning_block = "\n".join(low_conf_warnings)
+        body = f"{body}\n\n{warning_block}"
+
+    # Enforce WhatsApp character limit
     if len(body) <= WHATSAPP_MAX_CHARS:
         return body
 
-    # Truncation level 1: drop frequency/duration
-    cards = _build_medicine_cards(
-        prescription.medicines, summaries, include_frequency=False, include_duration=False
-    )
-    body = _assemble(greeting, cards, disclaimer)
-    if len(body) <= WHATSAPP_MAX_CHARS:
-        return _append_truncation_note(body)
-
-    # Truncation level 2: also truncate per-medicine summaries
-    cards = _build_medicine_cards(
-        prescription.medicines, [], include_frequency=False, include_duration=False
-    )
-    body = _assemble(greeting, cards, disclaimer)
-    if len(body) <= WHATSAPP_MAX_CHARS:
-        return _append_truncation_note(body)
-
-    # Truncation level 3: limit number of cards
-    return _truncate_cards(greeting, prescription.medicines, disclaimer)
+    # Truncate at last sentence boundary that fits
+    available = WHATSAPP_MAX_CHARS - len(f"\n\n{TRUNCATION_NOTE}")
+    truncated = body[:available]
+    last_period = truncated.rfind("। ")  # Hindi/Devanagari sentence end
+    if last_period == -1:
+        last_period = truncated.rfind(". ")
+    if last_period > 0:
+        truncated = truncated[: last_period + 1]
+    return f"{truncated}\n\n{TRUNCATION_NOTE}"
 
 
 def _build_medicine_cards(
@@ -592,41 +598,16 @@ def _format_audio_text(
 ) -> str:
     """Build a spoken-friendly version of the prescription summary for TTS.
 
-    Strips emoji, markdown, bullet points, and special characters.
-    Produces flowing spoken sentences instead of card-style formatting.
+    Uses the translated text (already in the patient's language) as the base,
+    strips emoji, markdown, bullet points, and special characters.
     Caps output at 2000 characters for Bhashini TTS.
     Never includes PHI (patient_name, doctor_name).
     """
-    # Spoken greeting
-    greeting = "Here is your prescription summary."
-
-    # Build medicine section
-    if prescription.medicines:
-        summaries = translation.per_medicine_summaries or []
-        medicine_text = _build_spoken_medicines(prescription.medicines, summaries)
-    else:
-        # Fallback to translated_text when no medicines
-        medicine_text = _strip_for_speech(translation.translated_text)
-
-    # Build spoken disclaimer
-    raw_disclaimer = translation.disclaimer or ""
-    clean_disclaimer = _strip_for_speech(raw_disclaimer)
-    if clean_disclaimer:
-        disclaimer_text = f"Important note: {clean_disclaimer}"
-    else:
-        disclaimer_text = ""
-
-    # Assemble
-    parts = [greeting, medicine_text]
-    if disclaimer_text:
-        parts.append(disclaimer_text)
-    assembled = " ".join(p for p in parts if p)
-
-    # Final cleanup: strip any remaining artifacts
-    assembled = _strip_for_speech(assembled)
+    # Use the full translated text (already in target language) as the base
+    spoken = _strip_for_speech(translation.translated_text)
 
     # Enforce length limit
-    return _enforce_audio_limit(assembled)
+    return _enforce_audio_limit(spoken)
 
 
 def _handle_pipeline_error(exc: Exception) -> str:
@@ -646,37 +627,89 @@ def _handle_pipeline_error(exc: Exception) -> str:
     return GENERIC_PIPELINE_ERROR_MESSAGE
 
 
+def _pipeline_done_callback(task: asyncio.Task) -> None:
+    """Log unhandled exceptions from background pipeline tasks."""
+    if task.cancelled():
+        logger.warning("Pipeline task was cancelled")
+        return
+    exc = task.exception()
+    if exc is not None:
+        logger.error("Unhandled pipeline task exception: {}", repr(exc))
+
+
 async def _run_pipeline(
     payload: WebhookPayload, session: SessionState, request_id: str, redis
 ) -> None:
-    """S10.1: Full pipeline — extract → enrich → glossary → translate → TTS → send."""
+    """S10.1: Full pipeline — extract → enrich → glossary → translate → TTS → send.
+
+    Semaphore limits concurrent pipeline runs to avoid overwhelming external APIs.
+    """
+    async with _PIPELINE_SEMAPHORE:
+        await _run_pipeline_inner(payload, session, request_id, redis)
+
+
+async def _run_pipeline_inner(
+    payload: WebhookPayload, session: SessionState, request_id: str, redis
+) -> None:
+    """Inner pipeline logic, called under semaphore."""
     with logger.contextualize(request_id=request_id):
         start = time.monotonic()
+        pipeline_succeeded = False
         try:
+            # Step 0: Download image from Twilio and store in S3
+            logger.info("Pipeline started: downloading image")
+            try:
+                image_bytes = await _download_image(payload.media_url)
+            except httpx.HTTPStatusError as exc:
+                raise ImageNotReadableError(
+                    f"Image download failed: HTTP {exc.response.status_code}"
+                ) from exc
+            except httpx.TimeoutException as exc:
+                raise ImageNotReadableError("Image download timed out") from exc
+
+            logger.info("Image downloaded: size={}", len(image_bytes))
+
+            # Store prescription image in S3 (best-effort — don't fail pipeline)
+            try:
+                image_s3_key = await store_prescription_image(
+                    image_bytes=image_bytes,
+                    request_id=request_id,
+                    content_type=payload.media_content_type or "image/jpeg",
+                )
+                logger.info("Prescription image stored: key={}", image_s3_key)
+            except ImageStoreError:
+                logger.warning("Failed to store prescription image — continuing pipeline")
+
             # Step 1: Extract prescription from image (GPT-4O Vision)
-            logger.info("Pipeline started: extraction")
-            prescription_data = await extract_prescription(
-                image_url=payload.media_url,
-                content_type=payload.media_content_type,
+            logger.info("Pipeline: extraction")
+            prescription_data = await extract_prescription_from_bytes(
+                image_bytes=image_bytes,
+                content_type=payload.media_content_type or "image/jpeg",
                 request_id=request_id,
             )
             logger.info("Extraction complete")
 
-            # Step 2: Enrich with drug lookup
-            logger.info("Pipeline: drug enrichment")
-            drug_info_list = await enrich_prescription(
-                redis_client=redis,
-                prescription=prescription_data,
-                request_id=request_id,
-            )
-            logger.info("Drug enrichment complete")
+            doc_type = prescription_data.doc_type
+            is_lab_report = doc_type == "lab_report"
+            logger.info("Pipeline: doc_type={}", doc_type)
 
-            # Step 3: Glossary lookup
-            logger.info("Pipeline: glossary lookup")
-            medicine_terms = [m.medicine_name for m in prescription_data.medicines]
-            glossary_entries = await lookup_terms(medicine_terms, session.language_code, redis)
-            glossary_context = format_glossary_context(glossary_entries, session.language_name)
-            logger.info("Glossary lookup complete")
+            # Step 2 & 3: Enrich with drug lookup + glossary (prescriptions only)
+            drug_info_list = []
+            glossary_context = ""
+            if not is_lab_report:
+                logger.info("Pipeline: drug enrichment")
+                drug_info_list = await enrich_prescription(
+                    redis_client=redis,
+                    prescription=prescription_data,
+                    request_id=request_id,
+                )
+                logger.info("Drug enrichment complete")
+
+                logger.info("Pipeline: glossary lookup")
+                medicine_terms = [m.medicine_name for m in prescription_data.medicines]
+                glossary_entries = await lookup_terms(medicine_terms, session.language_code, redis)
+                glossary_context = format_glossary_context(glossary_entries, session.language_name)
+                logger.info("Glossary lookup complete")
 
             # Step 4: Translate with Claude Sonnet 4.6
             logger.info("Pipeline: translation")
@@ -687,6 +720,7 @@ async def _run_pipeline(
                 drug_info_list=drug_info_list,
                 glossary_context=glossary_context,
                 request_id=request_id,
+                doc_type=doc_type,
             )
             logger.info("Translation complete")
 
@@ -743,6 +777,7 @@ async def _run_pipeline(
                     status=InteractionStatus.SUCCESS,
                     request_id=request_id,
                     db=db,
+                    doc_type=doc_type,
                     confidence_avg=confidence_avg,
                     latency_ms=latency_ms,
                 )
@@ -752,6 +787,7 @@ async def _run_pipeline(
                 lat=latency_ms,
                 conf=confidence_avg,
             )
+            pipeline_succeeded = True
 
         except Exception as exc:
             # S10.4: Map exception to patient-friendly message
@@ -787,9 +823,26 @@ async def _run_pipeline(
                 logger.error("Failed to log pipeline error interaction")
 
         finally:
-            # Always clean up session (success or failure)
-            await _delete_session(payload.from_number, redis)
-            logger.info("Session cleaned up")
+            if pipeline_succeeded:
+                # Success: clean up session entirely
+                await _delete_session(payload.from_number, redis)
+                logger.info("Session deleted after successful pipeline")
+            else:
+                # Error: reset to WAITING_FOR_IMAGE so user can re-send image
+                # without having to re-select their language
+                try:
+                    retry_session = SessionState(
+                        status=SessionStatus.WAITING_FOR_IMAGE,
+                        language_code=session.language_code,
+                        language_name=session.language_name,
+                        request_id=request_id,
+                        created_at=session.created_at,
+                    )
+                    await _save_session(payload.from_number, retry_session, redis)
+                    logger.info("Session reset to WAITING_FOR_IMAGE after pipeline error")
+                except Exception:
+                    logger.error("Failed to reset session, deleting instead")
+                    await _delete_session(payload.from_number, redis)
 
 
 def _compute_confidence_avg(prescription: PrescriptionData) -> float | None:

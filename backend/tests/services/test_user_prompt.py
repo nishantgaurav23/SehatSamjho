@@ -108,7 +108,6 @@ class TestImportAndSignature:
         assert "language_name" in params
         assert "language_code" in params
         assert "drug_info_list" in params
-        assert "glossary_context" in params
 
     def test_returns_string(self, full_prescription: PrescriptionData) -> None:
         from backend.app.services.translation import _build_user_prompt
@@ -284,21 +283,12 @@ class TestDrugEnrichment:
 
 
 class TestGlossarySection:
-    """FR-6: Glossary context section."""
+    """FR-6: Glossary context is injected via system prompt only (not user prompt)."""
 
-    def test_glossary_section_present(self, full_prescription: PrescriptionData) -> None:
+    def test_glossary_not_in_user_prompt(self, full_prescription: PrescriptionData) -> None:
         from backend.app.services.translation import _build_user_prompt
 
-        result = _build_user_prompt(
-            full_prescription, "Hindi", "hi", glossary_context="Diabetes: मधुमेह"
-        )
-        assert "## Glossary Reference" in result
-        assert "Diabetes: मधुमेह" in result
-
-    def test_glossary_section_omitted_empty(self, full_prescription: PrescriptionData) -> None:
-        from backend.app.services.translation import _build_user_prompt
-
-        result = _build_user_prompt(full_prescription, "Hindi", "hi", glossary_context="")
+        result = _build_user_prompt(full_prescription, "Hindi", "hi")
         assert "## Glossary Reference" not in result
 
 
