@@ -352,6 +352,88 @@ _SECTION_MARKERS_RX = ["[WHAT YOU TAKE]", "[WHY THESE MEDICINES]", "[NEXT STEPS]
 _SECTION_MARKERS_LAB = ["[YOUR TEST RESULTS]", "[WHAT THESE RESULTS MEAN]", "[NEXT STEPS]"]
 _SECTION_KEYS = ["medicines", "why", "next_steps"]
 
+# ---------------------------------------------------------------------------
+# Translated section headers per language
+# ---------------------------------------------------------------------------
+
+_TRANSLATED_HEADERS_RX: dict[str, list[str]] = {
+    "en": ["[WHAT YOU TAKE]", "[WHY THESE MEDICINES]", "[NEXT STEPS]"],
+    "hi": ["[आपकी दवाइयाँ]", "[ये दवाइयाँ क्यों]", "[आगे क्या करें]"],
+    "bn": ["[আপনার ওষুধ]", "[এই ওষুধ কেন]", "[পরবর্তী পদক্ষেপ]"],
+    "ta": ["[உங்கள் மருந்துகள்]", "[இந்த மருந்துகள் ஏன்]", "[அடுத்த படிகள்]"],
+    "te": ["[మీ మందులు]", "[ఈ మందులు ఎందుకు]", "[తదుపరి అడుగులు]"],
+    "mr": ["[तुमची औषधे]", "[ही औषधे का]", "[पुढील पावले]"],
+    "gu": ["[તમારી દવાઓ]", "[આ દવાઓ શા માટે]", "[આગળના પગલાં]"],
+    "kn": ["[ನಿಮ್ಮ ಔಷಧಿಗಳು]", "[ಈ ಔಷಧಿಗಳು ಏಕೆ]", "[ಮುಂದಿನ ಹೆಜ್ಜೆಗಳು]"],
+    "ml": ["[നിങ്ങളുടെ മരുന്നുകൾ]", "[ഈ മരുന്നുകൾ എന്തുകൊണ്ട്]", "[അടുത്ത ഘട്ടങ്ങൾ]"],
+    "or": ["[ଆପଣଙ୍କ ଔଷଧ]", "[ଏହି ଔଷଧ କାହିଁକି]", "[ପରବର୍ତ୍ତୀ ପଦକ୍ଷେପ]"],
+    "pa": ["[ਤੁਹਾਡੀਆਂ ਦਵਾਈਆਂ]", "[ਇਹ ਦਵਾਈਆਂ ਕਿਉਂ]", "[ਅਗਲੇ ਕਦਮ]"],
+    "as": ["[আপোনাৰ ঔষধ]", "[এই ঔষধ কিয়]", "[পৰৱৰ্তী পদক্ষেপ]"],
+    "ur": ["[آپ کی دوائیں]", "[یہ دوائیں کیوں]", "[اگلے اقدامات]"],
+    "ks": ["[تُہنٛدِ دَوایہٕ]", "[یہٕ دَوایہٕ کیٛازِ]", "[اَگلہٕ قَدَم]"],
+    "sd": ["[توهان جون دوائون]", "[اهي دوائون ڇو]", "[ايندڙا قدم]"],
+    "kok": ["[तुमची वखदां]", "[ही वखदां कित्याक]", "[फुडलीं पावलां]"],
+    "mai": ["[अहाँक दवाइ]", "[ई दवाइ किएक]", "[आगाँक कदम]"],
+    "doi": ["[तुंदी दवाइयां]", "[एह् दवाइयां कऊँ]", "[अगले कदम]"],
+    "mni": ["[নহাক্কী মরু-মশিং]", "[মরু-মশিংসি করিগীদমক]", "[অহানবা থৌরাংশিং]"],
+    "sat": ["[ᱟᱢᱟᱜ ᱡᱟᱹᱨᱤ]", "[ᱱᱚᱶᱟ ᱡᱟᱹᱨᱤ ᱪᱮᱫᱟᱜ]", "[ᱤᱱᱟᱹ ᱛᱟᱭᱚᱢ]"],
+    "ne": ["[तपाईंको औषधि]", "[यी औषधि किन]", "[अर्को कदम]"],
+    "brx": ["[नोंथांनि दाव]", "[बे दाव मानो]", "[उनाव थांखि]"],
+    "sa": ["[भवतः औषधानि]", "[एतानि औषधानि किमर्थम्]", "[अग्रिमाणि पदानि]"],
+}
+
+_TRANSLATED_HEADERS_LAB: dict[str, list[str]] = {
+    "en": ["[YOUR TEST RESULTS]", "[WHAT THESE RESULTS MEAN]", "[NEXT STEPS]"],
+    "hi": ["[आपके जाँच परिणाम]", "[इन परिणामों का मतलब]", "[आगे क्या करें]"],
+    "bn": ["[আপনার পরীক্ষার ফলাফল]", "[এই ফলাফলের অর্থ]", "[পরবর্তী পদক্ষেপ]"],
+    "ta": ["[உங்கள் சோதனை முடிவுகள்]", "[இந்த முடிவுகளின் பொருள்]", "[அடுத்த படிகள்]"],
+    "te": ["[మీ పరీక్ష ఫలితాలు]", "[ఈ ఫలితాల అర్థం]", "[తదుపరి అడుగులు]"],
+    "mr": ["[तुमचे चाचणी निकाल]", "[या निकालांचा अर्थ]", "[पुढील पावले]"],
+    "gu": ["[તમારા પરીક્ષણ પરિણામો]", "[આ પરિણામોનો અર્થ]", "[આગળના પગલાં]"],
+    "kn": ["[ನಿಮ್ಮ ಪರೀಕ್ಷಾ ಫಲಿತಾಂಶಗಳು]", "[ಈ ಫಲಿತಾಂಶಗಳ ಅರ್ಥ]", "[ಮುಂದಿನ ಹೆಜ್ಜೆಗಳು]"],
+    "ml": ["[നിങ്ങളുടെ പരിശോധനാ ഫലങ്ങൾ]", "[ഈ ഫലങ്ങളുടെ അർഥം]", "[അടുത്ത ഘട്ടങ്ങൾ]"],
+    "or": ["[ଆପଣଙ୍କ ପରୀକ୍ଷା ଫଳାଫଳ]", "[ଏହି ଫଳାଫଳର ଅର୍ଥ]", "[ପରବର୍ତ୍ତୀ ପଦକ୍ଷେପ]"],
+    "pa": ["[ਤੁਹਾਡੇ ਟੈਸਟ ਨਤੀਜੇ]", "[ਇਨ੍ਹਾਂ ਨਤੀਜਿਆਂ ਦਾ ਮਤਲਬ]", "[ਅਗਲੇ ਕਦਮ]"],
+    "as": ["[আপোনাৰ পৰীক্ষাৰ ফলাফল]", "[এই ফলাফলৰ অৰ্থ]", "[পৰৱৰ্তী পদক্ষেপ]"],
+    "ur": ["[آپ کے ٹیسٹ نتائج]", "[ان نتائج کا مطلب]", "[اگلے اقدامات]"],
+    "ks": ["[تُہنٛدٕ ٹیسٹ نتیٖجہٕ]", "[یِمَن نتیٖجَن ہُنٛد مَطلَب]", "[اَگلہٕ قَدَم]"],
+    "sd": ["[توهان جا ٽيسٽ نتيجا]", "[انهن نتيجن جو مطلب]", "[ايندڙا قدم]"],
+    "kok": ["[तुमचे तपासणी निकाल]", "[ह्या निकालांचो अर्थ]", "[फुडलीं पावलां]"],
+    "mai": ["[अहाँक जाँचक परिणाम]", "[एहि परिणामक अर्थ]", "[आगाँक कदम]"],
+    "doi": ["[तुंदे टेस्ट नतीजे]", "[इन नतीजें दा मतलब]", "[अगले कदम]"],
+    "mni": ["[নহাক্কী তোঙান-তাবা মশিং]", "[মসিংসিগী অর্থ]", "[অহানবা থৌরাংশিং]"],
+    "sat": ["[ᱟᱢᱟᱜ ᱡᱟᱸᱪ ᱯᱷᱟᱞᱟᱯᱷᱟᱞ]", "[ᱱᱚᱶᱟ ᱯᱷᱟᱞᱟᱯᱷᱟᱞ ᱨᱮᱭᱟᱜ ᱢᱟᱱᱮ]", "[ᱤᱱᱟᱹ ᱛᱟᱭᱚᱢ]"],
+    "ne": ["[तपाईंको जाँच परिणाम]", "[यी परिणामको अर्थ]", "[अर्को कदम]"],
+    "brx": ["[नोंथांनि टेस्ट फलाफल]", "[बे फलाफलनि अर्थ]", "[उनाव थांखि]"],
+    "sa": ["[भवतः परीक्षाफलानि]", "[एतेषां फलानाम् अर्थः]", "[अग्रिमाणि पदानि]"],
+}
+
+
+def _localize_section_headers(
+    text: str, language_code: str, doc_type: str = "prescription"
+) -> str:
+    """Replace English section markers with translated ones for the target language.
+
+    If language_code is 'en' or not found in the translation map, returns text unchanged.
+    """
+    if language_code == "en":
+        return text
+
+    if doc_type == "lab_report":
+        english_markers = _SECTION_MARKERS_LAB
+        translated_map = _TRANSLATED_HEADERS_LAB
+    else:
+        english_markers = _SECTION_MARKERS_RX
+        translated_map = _TRANSLATED_HEADERS_RX
+
+    translated = translated_map.get(language_code)
+    if not translated:
+        return text
+
+    for eng, loc in zip(english_markers, translated):
+        text = text.replace(eng, loc)
+    return text
+
 
 def _extract_sections(text: str, doc_type: str = "prescription") -> dict[str, str]:
     """Extract the 3 structured sections from the translation output.
@@ -512,8 +594,11 @@ async def simplify_and_translate(
 
     summaries = _extract_medicine_summaries(body)
 
+    # Replace English section markers with translated headers for target language
+    localized_text = _localize_section_headers(raw_text, language_code, doc_type)
+
     result = TranslationResult(
-        translated_text=raw_text,
+        translated_text=localized_text,
         per_medicine_summaries=summaries,
         disclaimer=disclaimer,
         language_code=language_code,
