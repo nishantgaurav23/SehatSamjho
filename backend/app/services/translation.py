@@ -409,9 +409,7 @@ _TRANSLATED_HEADERS_LAB: dict[str, list[str]] = {
 }
 
 
-def _localize_section_headers(
-    text: str, language_code: str, doc_type: str = "prescription"
-) -> str:
+def _localize_section_headers(text: str, language_code: str, doc_type: str = "prescription") -> str:
     """Replace English section markers with translated ones for the target language.
 
     If language_code is 'en' or not found in the translation map, returns text unchanged.
