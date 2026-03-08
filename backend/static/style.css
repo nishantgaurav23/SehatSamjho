@@ -662,7 +662,7 @@ body {
     gap: 0.4rem;
     background: var(--success-light);
     color: var(--success);
-    font-size: 0.72rem;
+    font-size: 0.82rem;
     font-weight: 700;
     padding: 0.3rem 0.85rem;
     border-radius: 20px;
@@ -702,7 +702,7 @@ body {
 }
 
 .rx-meta {
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     color: var(--text-muted);
     line-height: 1.6;
     padding-left: 0.75rem;
@@ -794,8 +794,8 @@ body {
 }
 
 .section-content {
-    font-size: 0.85rem;
-    line-height: 1.75;
+    font-size: 0.95rem;
+    line-height: 1.8;
     white-space: pre-line;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -868,7 +868,7 @@ body {
     display: inline-block;
     padding: 4px 12px;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 700;
     letter-spacing: 0.3px;
     vertical-align: middle;
@@ -1009,14 +1009,14 @@ body {
     border: 1px solid #fbbf24;
     border-radius: var(--radius-sm);
     padding: 0.85rem 1.15rem;
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     color: #92400e;
     margin-bottom: 0.75rem;
     line-height: 1.5;
 }
 
 .latency {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     color: var(--text-light);
     text-align: right;
     margin-bottom: 0.5rem;
@@ -1073,6 +1073,6 @@ body {
     .progress-number { width: 34px; height: 34px; font-size: 0.8rem; }
     .step-actions { flex-direction: column-reverse; gap: 0.5rem; }
     .step-actions .btn { width: 100%; }
-    .rx-meta { font-size: 0.82rem; }
-    .section-content { padding: 0.75rem 1rem; font-size: 0.88rem; }
+    .rx-meta { font-size: 0.88rem; }
+    .section-content { padding: 0.75rem 1rem; font-size: 0.92rem; }
 }
