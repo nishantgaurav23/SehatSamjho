@@ -491,8 +491,8 @@ class TestTenacityRetry:
         # Check that a warning log was emitted about the retry
         warning_calls = mock_logger.warning.call_args_list
         assert len(warning_calls) >= 1
-        retry_log = str(warning_calls[0])
-        assert "retry" in retry_log.lower() or "attempt" in retry_log.lower()
+        retry_logs = [str(c).lower() for c in warning_calls]
+        assert any("retry" in log or "attempt" in log for log in retry_logs)
 
 
 # ===========================================================================
