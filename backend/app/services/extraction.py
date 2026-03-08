@@ -165,6 +165,41 @@ async def _download_image(image_url: str) -> bytes:
         return response.content
 
 
+def _compress_image(
+    image_bytes: bytes, content_type: str = "image/jpeg"
+) -> tuple[bytes, str]:
+    """Resize + compress image to reduce payload size for OpenAI.
+
+    GPT-4O "high" detail mode internally uses max 2048px, so anything
+    larger is wasted bandwidth. Returns (compressed_bytes, content_type).
+    Falls back to original bytes if PIL fails.
+    """
+    try:
+        from PIL import Image
+
+        img = Image.open(io.BytesIO(image_bytes))
+        if img.mode in ("RGBA", "P", "LA"):
+            img = img.convert("RGB")
+
+        max_dim = 2048
+        if max(img.size) > max_dim:
+            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+            logger.debug("Resized image to {}x{}", img.size[0], img.size[1])
+
+        buf = io.BytesIO()
+        if content_type == "image/png":
+            img.save(buf, format="PNG", optimize=True)
+        else:
+            img.save(buf, format="JPEG", quality=85)
+            content_type = "image/jpeg"
+        result = buf.getvalue()
+        logger.debug("Compressed image: {} → {} bytes", len(image_bytes), len(result))
+        return result, content_type
+    except Exception as exc:
+        logger.warning("Image compression failed, using original: {}", exc)
+        return image_bytes, content_type
+
+
 # ---------------------------------------------------------------------------
 # GPT-4O Vision call (S5.3)
 # ---------------------------------------------------------------------------
@@ -202,6 +237,7 @@ async def _call_gpt4o_vision(image_url: str, content_type: str = "image/jpeg") -
     JSON string from the model response.
     """
     image_bytes = await _download_image(image_url)
+    image_bytes, content_type = _compress_image(image_bytes, content_type)
     data_uri = _encode_image_base64(image_bytes, content_type)
 
     system_messages = _build_extraction_prompt()
@@ -318,17 +354,8 @@ async def extract_prescription_from_bytes(
     if not image_bytes:
         raise ValueError("image_bytes must be non-empty")
 
-    # Convert unsupported image formats (BMP, TIFF, etc.) to PNG for OpenAI
-    _SUPPORTED_FORMATS = {"image/jpeg", "image/png", "image/gif", "image/webp"}
-    if content_type not in _SUPPORTED_FORMATS:
-        log.info("Converting {} to PNG for OpenAI compatibility", content_type)
-        from PIL import Image
-
-        img = Image.open(io.BytesIO(image_bytes))
-        buf = io.BytesIO()
-        img.save(buf, format="PNG")
-        image_bytes = buf.getvalue()
-        content_type = "image/png"
+    # Resize + compress for OpenAI (also handles format conversion)
+    image_bytes, content_type = _compress_image(image_bytes, content_type)
 
     log.info("Starting prescription extraction from bytes")
 
