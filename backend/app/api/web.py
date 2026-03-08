@@ -272,6 +272,7 @@ async def _run_web_pipeline(
         doctor_name=prescription.doctor_name,
         diagnosis=prescription.diagnosis,
         date=prescription.date,
+        translated_diagnosis=translation.translated_diagnosis,
         medicines=medicines,
         lab_tests=lab_tests,
         translated_text=translation.translated_text,

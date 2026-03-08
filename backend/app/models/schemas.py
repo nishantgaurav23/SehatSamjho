@@ -104,6 +104,7 @@ class TranslationResult(BaseModel):
     per_medicine_summaries: list[str] = []
     disclaimer: str = Field(..., min_length=1)
     language_code: str
+    translated_diagnosis: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -174,6 +175,7 @@ class WebTranslationResponse(BaseModel):
     doctor_name: str | None = None
     diagnosis: str | None = None
     date: str | None = None
+    translated_diagnosis: str | None = None
     medicines: list[WebMedicineDetail] = []
     lab_tests: list[WebLabTestDetail] = []
     translated_text: str

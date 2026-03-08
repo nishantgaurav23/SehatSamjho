@@ -330,7 +330,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const metaEl = document.getElementById("rx-meta");
         let metaParts = [];
         if (data.doctor_name) metaParts.push(`<strong>${isLabReport ? t("meta_lab_doctor") : t("meta_doctor")}</strong> ${esc(data.doctor_name)}`);
-        if (data.diagnosis) metaParts.push(`<strong>${t("meta_diagnosis")}</strong> ${esc(data.diagnosis)}`);
+        const diagnosisVal = data.translated_diagnosis || data.diagnosis;
+        if (diagnosisVal) metaParts.push(`<strong>${t("meta_diagnosis")}</strong> ${esc(diagnosisVal)}`);
         if (data.date) metaParts.push(`<strong>${t("meta_date")}</strong> ${esc(data.date)}`);
         metaParts.push(`<strong>${t("meta_language")}</strong> ${esc(data.language_name)}`);
         if (isLabReport) metaParts.push(`<strong>${t("meta_type")}</strong> ${t("meta_lab_report")}`);

@@ -93,6 +93,9 @@ in the output.
 9. The section markers [WHAT YOU TAKE], [WHY THESE MEDICINES], [NEXT STEPS] must appear \
 exactly as shown — they are used for parsing. Write all content in the target language \
 but keep these English markers.
+10. At the very end of your response (after the disclaimer), output exactly one line: \
+[DIAGNOSIS: <translated diagnosis/ailment in target language>]. If diagnosis is not available, \
+write [DIAGNOSIS: none]. This line is used for display only.
 {glossary_context}\
 """
 
@@ -139,6 +142,9 @@ in the output.
 9. The section markers [YOUR TEST RESULTS], [WHAT THESE RESULTS MEAN], [NEXT STEPS] must \
 appear exactly as shown — they are used for parsing. Write all content in the target \
 language but keep these English markers.
+10. At the very end of your response (after the disclaimer), output exactly one line: \
+[DIAGNOSIS: <translated test type or reason for tests in target language>]. If not available, \
+write [DIAGNOSIS: none]. This line is used for display only.
 {glossary_context}\
 """
 
@@ -308,6 +314,10 @@ _DISCLAIMER_PATTERN: re.Pattern[str] = re.compile(
 # Pattern to detect per-medicine summary headings (### Medicine or ### DrugName)
 _MEDICINE_HEADING_RE: re.Pattern[str] = re.compile(
     r"^#{1,4}\s+(.+)$",
+    re.MULTILINE,
+)
+_DIAGNOSIS_META_RE: re.Pattern[str] = re.compile(
+    r"\[DIAGNOSIS:\s*(.+?)\]\s*$",
     re.MULTILINE,
 )
 
@@ -620,8 +630,19 @@ async def simplify_and_translate(
         )
         raise TranslationError("Empty whitespace-only response from Claude API")
 
+    # Extract and strip [DIAGNOSIS: ...] metadata line before further parsing
+    translated_diagnosis = None
+    clean_text = raw_text
+    diag_match = _DIAGNOSIS_META_RE.search(raw_text)
+    if diag_match:
+        diag_value = diag_match.group(1).strip()
+        if diag_value.lower() != "none" and diag_value:
+            translated_diagnosis = diag_value
+        clean_text = raw_text[: diag_match.start()].rstrip() + raw_text[diag_match.end() :]
+        clean_text = clean_text.rstrip()
+
     # FR-5: Parse into TranslationResult
-    body, disclaimer = _extract_disclaimer(raw_text)
+    body, disclaimer = _extract_disclaimer(clean_text)
     if disclaimer == _DEFAULT_DISCLAIMER:
         logger.warning(
             "Disclaimer not found in response, using default | request_id={}",
@@ -631,13 +652,14 @@ async def simplify_and_translate(
     summaries = _extract_medicine_summaries(body)
 
     # Replace English section markers with translated headers for target language
-    localized_text = _localize_section_headers(raw_text, language_code, doc_type)
+    localized_text = _localize_section_headers(clean_text, language_code, doc_type)
 
     result = TranslationResult(
         translated_text=localized_text,
         per_medicine_summaries=summaries,
         disclaimer=disclaimer,
         language_code=language_code,
+        translated_diagnosis=translated_diagnosis,
     )
 
     # FR-6/7: PHI-safe success log (no translated text content)
