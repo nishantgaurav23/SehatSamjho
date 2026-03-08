@@ -228,7 +228,9 @@ async def _run_web_pipeline(
 
     # Extract structured sections from translation
     doc_type = prescription.doc_type
-    sections = _extract_sections(translation.translated_text, doc_type=doc_type)
+    sections = _extract_sections(
+        translation.translated_text, doc_type=doc_type, language_code=language_code
+    )
 
     # Build response
     medicines = []

@@ -433,24 +433,62 @@ def _localize_section_headers(text: str, language_code: str, doc_type: str = "pr
     return text
 
 
-def _extract_sections(text: str, doc_type: str = "prescription") -> dict[str, str]:
+def _find_markers(text: str, marker_list: list[str]) -> list[tuple[int, int]]:
+    """Return (position, marker_length) for each marker. (-1, 0) if not found."""
+    result = []
+    for marker in marker_list:
+        pos = text.find(marker)
+        result.append((pos, len(marker)) if pos != -1 else (-1, 0))
+    return result
+
+
+def _extract_sections(
+    text: str, doc_type: str = "prescription", language_code: str = ""
+) -> dict[str, str]:
     """Extract the 3 structured sections from the translation output.
+
+    Tries English markers first, then falls back to translated markers
+    for the given language_code so it works on both raw and localized text.
 
     Returns a dict with keys: 'medicines', 'why', 'next_steps'.
     Values are the text content of each section (empty string if not found).
     """
-    markers = _SECTION_MARKERS_LAB if doc_type == "lab_report" else _SECTION_MARKERS_RX
-    sections = {k: "" for k in _SECTION_KEYS}
+    if doc_type == "lab_report":
+        english_markers = _SECTION_MARKERS_LAB
+        translated_map = _TRANSLATED_HEADERS_LAB
+    else:
+        english_markers = _SECTION_MARKERS_RX
+        translated_map = _TRANSLATED_HEADERS_RX
 
-    positions = []
-    for marker in markers:
-        pos = text.find(marker)
-        positions.append(pos)
+    # Try English markers first
+    found = _find_markers(text, english_markers)
+
+    # If any English marker is missing, try translated markers for the language
+    if any(pos == -1 for pos, _ in found) and language_code:
+        translated = translated_map.get(language_code)
+        if translated:
+            alt = _find_markers(text, translated)
+            # Use translated results for any markers not found in English
+            found = [alt[i] if found[i][0] == -1 else found[i] for i in range(3)]
+
+    # If still missing markers, try ALL languages as fallback
+    if any(pos == -1 for pos, _ in found):
+        for lang_code, translated in translated_map.items():
+            if lang_code == "en":
+                continue
+            alt = _find_markers(text, translated)
+            found = [alt[i] if found[i][0] == -1 else found[i] for i in range(3)]
+            if all(pos != -1 for pos, _ in found):
+                break
+
+    sections = {k: "" for k in _SECTION_KEYS}
+    positions = [pos for pos, _ in found]
+    lengths = [length for _, length in found]
 
     for i, (pos, key) in enumerate(zip(positions, _SECTION_KEYS)):
         if pos == -1:
             continue
-        start = pos + len(markers[i])
+        start = pos + lengths[i]
         next_positions = [p for p in positions[i + 1 :] if p > pos]
         end = min(next_positions) if next_positions else len(text)
         sections[key] = text[start:end].strip()
