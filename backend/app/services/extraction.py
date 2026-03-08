@@ -222,9 +222,7 @@ async def _download_image(image_url: str) -> bytes:
         return response.content
 
 
-def _compress_image(
-    image_bytes: bytes, content_type: str = "image/jpeg"
-) -> tuple[bytes, str]:
+def _compress_image(image_bytes: bytes, content_type: str = "image/jpeg") -> tuple[bytes, str]:
     """Resize + compress image to reduce payload size for OpenAI.
 
     GPT-4O "high" detail mode internally uses max 2048px, so anything
