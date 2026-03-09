@@ -47,8 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (s2Title) s2Title.textContent = t("step2_title");
         if (s2Desc) s2Desc.textContent = t("step2_desc");
 
-        const placeholder = document.querySelector("#upload-placeholder p");
+        const placeholder = document.querySelector("#upload-placeholder p:first-of-type");
         if (placeholder) placeholder.innerHTML = t("upload_hint").replace("\n", "<br>");
+
+        const maxSizeEl = document.getElementById("upload-max-size");
+        if (maxSizeEl) maxSizeEl.textContent = t("upload_max_size");
 
         document.getElementById("back-to-1").childNodes.forEach(n => {
             if (n.nodeType === 3 && n.textContent.trim()) n.textContent = "\n            " + t("btn_back") + "\n        ";
@@ -197,8 +200,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function handleFileSelect(file) {
-        if (!file.type.startsWith("image/")) {
-            showError(t("err_not_image"));
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf";
+        if (!isImage && !isPdf) {
+            showError(t("err_not_supported"));
             return;
         }
         if (file.size > 10 * 1024 * 1024) {
@@ -209,14 +214,25 @@ document.addEventListener("DOMContentLoaded", () => {
         hideError();
         fileNameEl.textContent = file.name;
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            imagePreview.src = e.target.result;
-            uploadPlaceholder.style.display = "none";
-            uploadPreview.style.display = "";
+        if (isPdf) {
+            // Show PDF icon placeholder instead of image preview
+            imagePreview.src = "";
+            imagePreview.alt = t("upload_pdf_preview");
+            imagePreview.style.display = "none";
+            uploadPlaceholder.innerHTML = '<div style="font-size:3rem;text-align:center">📄</div><div style="text-align:center;margin-top:0.5rem">' + t("upload_pdf_preview") + '</div>';
+            uploadPlaceholder.style.display = "";
+            uploadPreview.style.display = "none";
             submitBtn.disabled = false;
-        };
-        reader.readAsDataURL(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                uploadPlaceholder.style.display = "none";
+                uploadPreview.style.display = "";
+                submitBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     // ── Submit ─────────────────────────────────────────────
@@ -234,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         startLoadingAnimation();
 
         const formData = new FormData();
-        formData.append("image", fileInput.files[0]);
+        formData.append("file", fileInput.files[0]);
         formData.append("language_code", selectedLanguage);
 
         try {

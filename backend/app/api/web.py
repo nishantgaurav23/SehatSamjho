@@ -1,6 +1,6 @@
-"""S14.2 — Web Upload API.
+"""S14.2 + S14.5 — Web Upload API.
 
-POST /api/translate: accepts a prescription image upload + language_code,
+POST /api/translate: accepts a prescription image or PDF upload + language_code,
 runs the full pipeline, and returns JSON with translation results.
 No Twilio, no WhatsApp, no session management — direct HTTP API.
 """
@@ -9,28 +9,37 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from loguru import logger
 
 router = APIRouter()
 
-MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @router.post("/translate")
 async def web_translate(
-    image: UploadFile = File(...),
     language_code: str = Form(...),
+    file: Optional[UploadFile] = File(None),
+    image: Optional[UploadFile] = File(None),
 ):
-    """Upload a prescription image and receive a translated summary.
+    """Upload a prescription image or PDF and receive a translated summary.
 
     Accepts multipart/form-data with:
-    - image: prescription photo (JPEG, PNG)
+    - file (or image): prescription photo (JPEG, PNG) or PDF document
     - language_code: one of the 22 supported Indian language codes
     """
     # Lazy imports to avoid module-level Settings() trigger
     from backend.app.services.whatsapp import SUPPORTED_LANGUAGES
+
+    # Accept either 'file' or 'image' field name (backward compat)
+    upload = file or image
+    if upload is None:
+        raise HTTPException(
+            status_code=422, detail="No file uploaded. Use 'file' or 'image' field."
+        )
 
     request_id = str(uuid.uuid4())
 
@@ -46,41 +55,51 @@ async def web_translate(
         lang_info = SUPPORTED_LANGUAGES[language_code]
         language_name = lang_info["name"]
 
-        # --- Validate image ---
-        content_type = image.content_type or ""
-        if not content_type.startswith("image/"):
+        # --- Read file bytes ---
+        content_type = upload.content_type or ""
+        file_bytes = await upload.read()
+
+        if not file_bytes:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+        if len(file_bytes) > MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type: '{content_type}'. Only image files are accepted.",
+                detail=f"File too large ({len(file_bytes)} bytes). Max: {MAX_FILE_SIZE} bytes.",
             )
 
-        image_bytes = await image.read()
-        if not image_bytes:
-            raise HTTPException(status_code=400, detail="Uploaded image is empty.")
+        # --- Detect file type ---
+        from backend.app.services.pdf_converter import is_pdf
 
-        if len(image_bytes) > MAX_IMAGE_SIZE:
+        file_is_pdf = is_pdf(content_type, file_bytes)
+        file_is_image = content_type.startswith("image/")
+
+        if not file_is_pdf and not file_is_image:
             raise HTTPException(
                 status_code=400,
-                detail=f"Image too large ({len(image_bytes)} bytes). Max: {MAX_IMAGE_SIZE} bytes.",
+                detail=f"Invalid file type: '{content_type}'. "
+                "Only image (JPEG, PNG) and PDF files are accepted.",
             )
 
         logger.info(
-            "Web translate request: language={}, image_size={}, content_type={}",
+            "Web translate request: language={}, file_size={}, content_type={}, is_pdf={}",
             language_code,
-            len(image_bytes),
+            len(file_bytes),
             content_type,
+            file_is_pdf,
         )
 
         start = time.monotonic()
 
         try:
             return await _run_web_pipeline(
-                image_bytes=image_bytes,
+                file_bytes=file_bytes,
                 content_type=content_type,
                 language_code=language_code,
                 language_name=language_name,
                 request_id=request_id,
                 start=start,
+                file_is_pdf=file_is_pdf,
             )
         except HTTPException:
             raise
@@ -93,8 +112,15 @@ async def web_translate(
                 ImageNotReadableError,
                 NotMedicalDocumentError,
             )
+            from backend.app.services.pdf_converter import PdfConversionError
             from backend.app.services.translation import TranslationError
 
+            if isinstance(exc, PdfConversionError):
+                logger.error("PDF conversion error: {}", exc)
+                raise HTTPException(
+                    status_code=422,
+                    detail="pdf_conversion_error",
+                )
             if isinstance(exc, NotMedicalDocumentError):
                 raise HTTPException(
                     status_code=422,
@@ -129,12 +155,13 @@ async def web_translate(
 
 
 async def _run_web_pipeline(
-    image_bytes: bytes,
+    file_bytes: bytes,
     content_type: str,
     language_code: str,
     language_name: str,
     request_id: str,
     start: float,
+    file_is_pdf: bool = False,
 ):
     """Execute the full pipeline and return a WebTranslationResponse dict."""
     from backend.app.api.webhooks import _format_audio_text
@@ -149,26 +176,42 @@ async def _run_web_pipeline(
     from backend.app.services.tts import generate_and_deliver_audio
     from backend.app.services.translation import _extract_sections, simplify_and_translate
 
-    # Step 0: Store prescription image in S3 (best-effort)
+    page_count = None
+
+    # Step 0: Store file in S3 (best-effort)
     try:
         from backend.app.services.image_store import store_prescription_image
 
         image_s3_key = await store_prescription_image(
-            image_bytes=image_bytes,
+            image_bytes=file_bytes,
             request_id=request_id,
             content_type=content_type,
         )
-        logger.info("Prescription image stored: key={}", image_s3_key)
+        logger.info("Prescription file stored: key={}", image_s3_key)
     except Exception:
-        logger.warning("Failed to store prescription image — continuing pipeline")
+        logger.warning("Failed to store prescription file — continuing pipeline")
 
-    # Step 1: Extract prescription from image bytes
+    # Step 1: Extract prescription
     logger.info("Pipeline: extraction")
-    prescription = await extract_prescription_from_bytes(
-        image_bytes=image_bytes,
-        content_type=content_type,
-        request_id=request_id,
-    )
+    if file_is_pdf:
+        from backend.app.services.pdf_converter import extract_from_pdf
+
+        prescription = await extract_from_pdf(file_bytes, request_id=request_id)
+        # Estimate page count from PDF
+        import fitz
+
+        try:
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            page_count = min(doc.page_count, 5)
+            doc.close()
+        except Exception:
+            pass
+    else:
+        prescription = await extract_prescription_from_bytes(
+            image_bytes=file_bytes,
+            content_type=content_type,
+            request_id=request_id,
+        )
 
     is_lab_report = prescription.doc_type == "lab_report"
     logger.info("Pipeline: doc_type={}", prescription.doc_type)
@@ -283,4 +326,5 @@ async def _run_web_pipeline(
         disclaimer=translation.disclaimer,
         audio_url=audio_url,
         latency_ms=latency_ms,
+        page_count=page_count,
     )
