@@ -106,8 +106,13 @@ class TestRowCount:
 class TestAllFieldsNonEmpty:
     def test_core_fields_non_empty(self):
         """Core fields (brand, generic, class, purpose, side_effects) always populated."""
-        core_cols = ["brand_name", "generic_name", "therapeutic_class",
-                     "purpose_en", "side_effects_en"]
+        core_cols = [
+            "brand_name",
+            "generic_name",
+            "therapeutic_class",
+            "purpose_en",
+            "side_effects_en",
+        ]
         rows = _load_rows()
         for i, row in enumerate(rows, start=2):
             for col in core_cols:

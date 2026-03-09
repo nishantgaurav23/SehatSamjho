@@ -224,8 +224,7 @@ class TestMedicineDataLoader:
 
         # Paracetamol appears in row 1 (Crocin) and row 3 (Dolo) — first should win
         salt_paracetamol_calls = [
-            call for call in mock_redis.set.call_args_list
-            if call.args[0] == "salt:paracetamol"
+            call for call in mock_redis.set.call_args_list if call.args[0] == "salt:paracetamol"
         ]
         assert len(salt_paracetamol_calls) == 1  # only stored once
 

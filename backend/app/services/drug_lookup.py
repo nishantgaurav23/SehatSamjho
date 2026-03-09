@@ -539,9 +539,7 @@ async def lookup_drug(
     if result is not None:
         # Cache the API result with TTL under drug: prefix
         try:
-            await redis_client.set(
-                drug_key, result.model_dump_json(), ex=DRUG_CACHE_TTL_SECONDS
-            )
+            await redis_client.set(drug_key, result.model_dump_json(), ex=DRUG_CACHE_TTL_SECONDS)
             logger.debug(
                 "Cached API result for '{}' (TTL={}s) | request_id={}",
                 normalized,
