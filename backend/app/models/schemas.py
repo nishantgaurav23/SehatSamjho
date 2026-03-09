@@ -186,3 +186,4 @@ class WebTranslationResponse(BaseModel):
     disclaimer: str
     audio_url: str | None = None
     latency_ms: int
+    page_count: int | None = None

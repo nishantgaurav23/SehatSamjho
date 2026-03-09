@@ -90,7 +90,7 @@
                 <form id="upload-form">
                     <div id="upload-zone" class="upload-zone">
                         <input type="file" id="image-input" name="image"
-                               accept="image/*" required>
+                               accept="image/*,.pdf,application/pdf" required>
                         <div class="upload-placeholder" id="upload-placeholder">
                             <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
                                 <rect x="6" y="10" width="36" height="28" rx="4" stroke="#94a3b8" stroke-width="2" fill="none"/>
@@ -98,6 +98,7 @@
                                 <path d="M6 32l10-8 8 6 8-10 10 12" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                             </svg>
                             <p>Drag & drop your prescription or lab report photo here,<br>or <strong>click to browse</strong></p>
+                            <p class="upload-max-size" id="upload-max-size">Maximum file size: 10MB</p>
                         </div>
                         <div class="upload-preview" id="upload-preview" style="display:none">
                             <img id="image-preview" alt="Prescription preview">

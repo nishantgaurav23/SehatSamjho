@@ -349,4 +349,5 @@ End-to-end validation with real prescriptions. Latency profiling. Edge case veri
 | S14.1 | Web Interface | `backend/app/services/tts_edge.py` | Edge TTS fallback | `specs/spec-S14.1-edge-tts-fallback/` | done |
 | S14.2 | Web Interface | `backend/app/api/web.py` | Web upload API | `specs/spec-S14.2-web-upload-api/` | done |
 | S14.3 | Web Interface | `backend/templates/index.html` | Web frontend | `specs/spec-S14.3-web-frontend/` | done |
-| S14.4 | Web Interface | `backend/tests/test_web_integration.py` | Web integration tests | `specs/spec-S14.4-web-integration-tests/` | pending |
+| S14.4 | Web Interface | `backend/tests/test_web_integration.py` | Web integration tests | `specs/spec-S14.4-web-integration-tests/` | done |
+| S14.5 | Web Interface | `backend/app/services/pdf_converter.py` | PDF upload support | `specs/spec-S14.5-pdf-upload-support/` | done |
