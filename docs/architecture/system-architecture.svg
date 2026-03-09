@@ -1,0 +1,232 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 750" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="1" dy="1" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a8a6e"/>
+      <stop offset="100%" stop-color="#2ba882"/>
+    </linearGradient>
+    <linearGradient id="awsGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF9900" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#FF9900" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="aiGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6B46C1" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#6B46C1" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="750" fill="#f8fafc" rx="8"/>
+
+  <!-- Title -->
+  <rect x="0" y="0" width="1100" height="48" rx="8" fill="url(#headerGrad)"/>
+  <text x="550" y="31" text-anchor="middle" fill="white" font-size="18" font-weight="bold">SehatSamjho — System Architecture</text>
+
+  <!-- ═══ PATIENT LAYER ═══ -->
+  <rect x="30" y="65" width="200" height="85" rx="10" fill="#E8F5E9" stroke="#2E7D32" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="130" y="87" text-anchor="middle" fill="#1B5E20" font-size="11" font-weight="bold">PATIENT</text>
+  <rect x="45" y="96" width="75" height="30" rx="6" fill="white" stroke="#43A047" stroke-width="1"/>
+  <text x="82" y="115" text-anchor="middle" fill="#2E7D32" font-size="10">WhatsApp</text>
+  <rect x="140" y="96" width="75" height="30" rx="6" fill="white" stroke="#43A047" stroke-width="1"/>
+  <text x="177" y="115" text-anchor="middle" fill="#2E7D32" font-size="10">Web</text>
+
+  <!-- Twilio Gateway -->
+  <rect x="30" y="175" width="200" height="45" rx="8" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="130" y="202" text-anchor="middle" fill="#4A148C" font-size="11" font-weight="bold">Twilio WhatsApp API</text>
+
+  <!-- Arrow Patient -> Twilio -->
+  <line x1="95" y1="150" x2="95" y2="175" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <line x1="170" y1="126" x2="170" y2="137" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="185" y="140" fill="#666" font-size="8" font-style="italic">direct upload</text>
+
+  <!-- ═══ FASTAPI BACKEND (big box) ═══ -->
+  <rect x="260" y="65" width="530" height="540" rx="12" fill="#E3F2FD" stroke="#1565C0" stroke-width="2" fill-opacity="0.3" filter="url(#shadow)"/>
+  <text x="525" y="87" text-anchor="middle" fill="#0D47A1" font-size="13" font-weight="bold">AWS EC2 t3.micro — FastAPI + Docker (Python 3.11 Async)</text>
+
+  <!-- Ingress Layer -->
+  <rect x="280" y="100" width="490" height="75" rx="8" fill="#E1F5FE" stroke="#0277BD" stroke-width="1"/>
+  <text x="525" y="118" text-anchor="middle" fill="#01579B" font-size="10" font-weight="bold">Ingress Layer</text>
+  <rect x="295" y="126" width="105" height="36" rx="5" fill="white" stroke="#0288D1" stroke-width="1"/>
+  <text x="347" y="141" text-anchor="middle" fill="#01579B" font-size="8.5" font-weight="bold">POST /webhook</text>
+  <text x="347" y="153" text-anchor="middle" fill="#01579B" font-size="8">/whatsapp</text>
+  <rect x="415" y="126" width="100" height="36" rx="5" fill="white" stroke="#0288D1" stroke-width="1"/>
+  <text x="465" y="141" text-anchor="middle" fill="#01579B" font-size="8.5" font-weight="bold">HMAC Verify</text>
+  <text x="465" y="153" text-anchor="middle" fill="#01579B" font-size="8">Twilio signature</text>
+  <rect x="530" y="126" width="105" height="36" rx="5" fill="white" stroke="#0288D1" stroke-width="1"/>
+  <text x="582" y="141" text-anchor="middle" fill="#01579B" font-size="8.5" font-weight="bold">POST /api/translate</text>
+  <text x="582" y="153" text-anchor="middle" fill="#01579B" font-size="8">Web upload</text>
+  <rect x="650" y="126" width="105" height="36" rx="5" fill="white" stroke="#0288D1" stroke-width="1"/>
+  <text x="702" y="148" text-anchor="middle" fill="#01579B" font-size="8.5" font-weight="bold">GET / Landing</text>
+
+  <!-- Session Layer -->
+  <rect x="280" y="190" width="230" height="55" rx="8" fill="#E8EAF6" stroke="#283593" stroke-width="1"/>
+  <text x="395" y="208" text-anchor="middle" fill="#1A237E" font-size="10" font-weight="bold">Session Layer</text>
+  <rect x="295" y="216" width="95" height="22" rx="4" fill="white" stroke="#3F51B5" stroke-width="1"/>
+  <text x="342" y="231" text-anchor="middle" fill="#283593" font-size="8">State Machine</text>
+  <rect x="400" y="216" width="95" height="22" rx="4" fill="white" stroke="#3F51B5" stroke-width="1"/>
+  <text x="447" y="231" text-anchor="middle" fill="#283593" font-size="8">Dispatch Router</text>
+
+  <!-- ═══ PROCESSING PIPELINE (5 boxes) ═══ -->
+  <rect x="280" y="262" width="490" height="195" rx="8" fill="#FFF8E1" stroke="#F57F17" stroke-width="1.5"/>
+  <text x="525" y="282" text-anchor="middle" fill="#E65100" font-size="11" font-weight="bold">Processing Pipeline</text>
+
+  <!-- Step 1: Extraction -->
+  <rect x="295" y="294" width="130" height="55" rx="6" fill="white" stroke="#E65100" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="360" y="312" text-anchor="middle" fill="#BF360C" font-size="9" font-weight="bold">1. Extraction</text>
+  <text x="360" y="326" text-anchor="middle" fill="#E65100" font-size="8">GPT-4O Vision</text>
+  <text x="360" y="339" text-anchor="middle" fill="#888" font-size="7">Image -> JSON</text>
+
+  <!-- Step 2: Drug Enrichment -->
+  <rect x="295" y="360" width="130" height="55" rx="6" fill="white" stroke="#2E7D32" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="360" y="378" text-anchor="middle" fill="#1B5E20" font-size="9" font-weight="bold">2. Drug Enrichment</text>
+  <text x="360" y="392" text-anchor="middle" fill="#2E7D32" font-size="8">1,001 medicines DB</text>
+  <text x="360" y="405" text-anchor="middle" fill="#888" font-size="7">Redis &lt; 100ms</text>
+
+  <!-- Step 3: Glossary RAG -->
+  <rect x="445" y="294" width="130" height="55" rx="6" fill="white" stroke="#1565C0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="510" y="312" text-anchor="middle" fill="#0D47A1" font-size="9" font-weight="bold">3. Glossary RAG</text>
+  <text x="510" y="326" text-anchor="middle" fill="#1565C0" font-size="8">Medical terms</text>
+  <text x="510" y="339" text-anchor="middle" fill="#888" font-size="7">6 languages cached</text>
+
+  <!-- Step 4: Translation -->
+  <rect x="445" y="360" width="130" height="55" rx="6" fill="white" stroke="#6B46C1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="510" y="378" text-anchor="middle" fill="#4A148C" font-size="9" font-weight="bold">4. Translation</text>
+  <text x="510" y="392" text-anchor="middle" fill="#6B46C1" font-size="8">Claude Sonnet 4.6</text>
+  <text x="510" y="405" text-anchor="middle" fill="#888" font-size="7">23 languages + RAG</text>
+
+  <!-- Step 5: TTS -->
+  <rect x="595" y="294" width="160" height="55" rx="6" fill="white" stroke="#00695C" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="675" y="312" text-anchor="middle" fill="#004D40" font-size="9" font-weight="bold">5. Text-to-Speech</text>
+  <text x="675" y="326" text-anchor="middle" fill="#00695C" font-size="8">Edge TTS (primary)</text>
+  <text x="675" y="339" text-anchor="middle" fill="#888" font-size="7">Bhashini fallback</text>
+
+  <!-- Pipeline arrows -->
+  <path d="M360 349 L360 360" stroke="#666" stroke-width="1.2" fill="none" marker-end="url(#arrowGray)"/>
+  <path d="M425 321 L445 321" stroke="#666" stroke-width="1.2" fill="none" marker-end="url(#arrowGray)"/>
+  <path d="M510 349 L510 360" stroke="#666" stroke-width="1.2" fill="none" marker-end="url(#arrowGray)"/>
+  <path d="M575 321 L595 321" stroke="#666" stroke-width="1.2" fill="none" marker-end="url(#arrowGray)"/>
+
+  <!-- Egress Layer -->
+  <rect x="280" y="472" width="490" height="50" rx="8" fill="#E0F2F1" stroke="#00695C" stroke-width="1"/>
+  <text x="395" y="502" text-anchor="middle" fill="#004D40" font-size="10" font-weight="bold">Response Formatter</text>
+  <text x="620" y="502" text-anchor="middle" fill="#004D40" font-size="10" font-weight="bold">WhatsApp / Web Sender</text>
+
+  <!-- Pipeline -> Egress arrow -->
+  <path d="M525 457 L525 472" stroke="#00695C" stroke-width="1.5" fill="none" marker-end="url(#arrowTeal)"/>
+
+  <!-- Metadata log arrow -->
+  <rect x="280" y="535" width="490" height="28" rx="5" fill="white" stroke="#546E7A" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="525" y="553" text-anchor="middle" fill="#546E7A" font-size="9">Log metadata (timestamp, language, latency, status) — Zero PHI stored</text>
+
+  <!-- ═══ AWS SERVICES ═══ -->
+  <rect x="30" y="580" width="740" height="90" rx="10" fill="url(#awsGrad)" stroke="#FF9900" stroke-width="1.5"/>
+  <text x="400" y="600" text-anchor="middle" fill="#E65100" font-size="11" font-weight="bold">AWS Services (Free Tier)</text>
+
+  <!-- RDS -->
+  <rect x="55" y="612" width="155" height="42" rx="6" fill="white" stroke="#FF9900" stroke-width="1" filter="url(#shadow)"/>
+  <text x="132" y="630" text-anchor="middle" fill="#E65100" font-size="9" font-weight="bold">RDS PostgreSQL</text>
+  <text x="132" y="645" text-anchor="middle" fill="#888" font-size="8">Metadata logs only</text>
+
+  <!-- Redis -->
+  <rect x="235" y="612" width="155" height="42" rx="6" fill="white" stroke="#FF9900" stroke-width="1" filter="url(#shadow)"/>
+  <text x="312" y="630" text-anchor="middle" fill="#E65100" font-size="9" font-weight="bold">Upstash Redis</text>
+  <text x="312" y="645" text-anchor="middle" fill="#888" font-size="8">Sessions + Drug + Glossary</text>
+
+  <!-- S3 -->
+  <rect x="415" y="612" width="155" height="42" rx="6" fill="white" stroke="#FF9900" stroke-width="1" filter="url(#shadow)"/>
+  <text x="492" y="630" text-anchor="middle" fill="#E65100" font-size="9" font-weight="bold">AWS S3</text>
+  <text x="492" y="645" text-anchor="middle" fill="#888" font-size="8">Audio files (24h auto-delete)</text>
+
+  <!-- EC2 -->
+  <rect x="595" y="612" width="155" height="42" rx="6" fill="white" stroke="#FF9900" stroke-width="1" filter="url(#shadow)"/>
+  <text x="672" y="630" text-anchor="middle" fill="#E65100" font-size="9" font-weight="bold">EC2 t3.micro</text>
+  <text x="672" y="645" text-anchor="middle" fill="#888" font-size="8">Docker host (ap-south-1)</text>
+
+  <!-- ═══ AI SERVICES ═══ -->
+  <rect x="820" y="65" width="250" height="280" rx="10" fill="url(#aiGrad)" stroke="#6B46C1" stroke-width="1.5"/>
+  <text x="945" y="87" text-anchor="middle" fill="#4A148C" font-size="11" font-weight="bold">AI Services</text>
+
+  <!-- OpenAI -->
+  <rect x="840" y="100" width="210" height="60" rx="6" fill="white" stroke="#E65100" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="945" y="120" text-anchor="middle" fill="#BF360C" font-size="10" font-weight="bold">OpenAI GPT-4O Vision</text>
+  <text x="945" y="136" text-anchor="middle" fill="#888" font-size="8">Prescription extraction</text>
+  <text x="945" y="149" text-anchor="middle" fill="#888" font-size="8">Confidence scoring</text>
+
+  <!-- Anthropic -->
+  <rect x="840" y="175" width="210" height="60" rx="6" fill="white" stroke="#6B46C1" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="945" y="195" text-anchor="middle" fill="#4A148C" font-size="10" font-weight="bold">Anthropic Claude Sonnet 4.6</text>
+  <text x="945" y="211" text-anchor="middle" fill="#888" font-size="8">Jargon simplification</text>
+  <text x="945" y="224" text-anchor="middle" fill="#888" font-size="8">23-language translation + RAG</text>
+
+  <!-- Edge TTS -->
+  <rect x="840" y="250" width="210" height="50" rx="6" fill="white" stroke="#00695C" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="945" y="270" text-anchor="middle" fill="#004D40" font-size="10" font-weight="bold">Edge TTS + Bhashini</text>
+  <text x="945" y="286" text-anchor="middle" fill="#888" font-size="8">Voice synthesis (10+ Indian langs)</text>
+
+  <!-- ═══ CONNECTING ARROWS ═══ -->
+  <!-- Arrowhead markers -->
+  <defs>
+    <marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#666"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#7B1FA2"/>
+    </marker>
+    <marker id="arrowTeal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#00695C"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#E65100"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#1565C0"/>
+    </marker>
+  </defs>
+
+  <!-- Twilio -> Webhook -->
+  <path d="M230 197 L280 155" stroke="#7B1FA2" stroke-width="1.5" fill="none" marker-end="url(#arrowPurple)"/>
+
+  <!-- Web -> Web API -->
+  <path d="M215 110 L530 140" stroke="#0277BD" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowBlue)"/>
+
+  <!-- Backend -> AI Services -->
+  <path d="M755 321 L840 130" stroke="#E65100" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowOrange)"/>
+  <path d="M755 387 L840 205" stroke="#6B46C1" stroke-width="1.2" stroke-dasharray="5,3" fill="none"/>
+  <path d="M755 321 L840 275" stroke="#00695C" stroke-width="1.2" stroke-dasharray="5,3" fill="none"/>
+
+  <!-- Backend -> AWS -->
+  <path d="M400 563 L312 612" stroke="#FF9900" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowOrange)"/>
+  <path d="M525 563 L132 612" stroke="#FF9900" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowOrange)"/>
+  <path d="M600 500 L492 612" stroke="#FF9900" stroke-width="1.2" stroke-dasharray="5,3" fill="none" marker-end="url(#arrowOrange)"/>
+
+  <!-- Sender -> Twilio (response) -->
+  <path d="M280 497 L165 220" stroke="#7B1FA2" stroke-width="1.5" fill="none" marker-end="url(#arrowPurple)"/>
+
+  <!-- Key/Legend -->
+  <rect x="820" y="370" width="250" height="130" rx="8" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="945" y="392" text-anchor="middle" fill="#333" font-size="10" font-weight="bold">Legend</text>
+  <line x1="840" y1="405" x2="890" y2="405" stroke="#1565C0" stroke-width="1.5"/>
+  <text x="900" y="409" fill="#333" font-size="8">Data flow</text>
+  <line x1="840" y1="425" x2="890" y2="425" stroke="#E65100" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="900" y="429" fill="#333" font-size="8">API call (external)</text>
+  <line x1="840" y1="445" x2="890" y2="445" stroke="#FF9900" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="900" y="449" fill="#333" font-size="8">AWS service connection</text>
+  <rect x="840" y="460" width="12" height="12" rx="2" fill="#FFF8E1" stroke="#F57F17" stroke-width="1"/>
+  <text x="860" y="470" fill="#333" font-size="8">Processing pipeline</text>
+  <rect x="840" y="480" width="12" height="12" rx="2" fill="#E8F5E9" stroke="#2E7D32" stroke-width="1"/>
+  <text x="860" y="490" fill="#333" font-size="8">Patient interface</text>
+
+  <!-- Privacy badge -->
+  <rect x="820" y="620" width="250" height="50" rx="8" fill="#FFEBEE" stroke="#C62828" stroke-width="1.5"/>
+  <text x="945" y="640" text-anchor="middle" fill="#B71C1C" font-size="10" font-weight="bold">Zero Patient Data Stored</text>
+  <text x="945" y="657" text-anchor="middle" fill="#C62828" font-size="8">Phone SHA-256 hashed | No images persisted | DISHA-ready</text>
+
+  <!-- Latency badge -->
+  <rect x="820" y="530" width="250" height="75" rx="8" fill="#E8F5E9" stroke="#2E7D32" stroke-width="1"/>
+  <text x="945" y="550" text-anchor="middle" fill="#1B5E20" font-size="10" font-weight="bold">Performance</text>
+  <text x="945" y="568" text-anchor="middle" fill="#2E7D32" font-size="9">Pipeline: ~30-60 seconds</text>
+  <text x="945" y="583" text-anchor="middle" fill="#2E7D32" font-size="9">Drug lookup: &lt; 100ms</text>
+  <text x="945" y="598" text-anchor="middle" fill="#2E7D32" font-size="9">1,467 tests passing</text>
+</svg>
