@@ -67,6 +67,17 @@ EXTRACTION_SYSTEM_PROMPT: str = (
     "Documents may be handwritten, printed, or a mix of both. "
     "The image may be rotated, slightly blurry, or photographed at an angle — "
     "do your best to read it.\n\n"
+    "## Handwriting disambiguation\n"
+    "Handwritten prescriptions are prone to letter confusion. When reading drug names, "
+    "use ALL available context to disambiguate:\n"
+    "- **Doctor's specialization** visible on the letterhead (e.g. a psychiatrist prescribes "
+    "antidepressants like Depraven, not non-existent drugs like Repraven).\n"
+    "- **Hospital/clinic name** and listed specialties at the bottom of the letterhead.\n"
+    "- **Diagnosis** written on the prescription.\n"
+    "- **Other medicines** on the same prescription (they often belong to the same therapeutic area).\n"
+    "- **Common confusions**: D↔R, P↔R, C↔G, l↔t, n↔u, m↔rn, a↔o, e↔c.\n"
+    "If an extracted drug name does not correspond to any known medicine, reconsider "
+    "ambiguous letters and try alternate readings before finalizing.\n\n"
     "## Rules (follow in order)\n"
     '1. **Classify first.** Set `doc_type` to `"prescription"`, `"lab_report"`, '
     'or `"other"` based on the document content.\n'

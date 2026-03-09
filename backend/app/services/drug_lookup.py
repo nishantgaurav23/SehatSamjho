@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import csv
+import difflib
 import json
 import re
 from pathlib import Path
@@ -32,6 +33,31 @@ MEDICINE_DATA_CSV_PATH: Path = (
 DRUG_REDIS_PREFIX: str = "drug:"
 SALT_REDIS_PREFIX: str = "salt:"
 CATEGORY_REDIS_PREFIX: str = "category:"
+
+# ── In-memory brand name cache for fuzzy matching (L2) ────────────────────────
+_brand_name_cache: set[str] = set()
+FUZZY_MATCH_CUTOFF: float = 0.8  # difflib similarity threshold
+FUZZY_MATCH_MAX_RESULTS: int = 1
+
+
+def _fuzzy_match_drug_name(name: str) -> str | None:
+    """Find the closest brand name match using sequence matching.
+
+    Returns the best match if similarity >= FUZZY_MATCH_CUTOFF, else None.
+    Uses stdlib difflib — no extra dependencies, runs in <5ms for 17K names.
+    """
+    if not _brand_name_cache or not name:
+        return None
+    matches = difflib.get_close_matches(
+        name,
+        _brand_name_cache,
+        n=FUZZY_MATCH_MAX_RESULTS,
+        cutoff=FUZZY_MATCH_CUTOFF,
+    )
+    if matches:
+        logger.debug("Fuzzy match: '{}' → '{}'", name, matches[0])
+        return matches[0]
+    return None
 
 
 # ── FR-3: DrugCSVLoader class ─────────────────────────────────────────────────
@@ -63,14 +89,17 @@ class DrugCSVLoader:
                     )
                     continue
 
-                brand_key = f"{DRUG_REDIS_PREFIX}{drug.brand_name.strip().lower()}"
+                brand_normalized = drug.brand_name.strip().lower()
+                brand_key = f"{DRUG_REDIS_PREFIX}{brand_normalized}"
                 drug_json = drug.model_dump_json()
                 await self._redis.set(brand_key, drug_json)
+
+                # Populate in-memory cache for fuzzy matching
+                _brand_name_cache.add(brand_normalized)
 
                 # Store under generic name too, if present and non-empty
                 if drug.generic_name and drug.generic_name.strip():
                     generic_normalized = drug.generic_name.strip().lower()
-                    brand_normalized = drug.brand_name.strip().lower()
                     if generic_normalized != brand_normalized:
                         generic_key = f"{DRUG_REDIS_PREFIX}{generic_normalized}"
                         await self._redis.set(generic_key, drug_json)
@@ -488,9 +517,10 @@ async def lookup_drug(
     """Look up a drug by name using tiered matching strategy.
 
     Level 1: Brand/generic name match (drug:{name})
-    Level 2: Salt/composition match  (salt:{name})
-    Level 3: Therapeutic class match (category:{name}) — only if name looks like a class
-    Level 4: IndianMedicineDB API fallback
+    Level 2: Fuzzy brand name match  (edit distance ≤ threshold)
+    Level 3: Salt/composition match  (salt:{name})
+    Level 4: Therapeutic class match (category:{name})
+    Level 5: IndianMedicineDB API fallback
 
     Returns DrugInfo if found, None otherwise. Never raises.
     """
@@ -512,19 +542,27 @@ async def lookup_drug(
         request_id,
     )
 
-    # ── Level 2: Salt/composition match ──────────────────────────────────
+    # ── Level 2: Fuzzy brand name match ──────────────────────────────────
+    fuzzy_name = _fuzzy_match_drug_name(normalized)
+    if fuzzy_name:
+        fuzzy_key = f"{DRUG_REDIS_PREFIX}{fuzzy_name}"
+        result = await _try_redis_key(redis_client, fuzzy_key, "Fuzzy match", request_id)
+        if result is not None:
+            return result
+
+    # ── Level 3: Salt/composition match ──────────────────────────────────
     salt_key = f"{SALT_REDIS_PREFIX}{normalized}"
     result = await _try_redis_key(redis_client, salt_key, "Salt match", request_id)
     if result is not None:
         return result
 
-    # ── Level 3: Category match (therapeutic class) ──────────────────────
+    # ── Level 4: Category match (therapeutic class) ──────────────────────
     cat_key = f"{CATEGORY_REDIS_PREFIX}{normalized}"
     result = await _try_redis_key(redis_client, cat_key, "Category match", request_id)
     if result is not None:
         return result
 
-    # ── Level 4: API fallback ────────────────────────────────────────────
+    # ── Level 5: API fallback ────────────────────────────────────────────
     try:
         result = await _call_indianmedicinedb(medicine_name, request_id=request_id)
     except Exception as exc:
@@ -609,6 +647,12 @@ async def enrich_prescription(
 
     hits = sum(1 for r in results if r is not None)
     misses = len(results) - hits
+
+    # L4: Flag unverified medicine names on the prescription object
+    for i, (med, drug) in enumerate(zip(medicines, results)):
+        if drug is None:
+            med.name_verified = False
+
     logger.info(
         "Enrichment complete: {} hits, {} misses | request_id={}",
         hits,

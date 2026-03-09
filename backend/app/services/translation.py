@@ -248,11 +248,11 @@ def _build_user_prompt(
         parts.append(f"- Instructions: {med.instructions or _NOT_SPECIFIED}")
         parts.append(f"- Confidence: {med.confidence}")
 
-    # FR-5: Drug enrichment section
+    # FR-5: Drug enrichment section + L3/L4 name verification
     if drug_info_list:
         parts.append("")
         parts.append("## Drug Information")
-        for drug in drug_info_list:
+        for idx, drug in enumerate(drug_info_list):
             if drug is None:
                 continue
             parts.append(f"### {drug.brand_name}")
@@ -262,6 +262,26 @@ def _build_user_prompt(
             parts.append(f"- Side Effects: {drug.side_effects_en or 'Unknown'}")
             parts.append(f"- Timing: {drug.timing_instructions or 'Unknown'}")
             parts.append(f"- Known Interactions: {drug.known_interactions or 'None known'}")
+
+    # Flag unverified medicine names (L4: no drug info found for this medicine)
+    unverified = []
+    for idx, med in enumerate(prescription.medicines):
+        has_info = drug_info_list and idx < len(drug_info_list) and drug_info_list[idx] is not None
+        if not has_info:
+            unverified.append(med.medicine_name)
+    if unverified:
+        parts.append("")
+        parts.append("## Name Verification Warning")
+        parts.append(
+            "The following medicine names were extracted from a handwritten prescription "
+            "via OCR and could NOT be verified against any drug database. They may contain "
+            "misread letters (common: D↔R, P↔R, C↔G, l↔t, n↔u). "
+            "If you recognize a likely correction, use the corrected name and clearly "
+            "note that the original name may have been misread. If you cannot determine "
+            "the correct name, warn the patient to verify with their pharmacist."
+        )
+        for name in unverified:
+            parts.append(f"- [UNVERIFIED] {name}")
 
     return "\n".join(parts)
 
