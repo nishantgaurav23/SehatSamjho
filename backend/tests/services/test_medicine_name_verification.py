@@ -250,7 +250,7 @@ class TestL4NameVerified:
             "backend.app.services.drug_lookup._call_indianmedicinedb",
             return_value=None,
         ):
-            results = await enrich_prescription(mock_redis, prescription)
+            await enrich_prescription(mock_redis, prescription)
 
         # Depraven found → name_verified stays True
         assert prescription.medicines[0].name_verified is True
@@ -271,6 +271,6 @@ class TestL4NameVerified:
         mock_redis = AsyncMock()
         mock_redis.get = AsyncMock(return_value=SAMPLE_DRUG_JSON)
 
-        results = await enrich_prescription(mock_redis, prescription)
+        await enrich_prescription(mock_redis, prescription)
 
         assert prescription.medicines[0].name_verified is True
