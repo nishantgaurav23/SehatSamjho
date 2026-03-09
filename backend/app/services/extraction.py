@@ -227,13 +227,15 @@ def _compress_image(image_bytes: bytes, content_type: str = "image/jpeg") -> tup
 
     GPT-4O "high" detail mode internally uses max 2048px, so anything
     larger is wasted bandwidth. Returns (compressed_bytes, content_type).
-    Falls back to original bytes if PIL fails.
+    Falls back to original bytes if PIL fails or compression is suspiciously small.
     """
     try:
         from PIL import Image
 
         img = Image.open(io.BytesIO(image_bytes))
-        if img.mode in ("RGBA", "P", "LA"):
+        # Convert any non-RGB mode (CMYK, L, I, RGBA, P, LA, etc.) to RGB
+        if img.mode != "RGB":
+            logger.debug("Converting image mode {} → RGB", img.mode)
             img = img.convert("RGB")
 
         max_dim = 2048
@@ -242,13 +244,23 @@ def _compress_image(image_bytes: bytes, content_type: str = "image/jpeg") -> tup
             logger.debug("Resized image to {}x{}", img.size[0], img.size[1])
 
         buf = io.BytesIO()
-        if content_type == "image/png":
-            img.save(buf, format="PNG", optimize=True)
-        else:
-            img.save(buf, format="JPEG", quality=85)
-            content_type = "image/jpeg"
+        # Always save as JPEG for GPT-4O — smaller payload, equally effective
+        img.save(buf, format="JPEG", quality=85)
+        content_type = "image/jpeg"
         result = buf.getvalue()
         logger.debug("Compressed image: {} → {} bytes", len(image_bytes), len(result))
+
+        # Sanity check: if compressed result is suspiciously small (< 5KB for
+        # images over 50KB), compression likely destroyed content — use original
+        if len(image_bytes) > 50_000 and len(result) < 5_000:
+            logger.warning(
+                "Compression suspect: {} → {} bytes (ratio {:.1f}x), using original",
+                len(image_bytes),
+                len(result),
+                len(image_bytes) / max(len(result), 1),
+            )
+            return image_bytes, content_type
+
         return result, content_type
     except Exception as exc:
         logger.warning("Image compression failed, using original: {}", exc)

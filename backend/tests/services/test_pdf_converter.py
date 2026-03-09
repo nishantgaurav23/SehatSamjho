@@ -290,9 +290,8 @@ class TestExtractFromPdf:
         from backend.app.services.extraction import NotMedicalDocumentError
         from backend.app.services.pdf_converter import extract_from_pdf
 
-        p1 = _make_prescription(doc_type="other", overall_confidence=0.3)
-        p2 = _make_prescription(doc_type="other", overall_confidence=0.2)
-
+        # Real extract_prescription_from_bytes raises NotMedicalDocumentError
+        # when doc_type="other" — mock that behavior
         with (
             patch(
                 _PATCH_CONVERT,
@@ -302,7 +301,10 @@ class TestExtractFromPdf:
             patch(
                 _PATCH_EXTRACT_FROM_BYTES,
                 new_callable=AsyncMock,
-                side_effect=[p1, p2],
+                side_effect=[
+                    NotMedicalDocumentError("doc_type=other"),
+                    NotMedicalDocumentError("doc_type=other"),
+                ],
             ),
         ):
             with pytest.raises(NotMedicalDocumentError):
