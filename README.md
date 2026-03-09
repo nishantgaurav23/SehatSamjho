@@ -14,7 +14,9 @@
 
 > Transforming Healthcare Access for 1.4 Billion Indians
 
-Patients photograph their prescriptions on WhatsApp or upload them on the web — and receive a plain-language explanation with audio in any of 23 Indian languages. No app downloads, no signup, no literacy required — just send a photo and listen.
+**60% of Indian patients cannot fully understand their prescriptions.** Medical documents use English jargon, Latin abbreviations (BD, TDS, OD), and illegible handwriting — leading to medication errors and missed doses.
+
+SehatSamjho ("Understand Your Health") lets any patient photograph their prescription and receive a plain-language explanation with audio in any of 23 Indian languages — via WhatsApp or the web.
 
 ---
 
@@ -94,104 +96,9 @@ Structured results with three cards — **Your Medicines** (names, dosages), **W
 
 ## System Architecture
 
-```mermaid
-graph TB
-    subgraph CLIENT["Patient"]
-        WA["WhatsApp"]
-        WEB["Web Browser"]
-    end
-
-    subgraph GATEWAY["Messaging Gateway"]
-        TW["Twilio WhatsApp\nBusiness API"]
-    end
-
-    subgraph BACKEND["FastAPI Backend — Python 3.11 Async"]
-        direction TB
-
-        subgraph INGRESS["Ingress Layer"]
-            WH["POST /webhook/whatsapp"]
-            HMAC["HMAC Signature\nVerification"]
-            WEBAPI["POST /api/translate"]
-            LANDING["GET / Landing Page"]
-        end
-
-        subgraph SESSION["Session Layer"]
-            SM["Redis State Machine"]
-            DISPATCH["Dispatch Router"]
-        end
-
-        subgraph PIPELINE["Processing Pipeline"]
-            direction LR
-            EXT["Extraction\nGPT-4O Vision"]
-            DRUG["Drug Enrichment\nRedis -> CSV -> API"]
-            GLOSS["Glossary RAG\nRedis Lookup"]
-            TRANS["Translation\nClaude Sonnet 4.6"]
-            TTS["Text-to-Speech\nEdge TTS"]
-        end
-
-        subgraph EGRESS["Egress Layer"]
-            FMT["Response Formatter"]
-            SEND["WhatsApp / Web Sender"]
-        end
-    end
-
-    subgraph STORAGE["AWS Services"]
-        PG[("RDS PostgreSQL\nMetadata Only")]
-        REDIS[("Redis - Upstash\nSessions + Cache")]
-        S3[("AWS S3\nAudio Files")]
-    end
-
-    subgraph AI["AI Services"]
-        OPENAI["OpenAI GPT-4O\nVision"]
-        ANTHROPIC["Anthropic Claude\nSonnet 4.6"]
-        EDGE["Edge TTS\nOpen-source"]
-    end
-
-    WA <-->|"Messages + Media"| TW
-    TW -->|"POST webhook"| WH
-    WH --> HMAC --> DISPATCH
-    WEB -->|"Upload image"| WEBAPI
-    WEB -->|"Browse"| LANDING
-    WEBAPI --> EXT
-    DISPATCH <-->|"Session State"| SM
-    SM <-->|"Read/Write"| REDIS
-
-    DISPATCH -->|"Image received"| EXT
-    EXT -->|"PrescriptionData"| DRUG
-    DRUG -->|"DrugInfo[]"| GLOSS
-    GLOSS -->|"Glossary Context"| TRANS
-    TRANS -->|"TranslationResult"| TTS
-    TTS --> FMT --> SEND
-    SEND -->|"Text + Audio"| TW
-
-    EXT <-.->|"Vision API"| OPENAI
-    TRANS <-.->|"Messages API"| ANTHROPIC
-    TTS <-.->|"TTS Pipeline"| EDGE
-    TTS -.->|"Upload audio"| S3
-    DISPATCH -.->|"Log metadata"| PG
-    DRUG <-.->|"Drug cache"| REDIS
-    GLOSS <-.->|"Term cache"| REDIS
-
-    classDef client fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20
-    classDef gateway fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C
-    classDef backend fill:#E3F2FD,stroke:#1565C0,stroke-width:2px,color:#0D47A1
-    classDef storage fill:#ECEFF1,stroke:#546E7A,stroke-width:2px,color:#263238
-    classDef ai fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#BF360C
-    classDef ingress fill:#E1F5FE,stroke:#0277BD,stroke-width:1px,color:#01579B
-    classDef session fill:#E8EAF6,stroke:#283593,stroke-width:1px,color:#1A237E
-    classDef pipeline fill:#FFF8E1,stroke:#F57F17,stroke-width:1px,color:#F57F17
-    classDef egress fill:#E0F2F1,stroke:#00695C,stroke-width:1px,color:#004D40
-
-    class CLIENT client
-    class GATEWAY gateway
-    class BACKEND backend
-    class STORAGE storage
-    class AI ai
-    class INGRESS ingress
-    class SESSION session
-    class PIPELINE pipeline
-    class EGRESS egress
-```
+<p align="center">
+  <img src="docs/architecture/system-architecture.svg" alt="SehatSamjho System Architecture" width="900"/>
+</p>
 
 ---
 
