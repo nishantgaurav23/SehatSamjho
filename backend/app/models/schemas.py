@@ -36,6 +36,10 @@ class MedicineEntry(BaseModel):
     duration: str | None = None
     instructions: str | None = None
     confidence: float = Field(..., ge=0.0, le=1.0)
+    name_verified: bool = Field(
+        default=True,
+        description="False if the medicine name could not be verified against any drug database.",
+    )
 
 
 class LabTestEntry(BaseModel):
