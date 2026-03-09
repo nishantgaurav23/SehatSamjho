@@ -21,7 +21,7 @@ import redis.asyncio as redis_asyncio
 from loguru import logger
 
 from backend.app.core.config import settings
-from backend.app.services.drug_lookup import load_drug_csv
+from backend.app.services.drug_lookup import load_drug_csv, load_medicine_data
 from backend.app.services.glossary import load_glossary
 
 
@@ -51,6 +51,19 @@ async def main() -> int:
             logger.error("Failed to load drug CSV: {}", exc)
             failed = True
 
+        # ── Load medicine_data.csv salt/category indexes ─────────────────
+        med_data_counts: dict[str, int] | None = None
+        try:
+            med_data_counts = await load_medicine_data(redis_client)
+            logger.info(
+                "Medicine data loaded: {} salt indexes, {} category indexes",
+                med_data_counts.get("salts", 0),
+                med_data_counts.get("categories", 0),
+            )
+        except Exception as exc:
+            logger.error("Failed to load medicine data indexes: {}", exc)
+            failed = True
+
         # ── Load glossary ────────────────────────────────────────────────
         try:
             glossary_counts = await load_glossary(redis_client)
@@ -63,9 +76,14 @@ async def main() -> int:
         # ── Summary ──────────────────────────────────────────────────────
         elapsed = time.monotonic() - start
         total_glossary = sum(glossary_counts.values()) if glossary_counts else 0
+        salt_count = med_data_counts.get("salts", 0) if med_data_counts else 0
+        cat_count = med_data_counts.get("categories", 0) if med_data_counts else 0
         logger.info(
-            "Seed complete: {} drugs, {} glossary terms ({} languages) in {:.2f}s",
+            "Seed complete: {} drugs, {} salts, {} categories, "
+            "{} glossary terms ({} languages) in {:.2f}s",
             drug_count if drug_count is not None else 0,
+            salt_count,
+            cat_count,
             total_glossary,
             len(glossary_counts) if glossary_counts else 0,
             elapsed,

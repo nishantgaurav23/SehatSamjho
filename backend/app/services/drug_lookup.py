@@ -2,6 +2,7 @@
 
 S8.2: Reads the drug database CSV and loads entries into Redis.
 S8.3: lookup_drug() checks Redis first, falls back to IndianMedicineDB API.
+       Tiered lookup: brand/generic → salt/composition → therapeutic class → API.
 S8.4: enrich_prescription() runs concurrent lookups for all medicines in a prescription.
 S8.5: _call_indianmedicinedb() — httpx async GET with tenacity retry.
 """
@@ -23,9 +24,14 @@ from backend.app.models.schemas import DrugInfo, PrescriptionData
 
 # ── FR-1: DRUG_CSV_PATH constant ─────────────────────────────────────────────
 DRUG_CSV_PATH: Path = Path(__file__).resolve().parents[3] / "data" / "drugs" / "medicines.csv"
+MEDICINE_DATA_CSV_PATH: Path = (
+    Path(__file__).resolve().parents[3] / "data" / "drugs" / "medicine_data.csv"
+)
 
 # ── FR-2: DRUG_REDIS_PREFIX constant ──────────────────────────────────────────
 DRUG_REDIS_PREFIX: str = "drug:"
+SALT_REDIS_PREFIX: str = "salt:"
+CATEGORY_REDIS_PREFIX: str = "category:"
 
 
 # ── FR-3: DrugCSVLoader class ─────────────────────────────────────────────────
@@ -90,6 +96,173 @@ class DrugCSVLoader:
 async def load_drug_csv(redis_client) -> int:
     """Convenience wrapper: create DrugCSVLoader and call load_all()."""
     loader = DrugCSVLoader(redis_client)
+    return await loader.load_all()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Salt/Composition + Category Indexing (from medicine_data.csv)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Regex to strip dosage from individual salt components
+# e.g. "Paracetamol (500mg)" → "paracetamol", "Amoxycillin (250mg)" → "amoxycillin"
+_SALT_DOSAGE_RE = re.compile(r"\s*\(.*?\)\s*$")
+
+
+def _normalize_salt(salt: str) -> str:
+    """Normalize a salt component: lowercase, strip dosage in parens, collapse whitespace."""
+    result = _SALT_DOSAGE_RE.sub("", salt)
+    result = re.sub(r"\s+", " ", result.strip()).lower()
+    return result
+
+
+def _extract_salt_components(composition: str) -> list[str]:
+    """Split a salt_composition string into individual normalized components.
+
+    Input:  "Paracetamol (500mg) + Caffeine (65mg)"
+    Output: ["paracetamol", "caffeine"]
+    Also returns the full normalized composition as a component.
+    """
+    if not composition or not composition.strip():
+        return []
+    parts = [_normalize_salt(p) for p in composition.split("+")]
+    parts = [p for p in parts if p and len(p) >= 2]
+    # Also add the full composition (without dosages) as a combined key
+    full = _normalize_salt(composition.replace("+", " + "))
+    if full and full not in parts:
+        parts.append(full)
+    return parts
+
+
+def _summarize_for_salt(desc: str) -> str:
+    """Extract first 1-2 sentences from medicine_desc, cap at 200 chars."""
+    if not desc:
+        return ""
+    sentences = re.split(r"(?<=[.!])\s+", desc.strip())
+    summary_parts: list[str] = []
+    char_count = 0
+    for s in sentences:
+        if char_count + len(s) > 195 and summary_parts:
+            break
+        summary_parts.append(s)
+        char_count += len(s)
+        if len(summary_parts) >= 2:
+            break
+    result = " ".join(summary_parts)
+    if len(result) > 200:
+        result = result[:197] + "..."
+    return result
+
+
+def _parse_interactions_json(raw: str) -> str:
+    """Parse JSON drug_interactions into readable text.
+
+    Input:  {"drug": ["Benazepril", ...], "effect": ["MODERATE", ...]}
+    Output: "Benazepril (MODERATE); Captopril (MODERATE)"
+    """
+    if not raw:
+        return ""
+    try:
+        data = json.loads(raw)
+        drugs = data.get("drug", [])
+        effects = data.get("effect", [])
+        if not drugs:
+            return ""
+        parts = []
+        for i, drug in enumerate(drugs):
+            drug = drug.strip()
+            if not drug:
+                continue
+            effect = effects[i].strip() if i < len(effects) else ""
+            parts.append(f"{drug} ({effect})" if effect else drug)
+        return "; ".join(parts) if parts else ""
+    except (json.JSONDecodeError, KeyError, IndexError):
+        return ""
+
+
+class MedicineDataLoader:
+    """Reads medicine_data.csv and builds salt/composition + category indexes in Redis.
+
+    This enables tiered lookup:
+    - Level 2: salt:{component} → DrugInfo for that salt (same composition = same medical info)
+    - Level 3: category:{sub_category} → representative DrugInfo for the category
+    """
+
+    def __init__(self, redis_client, csv_path: Path | None = None) -> None:
+        self._redis = redis_client
+        self._csv_path = csv_path if csv_path is not None else MEDICINE_DATA_CSV_PATH
+
+    async def load_all(self) -> dict[str, int]:
+        """Load salt and category indexes from medicine_data.csv.
+
+        Returns dict with counts: {"salts": N, "categories": N, "rows_processed": N}.
+        """
+        if not self._csv_path.exists():
+            logger.warning("medicine_data.csv not found at {}, skipping", self._csv_path)
+            return {"salts": 0, "categories": 0, "rows_processed": 0}
+
+        salt_count = 0
+        category_count = 0
+        rows = 0
+        seen_salts: set[str] = set()
+        seen_categories: set[str] = set()
+
+        with self._csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                rows += 1
+                name = (row.get("product_name") or "").strip()
+                if not name:
+                    continue
+
+                composition = (row.get("salt_composition") or "").strip()
+                sub_category = (row.get("sub_category") or "").strip().lower()
+                desc = (row.get("medicine_desc") or "").strip()
+                side_effects = (row.get("side_effects") or "").strip()
+                interactions_raw = (row.get("drug_interactions") or "").strip()
+
+                purpose = _summarize_for_salt(desc)
+                interactions = _parse_interactions_json(interactions_raw)
+
+                drug_info = DrugInfo(
+                    brand_name=name,
+                    generic_name=composition,
+                    therapeutic_class=sub_category,
+                    purpose_en=purpose,
+                    side_effects_en=side_effects,
+                    timing_instructions="",
+                    known_interactions=interactions,
+                )
+                drug_json = drug_info.model_dump_json()
+
+                # Index by salt components (first-seen per salt wins)
+                if composition:
+                    components = _extract_salt_components(composition)
+                    for comp in components:
+                        if comp not in seen_salts:
+                            salt_key = f"{SALT_REDIS_PREFIX}{comp}"
+                            await self._redis.set(salt_key, drug_json)
+                            seen_salts.add(comp)
+                            salt_count += 1
+
+                # Index by category (first-seen per category wins)
+                if sub_category and sub_category not in seen_categories:
+                    cat_key = f"{CATEGORY_REDIS_PREFIX}{sub_category}"
+                    await self._redis.set(cat_key, drug_json)
+                    seen_categories.add(sub_category)
+                    category_count += 1
+
+        logger.info(
+            "MedicineData loaded: {} salt indexes, {} category indexes from {} rows",
+            salt_count,
+            category_count,
+            rows,
+        )
+        return {"salts": salt_count, "categories": category_count, "rows_processed": rows}
+
+
+async def load_medicine_data(redis_client) -> dict[str, int]:
+    """Convenience wrapper: create MedicineDataLoader and call load_all()."""
+    loader = MedicineDataLoader(redis_client)
     return await loader.load_all()
 
 
@@ -266,13 +439,58 @@ async def _call_indianmedicinedb_with_retry(
         return drug
 
 
-# ── S8.3 FR-2/FR-3: lookup_drug() ───────────────────────────────────────────
+# ── Helper: try a single Redis key and return DrugInfo or None ────────────────
+async def _try_redis_key(
+    redis_client,
+    key: str,
+    label: str,
+    request_id: str | None = None,
+) -> DrugInfo | None:
+    """Attempt to read and parse a DrugInfo from a single Redis key.
+
+    Returns DrugInfo on hit, None on miss or error. Never raises.
+    """
+    try:
+        cached = await redis_client.get(key)
+        if cached is not None:
+            try:
+                drug = DrugInfo.model_validate_json(cached)
+                logger.debug(
+                    "{} hit for '{}' | request_id={}",
+                    label,
+                    key,
+                    request_id,
+                )
+                return drug
+            except (json.JSONDecodeError, ValidationError) as exc:
+                logger.warning(
+                    "Invalid cached data for '{}': {} | request_id={}",
+                    key,
+                    exc,
+                    request_id,
+                )
+    except Exception as exc:
+        logger.warning(
+            "Redis error for '{}': {} | request_id={}",
+            key,
+            exc,
+            request_id,
+        )
+    return None
+
+
+# ── S8.3 FR-2/FR-3: lookup_drug() — tiered lookup ───────────────────────────
 async def lookup_drug(
     redis_client,
     medicine_name: str,
     request_id: str | None = None,
 ) -> DrugInfo | None:
-    """Look up a drug by name: Redis first, then API fallback.
+    """Look up a drug by name using tiered matching strategy.
+
+    Level 1: Brand/generic name match (drug:{name})
+    Level 2: Salt/composition match  (salt:{name})
+    Level 3: Therapeutic class match (category:{name}) — only if name looks like a class
+    Level 4: IndianMedicineDB API fallback
 
     Returns DrugInfo if found, None otherwise. Never raises.
     """
@@ -282,43 +500,31 @@ async def lookup_drug(
     if not normalized:
         return None
 
-    redis_key = f"{DRUG_REDIS_PREFIX}{normalized}"
+    # ── Level 1: Brand/generic match ─────────────────────────────────────
+    drug_key = f"{DRUG_REDIS_PREFIX}{normalized}"
+    result = await _try_redis_key(redis_client, drug_key, "Drug cache", request_id)
+    if result is not None:
+        return result
 
-    # ── Redis hit path ───────────────────────────────────────────────────
-    try:
-        cached = await redis_client.get(redis_key)
-        if cached is not None:
-            try:
-                drug = DrugInfo.model_validate_json(cached)
-                logger.debug(
-                    "Drug cache hit for '{}' | request_id={}",
-                    normalized,
-                    request_id,
-                )
-                return drug
-            except (json.JSONDecodeError, ValidationError) as exc:
-                logger.warning(
-                    "Invalid cached drug data for '{}': {} | request_id={}",
-                    normalized,
-                    exc,
-                    request_id,
-                )
-        else:
-            logger.debug(
-                "Drug cache miss for '{}' | request_id={}",
-                normalized,
-                request_id,
-            )
-    except Exception as exc:
-        logger.warning(
-            "Redis error looking up '{}': {} | request_id={}",
-            normalized,
-            exc,
-            request_id,
-        )
-        return None
+    logger.debug(
+        "Drug cache miss for '{}' | request_id={}",
+        normalized,
+        request_id,
+    )
 
-    # ── API fallback path ────────────────────────────────────────────────
+    # ── Level 2: Salt/composition match ──────────────────────────────────
+    salt_key = f"{SALT_REDIS_PREFIX}{normalized}"
+    result = await _try_redis_key(redis_client, salt_key, "Salt match", request_id)
+    if result is not None:
+        return result
+
+    # ── Level 3: Category match (therapeutic class) ──────────────────────
+    cat_key = f"{CATEGORY_REDIS_PREFIX}{normalized}"
+    result = await _try_redis_key(redis_client, cat_key, "Category match", request_id)
+    if result is not None:
+        return result
+
+    # ── Level 4: API fallback ────────────────────────────────────────────
     try:
         result = await _call_indianmedicinedb(medicine_name, request_id=request_id)
     except Exception as exc:
@@ -331,9 +537,11 @@ async def lookup_drug(
         return None
 
     if result is not None:
-        # Cache the API result with TTL
+        # Cache the API result with TTL under drug: prefix
         try:
-            await redis_client.set(redis_key, result.model_dump_json(), ex=DRUG_CACHE_TTL_SECONDS)
+            await redis_client.set(
+                drug_key, result.model_dump_json(), ex=DRUG_CACHE_TTL_SECONDS
+            )
             logger.debug(
                 "Cached API result for '{}' (TTL={}s) | request_id={}",
                 normalized,
